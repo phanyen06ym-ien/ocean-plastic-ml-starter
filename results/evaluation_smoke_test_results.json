@@ -1,0 +1,62 @@
+{
+    "accuracy": 0.85,
+    "macro_precision": 0.8572836661546339,
+    "macro_recall": 0.8555555555555556,
+    "macro_f1": 0.8460845780318396,
+    "weighted_precision": 0.8634408602150538,
+    "weighted_recall": 0.85,
+    "weighted_f1": 0.8494224701374803,
+    "per_class": {
+        "trash_bag": {
+            "label": 0,
+            "precision": 0.9032258064516129,
+            "recall": 0.8,
+            "f1_score": 0.8484848484848485,
+            "support": 35
+        },
+        "trash_bottle": {
+            "label": 1,
+            "precision": 0.8928571428571429,
+            "recall": 0.8333333333333334,
+            "f1_score": 0.8620689655172413,
+            "support": 30
+        },
+        "trash_can": {
+            "label": 2,
+            "precision": 0.8,
+            "recall": 0.8,
+            "f1_score": 0.8,
+            "support": 15
+        },
+        "trash_net": {
+            "label": 3,
+            "precision": 0.7142857142857143,
+            "recall": 1.0,
+            "f1_score": 0.8333333333333334,
+            "support": 15
+        },
+        "trash_wrapper": {
+            "label": 4,
+            "precision": 0.8333333333333334,
+            "recall": 1.0,
+            "f1_score": 0.9090909090909091,
+            "support": 15
+        },
+        "biological_or_rov": {
+            "label": 5,
+            "precision": 1.0,
+            "recall": 0.7,
+            "f1_score": 0.8235294117647058,
+            "support": 10
+        }
+    },
+    "total_samples": 120,
+    "target_names": [
+        "trash_bag",
+        "trash_bottle",
+        "trash_can",
+        "trash_net",
+        "trash_wrapper",
+        "biological_or_rov"
+    ]
+}
