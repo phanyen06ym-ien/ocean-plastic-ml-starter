@@ -1,0 +1,22 @@
+# E02 — E01 + Data Augmentation. CHỈ khác E01 ở khoá `augmentation`.
+exp_id: E02
+description: E01 + data augmentation (flip, rotation, zoom, contrast) on train only
+data_version: v1_crop128
+seed: 42
+input_shape: [128, 128, 3]
+num_classes: 22
+filters: [32, 64, 128, 256]
+batch_norm: true
+dense_units: 128
+dropout: 0.4
+learning_rate: 0.001
+batch_size: 64
+epochs: 40
+early_stopping_patience: 6
+reduce_lr_patience: 3
+class_weight: balanced
+augmentation:
+  flip: horizontal
+  rotation: 0.1
+  zoom: 0.1
+  contrast: 0.2
