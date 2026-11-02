@@ -1,39 +1,56 @@
 # Data Contract — thông số dùng chung cho DATA → CNN → EVAL → DEMO.
-# Chủ sở hữu: Yến (S1-ARCH). Mọi thay đổi phải qua PR được Yến approve.
-# Giá trị TBD được chốt tại Issue #4 và ghi lại trong docs/decisions/.
+# Chủ sở hữu: Yến (S1-ARCH). Mọi thay đổi phải qua PR được Yến approve và có ADR.
+# Phiên bản v1 — chốt 03/11/2026 theo docs/decisions/ADR-001-class-scope.md
+
+version: v1
 
 dataset:
   name: TrashCan 1.0
-  version: instance          # dùng nhãn theo loại đối tượng, không dùng nhãn material
-  data_version: TBD          # ví dụ v1_crop224 — thư mục trên Drive: data/processed/<data_version>
+  version: instance              # nhãn theo loại đối tượng, không dùng bản material
+  annotation_files:
+    train: instances_train_trashcan.json
+    val: instances_val_trashcan.json
+  data_version: v1_crop128       # thư mục Drive: data/processed/v1_crop128
 
 classes:
-  mapping_file: configs/class_mapping.json   # category_id → class_name → class_index (DATA tạo)
-  selection_rule: plastic-related object categories with enough valid crops
-  min_valid_crops_per_class: TBD
-  include_other_class: TBD   # có thêm lớp "other" cho đối tượng ngoài phạm vi hay không
+  mapping_file: configs/class_mapping.json   # sinh tự động bởi src/preprocessing.py
+  num_classes: 22
+  scope: all_instance_categories             # Option D
+  index_order: category_id_ascending         # class_index 0..21
+  plastic_related_candidates:                # nhóm phân tích chuyên sâu, KHÔNG phải nhãn chất liệu
+    - trash_bag
+    - trash_bottle
+    - trash_snack_wrapper
+    - trash_net
+    - trash_rope
+    - trash_tarp
 
 split:
-  strategy: grouped_by_video # các khung hình cùng video nằm chung một tập → tránh data leakage
-  ratios: {train: TBD, val: TBD, test: TBD}
+  strategy: grouped_by_video     # gộp train+val gốc, cả video vào một tập
+  video_id_regex: "vid_(\\d+)"   # lấy video id từ tên file ảnh; không khớp → mỗi ảnh là một nhóm
+  ratios: {train: 0.70, val: 0.15, test: 0.15}   # theo số ảnh nguồn
   seed: 42
-  manifest: TBD              # ví dụ data/processed/<data_version>/split_manifest.csv (lưu trên Drive)
+  manifest: split_manifest.csv   # lưu cùng data/processed/<data_version>/
 
 crop:
-  source: bbox               # bbox từ annotation COCO
-  padding_ratio: TBD         # mở rộng box để giữ ngữ cảnh
-  min_box_side_px: TBD       # loại box quá nhỏ
+  source: bbox
+  padding_ratio: 0.10
+  min_box_side_px: 8
 
 image:
-  input_size: TBD            # problem_statement đề xuất 224; notebook 03 hiện dùng 128 → phải thống nhất
+  input_size: 128
   channels: 3
   color_mode: RGB
-  resize_method: TBD         # resize thẳng / giữ tỉ lệ + padding
-  normalization: TBD         # ví dụ pixel / 255.0 → [0, 1]
+  resize_method: stretch         # resize thẳng về 128x128
+  file_format: jpg
+  normalization: rescale_1_255   # thực hiện bằng lớp Rescaling trong mô hình → đầu vào là pixel 0..255
 
 labels:
-  encoding: int              # sparse_categorical_crossentropy
+  encoding: int                  # sparse_categorical_crossentropy
+
+training:
+  class_weight: balanced         # ADR-001 D6
 
 model_io:
   checkpoint_format: .keras
-  output: softmax            # vector dài num_classes, thứ tự theo class_index
+  output: softmax                # vector 22 phần tử, thứ tự theo class_index

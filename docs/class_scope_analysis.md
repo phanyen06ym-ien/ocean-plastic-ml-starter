@@ -6,7 +6,7 @@
 **Owner:** Phan Hải Yến  
 **Dataset:** TrashCan 1.0 — Instance  
 **Version:** 1.2  
-**Status:** PROPOSED — NOT APPROVED (Pending Team Review)  
+**Status:** APPROVED — 03/11/2026 (ADR-001)  
 **Proposed approach:** Option D — General Object Classification Baseline + Plastic-Related Class Analysis
 
 ---
@@ -210,7 +210,7 @@ Huấn luyện CNN với tập con lớp được lựa chọn sau kiểm chứn
 
 **Đề xuất:** Option D.
 
-**Trạng thái:** PROPOSED — NOT APPROVED.
+**Trạng thái:** APPROVED — Option D được chọn (ADR-001, 03/11/2026).
 
 ## 7. Class Selection Decision Framework
 
@@ -261,7 +261,7 @@ Option D chỉ được phê duyệt khi:
 6. Class mapping được ghi nhận và dùng nhất quán giữa các module.
 7. Quyết định được lưu tại Issue #4 và có review.
 
-Nếu một điều kiện chưa đạt, Option D tiếp tục ở trạng thái Proposed.
+Trạng thái 03/11/2026: Option D được trưởng nhóm phê duyệt (ADR-001); các điều kiện 1–3 được xác nhận qua review PR #9 và PR triển khai Sprint 2.
 
 ### 7.5. Quy tắc thay đổi phương án
 
@@ -534,13 +534,13 @@ Việc quan sát ảnh không đủ để xác minh chắc chắn vật liệu n
 
 | ID | Quyết định | Trạng thái |
 |---|---|---|
-| D01 | Sử dụng TrashCan 1.0 — Instance làm cơ sở thực nghiệm | Working assumption |
-| D02 | Giữ 22 lớp đối tượng làm baseline | Proposed |
-| D03 | Phân tích chuyên sâu sáu lớp ứng viên liên quan nhựa | Proposed |
-| D04 | Lựa chọn Option D | Proposed — Not approved |
-| D05 | Ánh xạ category ID gốc sang model index `0–21` | Proposed |
-| D06 | Giữ nguyên split theo nhóm video | Proposed |
-| D07 | Quy tắc đánh giá lớp thiếu Validation | Proposed |
+| D01 | Sử dụng TrashCan 1.0 — Instance làm cơ sở thực nghiệm | Approved — ADR-001 |
+| D02 | Giữ 22 lớp đối tượng làm baseline | Approved — ADR-001 |
+| D03 | Phân tích chuyên sâu sáu lớp ứng viên liên quan nhựa | Approved — ADR-001 |
+| D04 | Lựa chọn Option D | Approved — ADR-001 (03/11/2026) |
+| D05 | Ánh xạ category ID gốc sang model index `0–21` | Approved — `configs/class_mapping.json` |
+| D06 | ~~Giữ nguyên split gốc~~ → Gộp train+val gốc, chia lại theo video 70/15/15 | Approved — ADR-001 (thay đổi) |
+| D07 | Quy tắc đánh giá lớp thiếu Validation | Resolved — chia lại theo video bảo đảm mọi lớp có mẫu Val/Test khi đủ video |
 | D08 | Phương pháp kiểm thử out-of-scope | Proposed |
 | D09 | Phạm vi Visual Inspection mở rộng | Open |
 | D10 | Phê duyệt cấu hình CNN và Evaluation cuối cùng | Open |

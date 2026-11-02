@@ -5,7 +5,7 @@
 **Issue:** #4 — S1-ARCH  
 **Dataset:** TrashCan 1.0 — Instance  
 **Version:** 1.1 — Review Revision  
-**Status:** DRAFT — Pending Class Scope Approval
+**Status:** APPROVED — 03/11/2026 (ADR-001)
 
 ## 1. Bối cảnh và vấn đề (WHY)
 
@@ -40,7 +40,7 @@ Cho một ảnh RGB chứa đối tượng dưới nước đã được xác đ
 ### 3.1. Đầu vào
 
 - Ảnh RGB của một đối tượng đã crop.
-- Kích thước đầu vào sau tiền xử lý: 224 × 224 pixel.
+- Kích thước đầu vào sau tiền xử lý: 128 × 128 pixel (ADR-001).
 - Quy trình biến đổi màu, resize, padding và chuẩn hóa phải được xác định trong Data Contract.
 - Huấn luyện, đánh giá và suy luận phải sử dụng các phép tiền xử lý tương thích.
 
@@ -56,7 +56,7 @@ Cho một ảnh RGB chứa đối tượng dưới nước đã được xác đ
 
 **Supervised Multi-class Image Classification.**
 
-Số lớp đầu ra CNN và ánh xạ nhãn chính thức sẽ được xác định sau bước Class Scope Review.
+Số lớp đầu ra CNN: **22 lớp** của TrashCan-Instance (Option D, ADR-001). Ánh xạ nhãn chính thức: `configs/class_mapping.json`.
 
 Mô hình chỉ phân loại trong tập nhãn được cấu hình. Nếu gặp đối tượng ngoài tập nhãn, mô hình vẫn có thể trả về một lớp đã học; khả năng phát hiện hoặc từ chối đối tượng ngoài phạm vi chưa thuộc cam kết của Sprint 1.
 
@@ -168,4 +168,4 @@ Kết quả mong đợi là một quy trình kỹ thuật có thể kiểm chứ
 
 Việc lựa chọn tập nhãn cần dựa trên Class Scope Analysis, kết quả Visual Inspection, tính khả thi của CNN và chiến lược đánh giá. Chưa có quyết định chính thức về số lớp hoặc tuyên bố hệ thống đã nhận diện được vật liệu nhựa.
 
-**Current status: DRAFT — Pending Class Scope Approval and Technical Review.**
+**Current status: APPROVED — Option D, xem `docs/decisions/ADR-001-class-scope.md`.**
