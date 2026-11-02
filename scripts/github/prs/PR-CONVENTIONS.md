@@ -58,3 +58,7 @@ PR này thay thế #2 (README v1.0).
 
 ---
 **Review (Yến):** ☐ Đúng quy ước ☐ Đủ DoD của issue ☐ Approve
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+https://claude.ai/code/session_01Nb6jm9Jd3j82pCQnR6TzEq
