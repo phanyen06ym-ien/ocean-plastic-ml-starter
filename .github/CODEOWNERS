@@ -1,0 +1,3 @@
+# Mọi thay đổi phải được trưởng nhóm review và phê duyệt.
+# Bật "Require review from Code Owners" trong Settings → Branches → main để có hiệu lực.
+* @phanyen06ym-ien
