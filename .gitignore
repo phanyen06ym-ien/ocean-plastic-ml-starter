@@ -8,15 +8,26 @@ venv/
 __pycache__/
 *.pyc
 .pytest_cache/
+.ipynb_checkpoints/
 
-# Dataset
-data/raw/
-data/processed/
+# Dataset — never commit TrashCan images, crops or annotations (keep folder skeleton only)
+data/*/*
+!data/*/.gitkeep
 
-# Trained models
-models/*.keras
-models/*.h5
-models/*.pt
+# Trained models and run folders — stored on Google Drive
+models/*
+!models/.gitkeep
+checkpoints/
+runs/
+*.keras
+*.h5
+*.pt
+*.ckpt
+
+# Large archives
+*.zip
+*.tar
+*.tar.gz
 
 # Secrets
 .env
