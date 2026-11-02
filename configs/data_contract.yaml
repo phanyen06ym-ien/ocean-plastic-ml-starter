@@ -1,0 +1,39 @@
+# Data Contract — thông số dùng chung cho DATA → CNN → EVAL → DEMO.
+# Chủ sở hữu: Yến (S1-ARCH). Mọi thay đổi phải qua PR được Yến approve.
+# Giá trị TBD được chốt tại Issue #4 và ghi lại trong docs/decisions/.
+
+dataset:
+  name: TrashCan 1.0
+  version: instance          # dùng nhãn theo loại đối tượng, không dùng nhãn material
+  data_version: TBD          # ví dụ v1_crop224 — thư mục trên Drive: data/processed/<data_version>
+
+classes:
+  mapping_file: configs/class_mapping.json   # category_id → class_name → class_index (DATA tạo)
+  selection_rule: plastic-related object categories with enough valid crops
+  min_valid_crops_per_class: TBD
+  include_other_class: TBD   # có thêm lớp "other" cho đối tượng ngoài phạm vi hay không
+
+split:
+  strategy: grouped_by_video # các khung hình cùng video nằm chung một tập → tránh data leakage
+  ratios: {train: TBD, val: TBD, test: TBD}
+  seed: 42
+  manifest: TBD              # ví dụ data/processed/<data_version>/split_manifest.csv (lưu trên Drive)
+
+crop:
+  source: bbox               # bbox từ annotation COCO
+  padding_ratio: TBD         # mở rộng box để giữ ngữ cảnh
+  min_box_side_px: TBD       # loại box quá nhỏ
+
+image:
+  input_size: TBD            # problem_statement đề xuất 224; notebook 03 hiện dùng 128 → phải thống nhất
+  channels: 3
+  color_mode: RGB
+  resize_method: TBD         # resize thẳng / giữ tỉ lệ + padding
+  normalization: TBD         # ví dụ pixel / 255.0 → [0, 1]
+
+labels:
+  encoding: int              # sparse_categorical_crossentropy
+
+model_io:
+  checkpoint_format: .keras
+  output: softmax            # vector dài num_classes, thứ tự theo class_index
