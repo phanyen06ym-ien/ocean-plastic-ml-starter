@@ -20,10 +20,10 @@
 | Sprint | ARCH | DATA | CNN | EVAL | DEMO |
 |---|---|---|---|---|---|
 | S1 — Foundation (23/10–08/11) | #4 | #5 | #6 | #7 | #8 |
-| S2 — Data & Baseline (09/11–22/11) | S2-ARCH | S2-DATA | S2-CNN | S2-EVAL | S2-DEMO |
-| S3 — Improvement & Midterm (23/11–06/12) | S3-ARCH | S3-DATA | S3-CNN | S3-EVAL | S3-DEMO |
+| S2 — Data & Baseline (09/11–22/11) | #10 | #11 | #12 | #13 | #14 |
+| S3 — Improvement & Midterm (23/11–06/12) | #15 | #16 | #17 | #18 | #19 |
 
-Số issue Sprint 2–3 được gán khi chạy `scripts/github/setup_sprints.py`.
+Quy ước repo: PR #20.
 
 ## 3. Timeline
 
