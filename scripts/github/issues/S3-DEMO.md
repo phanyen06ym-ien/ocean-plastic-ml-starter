@@ -17,8 +17,8 @@ milestone: Sprint 3 — Improvement & Midterm
 | Vai trò | Inference Developer · Demo · Testing |
 | Ưu tiên | P1 — High |
 | Nhánh | `feat/s3-demo-final-app` |
-| Thời gian | 23/11 → 06/12/2026 |
-| Hạn mở PR | 03/12 |
+| Thời gian | 05/11 → 18/11/2026 |
+| Hạn mở PR | 15/11 |
 
 ## 2. Mục tiêu
 
@@ -28,19 +28,19 @@ Hoàn thiện demo dùng mô hình cuối, kiểm thử end-to-end và chuẩn b
 
 ## 3. Phạm vi công việc
 
-### A. Giao diện demo — hạn 28/11
+### A. Giao diện demo — hạn 10/11
 - [ ] Ứng dụng demo trên Colab: tải ảnh → hiển thị top-3 lớp + confidence; nút chọn ảnh mẫu.
 - [ ] Logic dự đoán gọi `src/predict.py`, không viết lại.
 
-### B. Tích hợp mô hình cuối — hạn 02/12
-- [ ] Nạp checkpoint cuối (sau ADR 30/11); cập nhật đường dẫn trong cấu hình.
+### B. Tích hợp mô hình cuối — hạn 14/11
+- [ ] Nạp checkpoint cuối (sau ADR 12/11); cập nhật đường dẫn trong cấu hình.
 - [ ] Bộ 10–15 ảnh demo từ tập Test (Yến duyệt), có cả trường hợp sai để thảo luận.
 
-### C. Kiểm thử end-to-end — hạn 03/12
+### C. Kiểm thử end-to-end — hạn 15/11
 - [ ] Chạy demo trên Colab mới, CPU và GPU; đo thời gian suy luận.
 - [ ] `tests/test_predict.py` chạy qua với checkpoint cuối (test đánh dấu `slow`, chạy thủ công).
 
-### D. Tư liệu trình bày — hạn 04/12
+### D. Tư liệu trình bày — hạn 16/11
 - [ ] Video quay màn hình demo 1–2 phút (dự phòng khi mạng lỗi) — lưu Drive.
 - [ ] Ảnh chụp cho slide; cập nhật `docs/demo_spec.md` và README mục Demo.
 
@@ -48,10 +48,10 @@ Hoàn thiện demo dùng mô hình cuối, kiểm thử end-to-end và chuẩn b
 
 | Sản phẩm | File / Bằng chứng | Hạn |
 |---|---|---|
-| Demo app | `notebooks/05_inference_demo.ipynb` (hoặc `app/`), `src/predict.py` | 02/12 |
-| Bộ ảnh demo | Drive `demo/images/` | 02/12 |
-| Video demo | Drive `demo/` | 04/12 |
-| Tài liệu | `docs/demo_spec.md`, README | 04/12 |
+| Demo app | `notebooks/05_inference_demo.ipynb` (hoặc `app/`), `src/predict.py` | 14/11 |
+| Bộ ảnh demo | Drive `demo/images/` | 14/11 |
+| Video demo | Drive `demo/` | 16/11 |
+| Tài liệu | `docs/demo_spec.md`, README | 16/11 |
 
 ## 5. Tiêu chí nghiệm thu (Definition of Done)
 
@@ -68,18 +68,18 @@ Hoàn thiện demo dùng mô hình cuối, kiểm thử end-to-end và chuẩn b
 
 | Hướng | Issue | Nội dung |
 |---|---|---|
-| Nhận từ | {{S3-CNN}} | Checkpoint cuối (01/12) |
+| Nhận từ | {{S3-CNN}} | Checkpoint cuối (13/11) |
 | Nhận từ | {{S3-EVAL}} | Dự đoán trên Test để so khớp |
-| Bàn giao cho | {{S3-ARCH}} | Ảnh/video demo cho slide (04/12) |
+| Bàn giao cho | {{S3-ARCH}} | Ảnh/video demo cho slide (16/11) |
 
 ## 8. Mốc thời gian
 
 | Ngày | Mốc | Người xác nhận |
 |---|---|---|
-| 28/11 | Giao diện demo với checkpoint Sprint 2 | Yến |
-| 02/12 | Tích hợp mô hình cuối | Yến |
-| 03/12 | Mở PR `feat(s3-demo): final demo app` | Yến |
-| 04/12 | Video demo; PR được merge | Yến |
+| 10/11 | Giao diện demo với checkpoint Sprint 2 | Yến |
+| 14/11 | Tích hợp mô hình cuối | Yến |
+| 15/11 | Mở PR `feat(s3-demo): final demo app` | Yến |
+| 16/11 | Video demo; PR được merge | Yến |
 
 ## 9. Quy định review
 

@@ -18,8 +18,8 @@ milestone: Sprint 1 — Foundation
 | Vai trò | Team Leader · Problem Analysis · ML System Design · Project Management |
 | Ưu tiên | P1 — High |
 | Nhánh | `docs/s1-arch-<mo-ta>` (PR #9: `docs/s1-arch-option-d-review`) |
-| Thời gian | 23/10 → 08/11/2026 |
-| Hạn mở PR | 05/11 |
+| Thời gian | 23/10 → 03/11/2026 |
+| Hạn mở PR | 03/11 |
 
 ## 2. Mục tiêu
 
@@ -29,29 +29,29 @@ Phân tích bài toán **phân loại ảnh đối tượng rác thải liên qu
 
 ## 3. Phạm vi công việc
 
-### A. Phân tích bài toán — hạn 05/11
+### A. Phân tích bài toán — hạn 03/11
 - [x] Xác định chủ đề và mục tiêu nghiên cứu.
 - [x] Lựa chọn bộ dữ liệu TrashCan 1.0, phiên bản Instance (phân loại theo loại đối tượng).
 - [x] Xác định bài toán giữa kỳ là CNN Image Classification trên ảnh đối tượng đã crop.
 - [x] Soạn Problem Statement (PR #1, cập nhật trong PR #9).
-- [ ] Đối chiếu đề xuất **Option D (22 lớp)** trong PR #9 với định hướng **chỉ giữ nhãn rác liên quan nhựa có đủ mẫu**; chọn một phương án và ghi lý do.
-- [ ] Chốt danh sách lớp, ngưỡng số crop tối thiểu, có/không lớp `other` → `docs/decisions/ADR-001-class-scope.md`.
-- [ ] Cập nhật `docs/problem_statement.md` theo quyết định đã chốt.
+- [x] Đối chiếu đề xuất **Option D (22 lớp)** trong PR #9 với định hướng **chỉ giữ nhãn rác liên quan nhựa có đủ mẫu**; chọn một phương án và ghi lý do.
+- [x] Chốt danh sách lớp, ngưỡng số crop tối thiểu, có/không lớp `other` → `docs/decisions/ADR-001-class-scope.md`.
+- [x] Cập nhật `docs/problem_statement.md` theo quyết định đã chốt.
 
-### B. Kiến trúc và hợp đồng dữ liệu — hạn 05/11
+### B. Kiến trúc và hợp đồng dữ liệu — hạn 03/11
 - [x] Khởi tạo GitHub repository.
 - [x] Khởi tạo cấu trúc Colab notebooks (PR #3 — đã merge).
-- [ ] Áp dụng quy ước thư mục, README, CONTRIBUTING, issue/PR template (PR `chore(s1-arch): repository conventions`).
-- [ ] Chốt `configs/data_contract.yaml`: kích thước ảnh (224 trong problem statement ≠ 128 trong notebook 03), chuẩn hoá, cách crop, tỉ lệ split theo video, seed.
-- [ ] Hoàn thiện `docs/colab_setup.md` (gộp nội dung từ nhánh của Ân).
+- [x] Áp dụng quy ước thư mục, README, CONTRIBUTING, issue/PR template (PR `chore(s1-arch): repository conventions`).
+- [x] Chốt `configs/data_contract.yaml`: kích thước ảnh (224 trong problem statement ≠ 128 trong notebook 03), chuẩn hoá, cách crop, tỉ lệ split theo video, seed.
+- [x] Hoàn thiện `docs/colab_setup.md` (gộp nội dung từ nhánh của Ân).
 
-### C. Thiết kế thực nghiệm — hạn 07/11
-- [ ] Giả thuyết và mục tiêu thực nghiệm.
-- [ ] Danh sách thí nghiệm: E01 CNN baseline, E02 = E01 + Data Augmentation (các yếu tố khác giữ cố định).
-- [ ] Thống nhất với S1-EVAL chỉ số chính (Macro F1) và quy tắc dùng Validation/Test.
-- [ ] Tham số bắt buộc ghi nhận mỗi run: `EXP_ID`, `DATA_VERSION`, epochs, batch size, learning rate, optimizer, seed.
+### C. Thiết kế thực nghiệm — hạn 03/11
+- [x] Giả thuyết và mục tiêu thực nghiệm.
+- [x] Danh sách thí nghiệm: E01 CNN baseline, E02 = E01 + Data Augmentation (các yếu tố khác giữ cố định).
+- [x] Thống nhất với S1-EVAL chỉ số chính (Macro F1) và quy tắc dùng Validation/Test.
+- [x] Tham số bắt buộc ghi nhận mỗi run: `EXP_ID`, `DATA_VERSION`, epochs, batch size, learning rate, optimizer, seed.
 
-### D. Điều phối — hạn 08/11
+### D. Điều phối — hạn 03/11
 - [x] Tạo issue Sprint 1 cho 5 thành viên (#4–#8).
 - [ ] Bật branch protection cho `main`: bắt buộc PR, 1 approval, review từ Code Owners.
 - [ ] Mời GitHub của Ân làm collaborator và gán vào issue #7.
@@ -62,12 +62,12 @@ Phân tích bài toán **phân loại ảnh đối tượng rác thải liên qu
 
 | Sản phẩm | File / Bằng chứng | Hạn |
 |---|---|---|
-| Problem Statement | `docs/problem_statement.md` | 05/11 |
-| Class Scope Analysis + quyết định | `docs/class_scope_analysis.md`, `docs/decisions/ADR-001-class-scope.md` | 05/11 |
-| Data Contract | `configs/data_contract.yaml` | 05/11 |
-| Quy ước repo | `README.md`, `CONTRIBUTING.md`, `.github/` | 04/11 |
-| Kế hoạch thực nghiệm | `docs/experiment_plan.md` | 07/11 |
-| Sprint 1 Review | `docs/reports/sprint1_review.md` | 08/11 |
+| Problem Statement | `docs/problem_statement.md` (PR #9) | 03/11 |
+| Class Scope Analysis + quyết định | `docs/class_scope_analysis.md`, `docs/decisions/ADR-001-class-scope.md` | 03/11 |
+| Data Contract | `configs/data_contract.yaml` | 03/11 |
+| Quy ước repo | `README.md`, `CONTRIBUTING.md`, `.github/` | 03/11 |
+| Kế hoạch thực nghiệm | `docs/experiment_plan.md` | 03/11 |
+| Sprint 1 Review | `docs/reports/sprint1_review.md` | 03/11 |
 
 ## 5. Tiêu chí nghiệm thu (Definition of Done)
 
@@ -98,10 +98,10 @@ Phân tích bài toán **phân loại ảnh đối tượng rác thải liên qu
 | Ngày | Mốc | Người xác nhận |
 |---|---|---|
 | 03/11 | Mở PR quy ước repo; bật branch protection; mời Ân | Yến |
-| 04/11 | Gửi PR #9 cho Hùng, Bách, Ân, Nguyên review chuyên môn | Yến |
-| 05/11 | Chốt ADR-001 + data contract | Cả nhóm |
-| 07/11 | Hoàn tất review mọi PR Sprint 1 | Yến |
-| 08/11 | Sprint 1 Review, mở Sprint 2 | Yến |
+| 03/11 | Gửi PR #9 cho Hùng, Bách, Ân, Nguyên review chuyên môn | Yến |
+| 03/11 | Chốt ADR-001 + data contract | Cả nhóm |
+| 03/11 | Hoàn tất review mọi PR Sprint 1 | Yến |
+| 03/11 | Sprint 1 Review, mở Sprint 2 | Yến |
 
 ## 9. Quy định review
 
@@ -110,5 +110,6 @@ Phân tích bài toán **phân loại ảnh đối tượng rác thải liên qu
 
 ## 10. Ghi chú
 
+- **Lịch rút gọn (03/11/2026):** Sprint 1 kết thúc 03/11, Sprint 2 hoàn thành trong ngày 04/11, Sprint 3 chạy 05/11 → 18/11. Việc không hoàn thành đúng hạn → Yến (dự phòng) làm thay và ghi chú tại đây. Phạm vi: [ADR-001](../blob/main/docs/decisions/ADR-001-class-scope.md) — 22 lớp, 128×128, chia theo video 70/15/15, class weights.
 - Nhãn TrashCan-Instance là loại đối tượng; không mặc định mọi `trash_bottle`, `trash_rope`… là nhựa.
 - Không ghi số liệu hiệu năng khi chưa có run thực tế.

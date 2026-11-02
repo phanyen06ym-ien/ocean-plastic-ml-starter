@@ -18,8 +18,8 @@ milestone: Sprint 1 — Foundation
 | Vai trò | Inference Developer · Testing · Demo |
 | Ưu tiên | P1 — High |
 | Nhánh | `feat/s1-demo-inference` |
-| Thời gian | 23/10 → 08/11/2026 |
-| Hạn mở PR | 05/11 |
+| Thời gian | 23/10 → 03/11/2026 |
+| Hạn mở PR | 03/11 |
 
 ## 2. Mục tiêu
 
@@ -34,12 +34,12 @@ Xây dựng chương trình dự đoán: nhận ảnh một đối tượng → 
 - [ ] Đặc tả đầu vào/đầu ra và thông báo lỗi trong `docs/demo_spec.md`.
 - [ ] Kích thước ảnh, chuẩn hoá, class mapping đọc từ `configs/` — không hard-code.
 
-### B. Cài đặt — hạn 05/11
+### B. Cài đặt — hạn 03/11
 - [ ] `load_image()`, `preprocess()`, `load_model()`, `predict()` trong `src/predict.py`.
 - [ ] Xử lý: file không tồn tại, file không phải ảnh, thiếu checkpoint, class mapping không khớp số lớp.
 - [ ] Thay nội dung mẫu PyCharm trong `main.py` bằng CLI: `python main.py --image <path> --model <path> [--top-k 3]`.
 
-### C. Kiểm thử — hạn 06/11
+### C. Kiểm thử — hạn 03/11
 - [ ] `tests/test_predict.py` với mock model (Keras nhỏ tạo trong test): ảnh JPG/PNG hợp lệ, đường dẫn sai, file không phải ảnh, shape sau preprocess, tổng xác suất = 1, thứ tự nhãn đúng mapping.
 - [ ] Ghi kết quả smoke test trong PR.
 
@@ -48,9 +48,9 @@ Xây dựng chương trình dự đoán: nhận ảnh một đối tượng → 
 | Sản phẩm | File / Bằng chứng | Hạn |
 |---|---|---|
 | Đặc tả demo | `docs/demo_spec.md` | 03/11 |
-| Inference module | `src/predict.py` | 05/11 |
-| CLI | `main.py` | 05/11 |
-| Test | `tests/test_predict.py` | 06/11 |
+| Inference module | `src/predict.py` | 03/11 |
+| CLI | `main.py` | 03/11 |
+| Test | `tests/test_predict.py` | 03/11 |
 
 ## 5. Tiêu chí nghiệm thu (Definition of Done)
 
@@ -77,8 +77,8 @@ Xây dựng chương trình dự đoán: nhận ảnh một đối tượng → 
 | Ngày | Mốc | Người xác nhận |
 |---|---|---|
 | 03/11 | `docs/demo_spec.md` | Yến |
-| 05/11 | Mở PR `feat(s1-demo): inference module, CLI and tests` | Yến |
-| 07/11 | PR được merge | Yến |
+| 03/11 | Mở PR `feat(s1-demo): inference module, CLI and tests` | Yến |
+| 03/11 | PR được merge | Yến |
 
 ## 9. Quy định review
 
@@ -88,5 +88,6 @@ Xây dựng chương trình dự đoán: nhận ảnh một đối tượng → 
 
 ## 10. Ghi chú
 
+- **Lịch rút gọn (03/11/2026):** Sprint 1 kết thúc 03/11, Sprint 2 hoàn thành trong ngày 04/11, Sprint 3 chạy 05/11 → 18/11. Việc không hoàn thành đúng hạn → Yến (dự phòng) làm thay và ghi chú tại đây. Phạm vi: [ADR-001](../blob/main/docs/decisions/ADR-001-class-scope.md) — 22 lớp, 128×128, chia theo video 70/15/15, class weights.
 - Đầu vào giữa kỳ là ảnh **một đối tượng đã crop**, không phải ảnh nhiều vật thể.
 - Confidence là điểm softmax, không phải xác suất đã hiệu chuẩn.

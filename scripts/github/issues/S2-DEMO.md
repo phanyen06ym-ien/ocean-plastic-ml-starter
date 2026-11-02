@@ -17,8 +17,8 @@ milestone: Sprint 2 — Data & Baseline
 | Vai trò | Inference Developer · Testing · Demo |
 | Ưu tiên | P1 — High |
 | Nhánh | `feat/s2-demo-trained-model` |
-| Thời gian | 09/11 → 22/11/2026 |
-| Hạn mở PR | 19/11 |
+| Thời gian | 04/11/2026 |
+| Hạn mở PR | 04/11 |
 
 ## 2. Mục tiêu
 
@@ -28,29 +28,29 @@ Tích hợp checkpoint E01 thật vào chương trình dự đoán, xây dựng 
 
 ## 3. Phạm vi công việc
 
-### A. Tích hợp — hạn 15/11
+### A. Tích hợp — hạn 04/11
 - [ ] Đọc `configs/class_mapping.json` + data contract v1; nạp `best.keras` E01 từ Drive.
 - [ ] So khớp: dự đoán của `predict.py` trên 20 ảnh val **trùng** với `y_pred` của pipeline đánh giá.
 
-### B. Demo notebook — hạn 18/11
+### B. Demo notebook — hạn 04/11
 - [ ] `notebooks/05_inference_demo.ipynb`: chọn ảnh (upload hoặc đường dẫn Drive), hiển thị ảnh, top-3 lớp + confidence.
 - [ ] Chế độ thư mục: dự đoán hàng loạt, xuất CSV.
 
-### C. Kiểm thử — hạn 19/11
+### C. Kiểm thử — hạn 04/11
 - [ ] Bổ sung `tests/test_predict.py`: kiểm tra số lớp khớp mapping, ảnh xám/RGBA được chuyển RGB.
 - [ ] Đo thời gian suy luận trung bình một ảnh trên Colab CPU và GPU.
 
-### D. Tài liệu — hạn 19/11
+### D. Tài liệu — hạn 04/11
 - [ ] Cập nhật `docs/demo_spec.md` và mục chạy demo trong README.
 
 ## 4. Sản phẩm bàn giao
 
 | Sản phẩm | File / Bằng chứng | Hạn |
 |---|---|---|
-| Inference tích hợp checkpoint thật | `src/predict.py`, `main.py` | 15/11 |
-| Demo notebook | `notebooks/05_inference_demo.ipynb` | 18/11 |
-| Test | `tests/test_predict.py` | 19/11 |
-| Đặc tả + hướng dẫn | `docs/demo_spec.md` | 19/11 |
+| Inference tích hợp checkpoint thật | `src/predict.py`, `main.py` | 04/11 |
+| Demo notebook | `notebooks/05_inference_demo.ipynb` | 04/11 |
+| Test | `tests/test_predict.py` | 04/11 |
+| Đặc tả + hướng dẫn | `docs/demo_spec.md` | 04/11 |
 
 ## 5. Tiêu chí nghiệm thu (Definition of Done)
 
@@ -67,7 +67,7 @@ Tích hợp checkpoint E01 thật vào chương trình dự đoán, xây dựng 
 
 | Hướng | Issue | Nội dung |
 |---|---|---|
-| Nhận từ | {{S2-CNN}} | Checkpoint E01 (14/11) |
+| Nhận từ | {{S2-CNN}} | Checkpoint E01 (04/11) |
 | Nhận từ | {{S2-DATA}} | Class mapping, tham số tiền xử lý |
 | Nhận từ | {{S2-EVAL}} | `y_pred` trên val để so khớp |
 
@@ -75,10 +75,10 @@ Tích hợp checkpoint E01 thật vào chương trình dự đoán, xây dựng 
 
 | Ngày | Mốc | Người xác nhận |
 |---|---|---|
-| 15/11 | Dự đoán bằng checkpoint E01 | Yến |
-| 18/11 | Notebook demo | Yến |
-| 19/11 | Mở PR `feat(s2-demo): inference with trained checkpoint and demo notebook` | Yến |
-| 21/11 | PR được merge | Yến |
+| 04/11 | Dự đoán bằng checkpoint E01 | Yến |
+| 04/11 | Notebook demo | Yến |
+| 04/11 | Mở PR `feat(s2-demo): inference with trained checkpoint and demo notebook` | Yến |
+| 04/11 | PR được merge | Yến |
 
 ## 9. Quy định review
 
@@ -88,4 +88,5 @@ Tích hợp checkpoint E01 thật vào chương trình dự đoán, xây dựng 
 
 ## 10. Ghi chú
 
-- Trong thời gian chờ checkpoint (trước 14/11), tiếp tục với mock model và phần giao diện notebook.
+- **Lịch rút gọn (03/11/2026):** Sprint 1 kết thúc 03/11, Sprint 2 hoàn thành trong ngày 04/11, Sprint 3 chạy 05/11 → 18/11. Việc không hoàn thành đúng hạn → Yến (dự phòng) làm thay và ghi chú tại đây. Phạm vi: [ADR-001](../blob/main/docs/decisions/ADR-001-class-scope.md) — 22 lớp, 128×128, chia theo video 70/15/15, class weights.
+- Trong thời gian chờ checkpoint (trước 04/11), tiếp tục với mock model và phần giao diện notebook.

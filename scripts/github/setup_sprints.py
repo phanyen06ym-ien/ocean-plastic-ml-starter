@@ -45,12 +45,12 @@ LABELS = [
 ]
 
 MILESTONES = [
-    ("Sprint 1 — Foundation", "2026-11-08T16:59:59Z",
-     "23/10 – 08/11/2026 · Bài toán, kiến trúc, Dataset Audit, khung code CNN/Eval/Demo"),
-    ("Sprint 2 — Data & Baseline", "2026-11-22T16:59:59Z",
-     "09/11 – 22/11/2026 · Chốt lớp, dữ liệu processed, E01/E02, đánh giá Validation"),
-    ("Sprint 3 — Improvement & Midterm", "2026-12-06T16:59:59Z",
-     "23/11 – 06/12/2026 · Cải tiến, đánh giá Test, demo, báo cáo giữa kỳ, release v0.1-midterm"),
+    ("Sprint 1 — Foundation", "2026-11-03T16:59:59Z",
+     "23/10 – 03/11/2026 · Bài toán, kiến trúc, Dataset Audit, khung code CNN/Eval/Demo"),
+    ("Sprint 2 — Data & Baseline", "2026-11-04T16:59:59Z",
+     "04/11/2026 · Chốt lớp, dữ liệu processed, E01/E02, đánh giá Validation"),
+    ("Sprint 3 — Improvement & Midterm", "2026-11-18T16:59:59Z",
+     "05/11 – 18/11/2026 · Cải tiến, đánh giá Test, demo, báo cáo giữa kỳ, release v0.1-midterm"),
 ]
 
 ISSUE_ORDER = [

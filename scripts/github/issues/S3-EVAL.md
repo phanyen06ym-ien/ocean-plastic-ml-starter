@@ -17,8 +17,8 @@ milestone: Sprint 3 — Improvement & Midterm
 | Vai trò | Model Evaluation · Comparison · Error Analysis |
 | Ưu tiên | P0 — Critical |
 | Nhánh | `exp/s3-eval-final-test` |
-| Thời gian | 23/11 → 06/12/2026 |
-| Hạn mở PR | 02/12 |
+| Thời gian | 05/11 → 18/11/2026 |
+| Hạn mở PR | 14/11 |
 
 ## 2. Mục tiêu
 
@@ -28,29 +28,29 @@ milestone: Sprint 3 — Improvement & Midterm
 
 ## 3. Phạm vi công việc
 
-### A. Đánh giá ứng viên trên Validation — hạn 29/11
+### A. Đánh giá ứng viên trên Validation — hạn 11/11
 - [ ] `results/metrics/E03_val.json`, `E04_val.json` + hình.
 - [ ] Bảng so sánh E01–E04: Accuracy, Macro P/R/F1, F1 từng lớp (kèm support).
 
-### B. Đánh giá Test — hạn 01/12 (chỉ sau khi ADR mô hình cuối được merge)
+### B. Đánh giá Test — hạn 13/11 (chỉ sau khi ADR mô hình cuối được merge)
 - [ ] Chạy Test **một lần** cho mô hình cuối; `results/metrics/<EXP_ID>_test.json`, confusion matrix.
 - [ ] Ghi thời điểm chạy, commit hash, checkpoint vào báo cáo.
 
-### C. Phân tích lỗi cuối — hạn 02/12
+### C. Phân tích lỗi cuối — hạn 14/11
 - [ ] Cặp lớp nhầm nhiều nhất trên Test; lưới ảnh dự đoán sai.
 - [ ] So sánh Val vs Test (chênh lệch, lý giải có kiểm soát).
 - [ ] Hạn chế: số mẫu nhỏ, nhãn đối tượng ≠ chất liệu, ảnh crop từ cùng nguồn video.
 
-### D. Báo cáo — hạn 02/12
+### D. Báo cáo — hạn 14/11
 - [ ] Cập nhật `docs/evaluation_report.md` (bản cuối) và cung cấp bảng/hình cho báo cáo giữa kỳ.
 
 ## 4. Sản phẩm bàn giao
 
 | Sản phẩm | File / Bằng chứng | Hạn |
 |---|---|---|
-| Kết quả val E03/E04 | `results/metrics/E03_val.json`, `E04_val.json` | 29/11 |
-| Kết quả Test | `results/metrics/<EXP_ID>_test.json`, `results/figures/<EXP_ID>_test_*.png` | 01/12 |
-| Báo cáo đánh giá cuối | `docs/evaluation_report.md` | 02/12 |
+| Kết quả val E03/E04 | `results/metrics/E03_val.json`, `E04_val.json` | 11/11 |
+| Kết quả Test | `results/metrics/<EXP_ID>_test.json`, `results/figures/<EXP_ID>_test_*.png` | 13/11 |
+| Báo cáo đánh giá cuối | `docs/evaluation_report.md` | 14/11 |
 
 ## 5. Tiêu chí nghiệm thu (Definition of Done)
 
@@ -66,18 +66,18 @@ milestone: Sprint 3 — Improvement & Midterm
 
 | Hướng | Issue | Nội dung |
 |---|---|---|
-| Nhận từ | {{S3-CNN}} | Checkpoint ứng viên (30/11) |
-| Nhận từ | {{S3-ARCH}} | ADR mô hình cuối (30/11) |
-| Bàn giao cho | {{S3-ARCH}} | Bảng, hình cho báo cáo (02/12) |
+| Nhận từ | {{S3-CNN}} | Checkpoint ứng viên (12/11) |
+| Nhận từ | {{S3-ARCH}} | ADR mô hình cuối (12/11) |
+| Bàn giao cho | {{S3-ARCH}} | Bảng, hình cho báo cáo (14/11) |
 
 ## 8. Mốc thời gian
 
 | Ngày | Mốc | Người xác nhận |
 |---|---|---|
-| 29/11 | So sánh Validation E01–E04 | Yến |
-| 01/12 | **Chạy Test một lần** | Yến |
-| 02/12 | Mở PR `exp(s3-eval): final test evaluation and error analysis` | Yến |
-| 04/12 | PR được merge | Yến |
+| 11/11 | So sánh Validation E01–E04 | Yến |
+| 13/11 | **Chạy Test một lần** | Yến |
+| 14/11 | Mở PR `exp(s3-eval): final test evaluation and error analysis` | Yến |
+| 16/11 | PR được merge | Yến |
 
 ## 9. Quy định review
 
