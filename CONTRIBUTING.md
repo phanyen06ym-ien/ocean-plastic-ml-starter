@@ -89,6 +89,28 @@ Một commit làm một việc. Không commit file sinh tự động, dữ liệ
 | Merge | Chỉ Yến merge, dùng **Squash and merge**, xoá nhánh sau merge. |
 | Từ chối | PR thiếu template, thiếu issue, sai tên nhánh/tiêu đề → gắn `status:needs-changes`, không review nội dung. |
 
+### 6.1. Vòng lặp xử lý việc và chuyển trách nhiệm
+
+Áp dụng cho mọi dòng trong checklist (Google Sheet "Ocean Plastic ML: Kế hoạch và checklist Sprint") và mọi PR:
+
+```
+1. Lấy việc kế tiếp trong checklist (hạn sớm nhất, chưa Xong)
+2. Người phụ trách làm → mở PR theo template, yêu cầu review
+3. Chờ phản hồi đến hạn review
+   ├─ Có review → sửa theo nhận xét → Yến merge
+   └─ Không ai phản hồi → bình luận trên PR "Chuyển trách nhiệm review"
+                          → gán @phanyen06ym-ien → Yến quyết định merge hay chờ
+4. Việc không hoàn thành đúng hạn → Yến (dự phòng) làm thay, ghi chú trong issue và Sheet
+5. Cập nhật Trạng thái trên Sheet và đóng issue khi đạt DoD → quay lại bước 1
+```
+
+| Giai đoạn | Hạn chờ phản hồi trước khi chuyển cho Yến |
+|---|---|
+| Sprint 1–2 (lịch rút gọn) | Trong ngày; mốc kiểm tra 07:30, 12:00, 17:00 |
+| Sprint 3 trở đi | 48 giờ |
+
+Mọi quyết định thay đổi phạm vi, merge khi chưa có review, hoặc chạy tập Test đều phải hỏi Yến trước.
+
 ## 7. Đặt tên file
 
 | Loại | Quy tắc | Ví dụ |
