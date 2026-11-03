@@ -8,7 +8,7 @@
 
 ## 2. Chạy pipeline Sprint 2
 
-1. Mở Colab → *File → Open notebook → GitHub* → `phanyen06ym-ien/ocean-plastic-ml-starter` → `notebooks/00_pipeline_colab.ipynb`.
+1. Mở notebook bằng link: https://colab.research.google.com/github/phanyen06ym-ien/ocean-plastic-ml-starter/blob/main/notebooks/00_pipeline_colab.ipynb (hoặc *File → Open notebook → GitHub* → `phanyen06ym-ien/ocean-plastic-ml-starter` → `notebooks/00_pipeline_colab.ipynb`).
 2. *Runtime → Change runtime type → T4 GPU*.
 3. Chạy lần lượt từng cell (hoặc *Runtime → Run all*). Notebook tự clone repo, giải nén dữ liệu, tiền xử lý, kiểm thử, huấn luyện E01/E02, đánh giá Validation, demo và đẩy kết quả lên nhánh `exp/s2-run-results-*`.
 4. Mở link PR in ra ở cell cuối, điền template, reviewer **@phanyen06ym-ien**.
