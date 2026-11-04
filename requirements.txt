@@ -1,0 +1,10 @@
+# Google Colab đã có sẵn các thư viện này; trên máy cá nhân: pip install -r requirements.txt
+numpy>=1.24
+pandas>=2.0
+scikit-learn>=1.3
+matplotlib>=3.7
+seaborn>=0.12
+pillow>=10.0
+pyyaml>=6.0
+tensorflow>=2.15     # Keras 3; trên Windows không có GPU có thể dùng tensorflow-cpu
+pytest>=7.4
