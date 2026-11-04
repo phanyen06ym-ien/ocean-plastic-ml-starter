@@ -17,8 +17,8 @@ milestone: Sprint 3 — Improvement & Midterm
 | Vai trò | Data Engineer · Data-centric Improvement |
 | Ưu tiên | P1 — High |
 | Nhánh | `exp/s3-data-imbalance-crop` |
-| Thời gian | 23/11 → 06/12/2026 |
-| Hạn mở PR | 01/12 |
+| Thời gian | 05/11 → 18/11/2026 |
+| Hạn mở PR | 13/11 |
 
 ## 2. Mục tiêu
 
@@ -28,15 +28,15 @@ Cải thiện dữ liệu theo kết quả phân tích lỗi Sprint 2 (mất câ
 
 ## 3. Phạm vi công việc
 
-### A. Phân tích đầu vào — hạn 24/11
+### A. Phân tích đầu vào — hạn 06/11
 - [ ] Đọc `docs/evaluation_report.md`; liệt kê lỗi liên quan dữ liệu (lớp nhỏ, box nhỏ, nhãn nghi sai).
 
-### B. Phương án cải tiến — hạn 27/11
+### B. Phương án cải tiến — hạn 09/11
 - [ ] Oversampling lớp nhỏ trên Train hoặc class weights (phối hợp Bách — chỉ chọn một để so sánh công bằng).
 - [ ] Thử `padding_ratio` khác (ví dụ thêm ngữ cảnh quanh box) → `DATA_VERSION` mới, **giữ nguyên split theo video**.
 - [ ] Ghi danh sách mẫu nghi gán nhãn sai (không tự sửa nhãn gốc).
 
-### C. Dataset card — hạn 01/12
+### C. Dataset card — hạn 13/11
 - [ ] `docs/dataset_card.md`: nguồn, giấy phép, trích dẫn, lớp đã chọn và lý do, số mẫu từng tập, quy trình crop/split, hạn chế, rủi ro thiên lệch.
 - [ ] Hình: phân bố lớp sau xử lý, ảnh mẫu mỗi lớp.
 
@@ -44,9 +44,9 @@ Cải thiện dữ liệu theo kết quả phân tích lỗi Sprint 2 (mất câ
 
 | Sản phẩm | File / Bằng chứng | Hạn |
 |---|---|---|
-| Dữ liệu cải tiến (nếu dùng) | Drive `data/processed/<DATA_VERSION_v2>/` | 27/11 |
-| Code | `src/preprocessing.py`, notebook 02 | 01/12 |
-| Dataset card | `docs/dataset_card.md` | 01/12 |
+| Dữ liệu cải tiến (nếu dùng) | Drive `data/processed/<DATA_VERSION_v2>/` | 09/11 |
+| Code | `src/preprocessing.py`, notebook 02 | 13/11 |
+| Dataset card | `docs/dataset_card.md` | 13/11 |
 
 ## 5. Tiêu chí nghiệm thu (Definition of Done)
 
@@ -64,17 +64,17 @@ Cải thiện dữ liệu theo kết quả phân tích lỗi Sprint 2 (mất câ
 | Hướng | Issue | Nội dung |
 |---|---|---|
 | Nhận từ | {{S2-EVAL}} | Phân tích lỗi Sprint 2 |
-| Bàn giao cho | {{S3-CNN}} | `DATA_VERSION` mới (27/11) |
+| Bàn giao cho | {{S3-CNN}} | `DATA_VERSION` mới (09/11) |
 | Bàn giao cho | {{S3-ARCH}} | Dataset card |
 
 ## 8. Mốc thời gian
 
 | Ngày | Mốc | Người xác nhận |
 |---|---|---|
-| 24/11 | Danh sách lỗi liên quan dữ liệu | Yến |
-| 27/11 | Bàn giao `DATA_VERSION` mới cho Bách | Bách |
-| 01/12 | Mở PR `exp(s3-data): ...` + dataset card | Yến |
-| 03/12 | PR được merge | Yến |
+| 06/11 | Danh sách lỗi liên quan dữ liệu | Yến |
+| 09/11 | Bàn giao `DATA_VERSION` mới cho Bách | Bách |
+| 13/11 | Mở PR `exp(s3-data): ...` + dataset card | Yến |
+| 15/11 | PR được merge | Yến |
 
 ## 9. Quy định review
 

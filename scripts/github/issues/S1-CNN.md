@@ -18,8 +18,8 @@ milestone: Sprint 1 — Foundation
 | Vai trò | CNN Developer · Model Architecture · Training Pipeline |
 | Ưu tiên | P1 — High |
 | Nhánh | `feat/s1-cnn-baseline` |
-| Thời gian | 23/10 → 08/11/2026 |
-| Hạn mở PR | 05/11 |
+| Thời gian | 23/10 → 03/11/2026 |
+| Hạn mở PR | 03/11 |
 
 ## 2. Mục tiêu
 
@@ -39,12 +39,12 @@ Xây dựng CNN baseline có thể cấu hình và training pipeline chạy trê
 - [ ] `input_shape`, `num_classes` và hyperparameter đọc từ cấu hình; `input_size` theo `configs/data_contract.yaml` (đang lệch: notebook dùng 128, problem statement dùng 224).
 - [ ] `model.summary()` và giải thích số tham số.
 
-### C. Lập trình và kiểm tra — hạn 05/11
+### C. Lập trình và kiểm tra — hạn 03/11
 - [ ] `build_cnn()`, `compile_model()`, `DEFAULT_CONFIG` trong `src/train.py`.
 - [ ] Loss phù hợp nhãn int (`sparse_categorical_crossentropy`); optimizer Adam; giải thích lựa chọn.
 - [ ] `tests/test_train.py`: forward pass với `num_classes` ∈ {2, 4, 6}, kiểm tra shape và tổng softmax = 1.
 
-### D. Training pipeline — hạn 06/11
+### D. Training pipeline — hạn 03/11
 - [ ] Hàm nạp Train/Val từ thư mục processed trên Drive (đường dẫn qua cấu hình, không hard-code).
 - [ ] `ModelCheckpoint` (best theo `val_loss`), `EarlyStopping`, `CSVLogger`.
 - [ ] Lưu `config.json`, `history.csv`, `best.keras` vào `runs/<EXP_ID>_<YYYYMMDD-HHMM>/` trên Drive.
@@ -54,10 +54,10 @@ Xây dựng CNN baseline có thể cấu hình và training pipeline chạy trê
 
 | Sản phẩm | File / Bằng chứng | Hạn |
 |---|---|---|
-| CNN + cấu hình | `src/train.py` | 05/11 |
-| Test | `tests/test_train.py` | 05/11 |
-| Notebook huấn luyện | `notebooks/03_cnn_training.ipynb` | 06/11 |
-| Mô tả kiến trúc + `model.summary()` | Mục trong PR + `docs/experiment_plan.md` (phối hợp Yến) | 06/11 |
+| CNN + cấu hình | `src/train.py` | 03/11 |
+| Test | `tests/test_train.py` | 03/11 |
+| Notebook huấn luyện | `notebooks/03_cnn_training.ipynb` | 03/11 |
+| Mô tả kiến trúc + `model.summary()` | Mục trong PR + `docs/experiment_plan.md` (phối hợp Yến) | 03/11 |
 
 ## 5. Tiêu chí nghiệm thu (Definition of Done)
 
@@ -87,8 +87,8 @@ Xây dựng CNN baseline có thể cấu hình và training pipeline chạy trê
 | Ngày | Mốc | Người xác nhận |
 |---|---|---|
 | 03/11 | Kiến trúc + `model.summary()` | Yến |
-| 05/11 | Mở PR `feat(s1-cnn): CNN baseline and training pipeline` | Yến |
-| 07/11 | PR được merge | Yến |
+| 03/11 | Mở PR `feat(s1-cnn): CNN baseline and training pipeline` | Yến |
+| 03/11 | PR được merge | Yến |
 
 ## 9. Quy định review
 
@@ -98,5 +98,6 @@ Xây dựng CNN baseline có thể cấu hình và training pipeline chạy trê
 
 ## 10. Ghi chú
 
+- **Lịch rút gọn (03/11/2026):** Sprint 1 kết thúc 03/11, Sprint 2 hoàn thành trong ngày 04/11, Sprint 3 chạy 05/11 → 18/11. Việc không hoàn thành đúng hạn → Yến (dự phòng) làm thay và ghi chú tại đây. Phạm vi: [ADR-001](../blob/main/docs/decisions/ADR-001-class-scope.md) — 22 lớp, 128×128, chia theo video 70/15/15, class weights.
 - **Ghi chú review (02/11 — Yến):** `notebooks/03_cnn_training.ipynb` đang được commit **trực tiếp lên `main`** qua Colab ("Created using Colab" — 28/10, 30/10). Từ nay chỉ lưu notebook vào nhánh `feat/s1-cnn-baseline` (Colab: *File → Save a copy in GitHub* → chọn nhánh) rồi mở PR. Nhánh `feature/s1-cnn-baseline` trong notebook chưa có trên GitHub và `src/train.py` trên `main` vẫn trống.
 - Forward pass với dữ liệu ngẫu nhiên chỉ chứng minh mô hình đúng cấu trúc, không chứng minh độ chính xác.

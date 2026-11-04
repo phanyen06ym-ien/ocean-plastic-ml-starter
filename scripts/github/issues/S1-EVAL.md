@@ -18,8 +18,8 @@ milestone: Sprint 1 — Foundation
 | Vai trò | Model Evaluation · Experiment Comparison · Error Analysis |
 | Ưu tiên | P1 — High |
 | Nhánh | `feat/sprint1-evaluation-pipeline` (đã có; nhánh sau theo quy ước `feat/s<N>-eval-...`) |
-| Thời gian | 23/10 → 08/11/2026 |
-| Hạn mở PR | **04/11** (code đã có trên nhánh, chưa mở PR) |
+| Thời gian | 23/10 → 03/11/2026 |
+| Hạn mở PR | **03/11** (code đã có trên nhánh, chưa mở PR) |
 
 ## 2. Mục tiêu
 
@@ -34,18 +34,18 @@ Xây dựng Evaluation Pipeline có thể tái lập cho CNN phân loại nhiề
 - [ ] Chỉ số: Accuracy, Precision, Recall, F1 (per-class, macro, weighted); **Macro F1 là chỉ số chính**.
 - [ ] Đánh giá riêng nhóm lớp liên quan nhựa (theo ADR-001).
 
-### B. Cài đặt — hạn 04/11
+### B. Cài đặt — hạn 03/11
 - [ ] Hàm tính chỉ số, classification report, confusion matrix (raw + normalized).
 - [ ] Learning curves từ `history.csv` của S1-CNN.
 - [ ] Thứ tự nhãn lấy từ `configs/class_mapping.json`; xử lý lớp không xuất hiện trong tập đánh giá.
 - [ ] Xuất kết quả ra `results/metrics/<EXP_ID>_<split>.json` và hình `results/figures/<EXP_ID>_*.png`.
 
-### C. So sánh và phân tích lỗi — hạn 05/11
+### C. So sánh và phân tích lỗi — hạn 03/11
 - [ ] Mẫu bảng so sánh E01 vs E02 (giữ cố định dữ liệu, seed, split).
 - [ ] Top cặp lớp nhầm lẫn; lưới ảnh dự đoán sai (ảnh, nhãn thật, nhãn dự đoán, confidence).
 - [ ] Mẫu bảng tổng hợp nguyên nhân lỗi (giả thuyết vs đã kiểm chứng).
 
-### D. Kiểm tra — hạn 05/11
+### D. Kiểm tra — hạn 03/11
 - [ ] `tests/test_evaluate.py` với dữ liệu có kết quả kỳ vọng.
 - [ ] Notebook `04_evaluation.ipynb` chạy được trên Colab.
 
@@ -54,9 +54,9 @@ Xây dựng Evaluation Pipeline có thể tái lập cho CNN phân loại nhiề
 | Sản phẩm | File / Bằng chứng | Hạn |
 |---|---|---|
 | Evaluation Plan | `docs/evaluation_plan.md` | 03/11 |
-| Module + test | `src/evaluate.py`, `tests/test_evaluate.py` | 04/11 |
-| Notebook | `notebooks/04_evaluation.ipynb` | 05/11 |
-| Bằng chứng smoke test | `results/metrics/smoke_test_*.json` (ghi rõ là dữ liệu giả) | 05/11 |
+| Module + test | `src/evaluate.py`, `tests/test_evaluate.py` | 03/11 |
+| Notebook | `notebooks/04_evaluation.ipynb` | 03/11 |
+| Bằng chứng smoke test | `results/metrics/smoke_test_*.json` (ghi rõ là dữ liệu giả) | 03/11 |
 
 ## 5. Tiêu chí nghiệm thu (Definition of Done)
 
@@ -83,9 +83,9 @@ Xây dựng Evaluation Pipeline có thể tái lập cho CNN phân loại nhiề
 
 | Ngày | Mốc | Người xác nhận |
 |---|---|---|
-| 04/11 | Mở PR `feat(s1-eval): evaluation module, tests and notebook` từ nhánh hiện có | Yến |
-| 06/11 | Xử lý xong nhận xét review | Yến |
-| 07/11 | PR được merge | Yến |
+| 03/11 | Mở PR `feat(s1-eval): evaluation module, tests and notebook` từ nhánh hiện có | Yến |
+| 03/11 | Xử lý xong nhận xét review | Yến |
+| 03/11 | PR được merge | Yến |
 
 ## 9. Quy định review
 
@@ -95,5 +95,6 @@ Xây dựng Evaluation Pipeline có thể tái lập cho CNN phân loại nhiề
 
 ## 10. Ghi chú
 
+- **Lịch rút gọn (03/11/2026):** Sprint 1 kết thúc 03/11, Sprint 2 hoàn thành trong ngày 04/11, Sprint 3 chạy 05/11 → 18/11. Việc không hoàn thành đúng hạn → Yến (dự phòng) làm thay và ghi chú tại đây. Phạm vi: [ADR-001](../blob/main/docs/decisions/ADR-001-class-scope.md) — 22 lớp, 128×128, chia theo video 70/15/15, class weights.
 - **Ghi chú review (02/11 — Yến):** nhánh `feat/sprint1-evaluation-pipeline` có 3 commit (24/10) gồm `src/evaluate.py`, `tests/test_evaluate.py`, notebook 04, hình smoke test, nhưng **chưa mở PR**. Nhánh này cũng sửa `README.md`, `.gitignore`, `requirements.txt`, `docs/colab_setup.md` → cần cập nhật từ `main` và loại phần sửa ngoài phạm vi trước khi review.
 - GitHub của Ân chưa là collaborator nên chưa gán được issue; Ân gửi username cho Yến.

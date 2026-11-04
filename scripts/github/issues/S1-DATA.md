@@ -19,8 +19,8 @@ state: open
 | Vai trò | Data Engineer · Dataset Audit · EDA · Image Preprocessing |
 | Ưu tiên | P0 — Critical (đường găng: CNN, EVAL, DEMO đều chờ dữ liệu) |
 | Nhánh | `feat/s1-data-audit-eda` |
-| Thời gian | 23/10 → 08/11/2026 |
-| Hạn mở PR | 05/11 |
+| Thời gian | 23/10 → 03/11/2026 |
+| Hạn mở PR | 03/11 |
 
 ## 2. Mục tiêu
 
@@ -42,13 +42,13 @@ Kiểm kê và phân tích **TrashCan 1.0 — Instance**, cung cấp số liệu
 - [ ] Hiển thị ảnh mẫu + annotation cho từng lớp ứng viên.
 - [ ] Nhận xét hạn chế của ảnh dưới nước (đục, thiếu sáng, che khuất).
 
-### C. Đề xuất lớp — hạn 04/11
+### C. Đề xuất lớp — hạn 03/11
 - [ ] Bảng 22 lớp: số annotation, số crop hợp lệ sau lọc, số video chứa lớp.
 - [ ] Đề xuất lớp liên quan nhựa đủ mẫu theo ngưỡng đề xuất; không mặc định nhãn là chất liệu nhựa.
 - [ ] Thực hiện Visual Inspection theo `docs/visual_inspection_protocol.md` cho các lớp ứng viên.
 - [ ] Bàn giao số liệu cho Yến để chốt ADR-001.
 
-### D. Khung tiền xử lý — hạn 06/11
+### D. Khung tiền xử lý — hạn 03/11
 - [ ] Quy tắc chia Train/Val/Test **theo video** (tránh data leakage), chia **trước** khi crop.
 - [ ] Hàm crop theo bbox, lọc box lỗi, resize, chuẩn hoá theo `configs/data_contract.yaml`.
 - [ ] Augmentation chỉ áp dụng cho Train.
@@ -58,11 +58,11 @@ Kiểm kê và phân tích **TrashCan 1.0 — Instance**, cung cấp số liệu
 
 | Sản phẩm | File / Bằng chứng | Hạn |
 |---|---|---|
-| Dataset Audit Report | `docs/dataset_report.md` | 04/11 |
-| Thống kê lớp | `results/metrics/dataset_class_distribution.csv` | 04/11 |
-| EDA notebook + module | `notebooks/01_trashcan_eda.ipynb`, `src/eda.py` | 05/11 |
-| Preprocessing notebook + module | `notebooks/02_preprocessing.ipynb`, `src/preprocessing.py` | 06/11 |
-| Hình EDA | `results/figures/eda_*.png` | 05/11 |
+| Dataset Audit Report | `docs/dataset_report.md` | 03/11 |
+| Thống kê lớp | `results/metrics/dataset_class_distribution.csv` | 03/11 |
+| EDA notebook + module | `notebooks/01_trashcan_eda.ipynb`, `src/eda.py` | 03/11 |
+| Preprocessing notebook + module | `notebooks/02_preprocessing.ipynb`, `src/preprocessing.py` | 03/11 |
+| Hình EDA | `results/figures/eda_*.png` | 03/11 |
 
 ## 5. Tiêu chí nghiệm thu (Definition of Done)
 
@@ -91,9 +91,9 @@ Kiểm kê và phân tích **TrashCan 1.0 — Instance**, cung cấp số liệu
 | Ngày | Mốc | Người xác nhận |
 |---|---|---|
 | 30/10 | Kiểm kê xong | Yến |
-| 04/11 | Bàn giao bảng thống kê + đề xuất lớp | Yến |
-| 05/11 | Mở PR `feat(s1-data): dataset audit and EDA` | Yến |
-| 07/11 | PR được merge | Yến |
+| 03/11 | Bàn giao bảng thống kê + đề xuất lớp | Yến |
+| 03/11 | Mở PR `feat(s1-data): dataset audit and EDA` | Yến |
+| 03/11 | PR được merge | Yến |
 
 ## 9. Quy định review
 
@@ -103,5 +103,6 @@ Kiểm kê và phân tích **TrashCan 1.0 — Instance**, cung cấp số liệu
 
 ## 10. Ghi chú
 
+- **Lịch rút gọn (03/11/2026):** Sprint 1 kết thúc 03/11, Sprint 2 hoàn thành trong ngày 04/11, Sprint 3 chạy 05/11 → 18/11. Việc không hoàn thành đúng hạn → Yến (dự phòng) làm thay và ghi chú tại đây. Phạm vi: [ADR-001](../blob/main/docs/decisions/ADR-001-class-scope.md) — 22 lớp, 128×128, chia theo video 70/15/15, class weights.
 - **Ghi chú review (02/11 — Yến):** issue được đóng ngày 25/10 nhưng `docs/dataset_report.md`, `src/eda.py`, `src/preprocessing.py`, notebook 01–02 trên `main` vẫn trống và chưa có PR từ Hùng → **chưa đạt DoD**. Các file Hùng đã chuẩn bị (`instances_*_grouped_clean.json`, `grouped_class_distribution.csv`) cần được bàn giao qua PR (code + báo cáo, không kèm dữ liệu lớn). Phần còn lại tiếp tục tại S2-DATA.
 - Lớp ứng viên liên quan nhựa: `trash_bag`, `trash_bottle`, `trash_snack_wrapper`, `trash_net`, `trash_rope`, `trash_tarp` — chưa chốt.
