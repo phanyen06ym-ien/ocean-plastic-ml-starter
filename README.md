@@ -169,12 +169,14 @@ Chi tiết phân công và các mốc: [`docs/sprint_plan.md`](docs/sprint_plan.
 
 ## 8. Kết quả
 
-Chưa có. Bảng kết quả sẽ được cập nhật từ `results/metrics/` sau khi các thí nghiệm được review và merge.
+Sprint 2 (05/11/2026, Colab T4, dữ liệu `v1_crop128`, Validation 1.782 crop). Nguồn: `results/metrics/`, phân tích: [`docs/evaluation_report.md`](docs/evaluation_report.md).
 
-| EXP_ID | Mô tả | Macro F1 (val) | Accuracy (val) | Macro F1 (test) |
-|---|---|---:|---:|---:|
-| E01 | CNN baseline | — | — | — |
-| E02 | E01 + Data Augmentation | — | — | — |
+| EXP_ID | Mô tả | Macro F1 (val) | Accuracy (val) | Macro F1 nhóm nhựa (val) | Macro F1 (test) |
+|---|---|---:|---:|---:|---:|
+| E01 | CNN baseline + class weights | **0,076** | 0,219 | 0,000 | — |
+| E02 | E01 + Data Augmentation | 0,065 | 0,161 | 0,017 | — |
+
+Cả hai mô hình mới cao hơn mức ngẫu nhiên (≈ 0,045) một chút: mô hình học bối cảnh của từng video và phân bố lớp giữa Train và Validation lệch mạnh do chia theo video. Sprint 3 thử học chuyển giao (E03) và phiên bản chia dữ liệu mới. Tập Test chưa được dùng.
 
 ## 9. Trích dẫn
 

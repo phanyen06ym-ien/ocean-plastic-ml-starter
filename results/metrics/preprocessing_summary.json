@@ -1,0 +1,11 @@
+{
+  "data_version": "v1_crop128",
+  "num_annotations": 12128,
+  "num_source_images": 7083,
+  "num_videos": 310,
+  "crop_status": {"ok": 12074, "too_small": 54},
+  "split": {"attempt": 160, "classes_in_val_and_test": 22, "num_classes": 22,
+            "image_fraction": {"train": 0.699, "val": 0.1494, "test": 0.1516}, "seed": 42, "num_videos": 310},
+  "crops_per_split": {"train": 8283, "val": 1782, "test": 2009},
+  "classes_missing_in": {"train": [], "val": [], "test": []}
+}

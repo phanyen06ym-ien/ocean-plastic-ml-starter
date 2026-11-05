@@ -1,0 +1,140 @@
+{
+  "dataset": "TrashCan 1.0 — Instance",
+  "num_classes": 22,
+  "index_order": "category_id_ascending",
+  "source_annotations": "instances_train/val_trashcan.json",
+  "classes": [
+    {
+      "class_index": 0,
+      "category_id": 1,
+      "class_name": "rov",
+      "plastic_related": false
+    },
+    {
+      "class_index": 1,
+      "category_id": 2,
+      "class_name": "plant",
+      "plastic_related": false
+    },
+    {
+      "class_index": 2,
+      "category_id": 3,
+      "class_name": "animal_fish",
+      "plastic_related": false
+    },
+    {
+      "class_index": 3,
+      "category_id": 4,
+      "class_name": "animal_starfish",
+      "plastic_related": false
+    },
+    {
+      "class_index": 4,
+      "category_id": 5,
+      "class_name": "animal_shells",
+      "plastic_related": false
+    },
+    {
+      "class_index": 5,
+      "category_id": 6,
+      "class_name": "animal_crab",
+      "plastic_related": false
+    },
+    {
+      "class_index": 6,
+      "category_id": 7,
+      "class_name": "animal_eel",
+      "plastic_related": false
+    },
+    {
+      "class_index": 7,
+      "category_id": 8,
+      "class_name": "animal_etc",
+      "plastic_related": false
+    },
+    {
+      "class_index": 8,
+      "category_id": 9,
+      "class_name": "trash_clothing",
+      "plastic_related": false
+    },
+    {
+      "class_index": 9,
+      "category_id": 10,
+      "class_name": "trash_pipe",
+      "plastic_related": false
+    },
+    {
+      "class_index": 10,
+      "category_id": 11,
+      "class_name": "trash_bottle",
+      "plastic_related": true
+    },
+    {
+      "class_index": 11,
+      "category_id": 12,
+      "class_name": "trash_bag",
+      "plastic_related": true
+    },
+    {
+      "class_index": 12,
+      "category_id": 13,
+      "class_name": "trash_snack_wrapper",
+      "plastic_related": true
+    },
+    {
+      "class_index": 13,
+      "category_id": 14,
+      "class_name": "trash_can",
+      "plastic_related": false
+    },
+    {
+      "class_index": 14,
+      "category_id": 15,
+      "class_name": "trash_cup",
+      "plastic_related": false
+    },
+    {
+      "class_index": 15,
+      "category_id": 16,
+      "class_name": "trash_container",
+      "plastic_related": false
+    },
+    {
+      "class_index": 16,
+      "category_id": 17,
+      "class_name": "trash_unknown_instance",
+      "plastic_related": false
+    },
+    {
+      "class_index": 17,
+      "category_id": 18,
+      "class_name": "trash_branch",
+      "plastic_related": false
+    },
+    {
+      "class_index": 18,
+      "category_id": 19,
+      "class_name": "trash_wreckage",
+      "plastic_related": false
+    },
+    {
+      "class_index": 19,
+      "category_id": 20,
+      "class_name": "trash_tarp",
+      "plastic_related": true
+    },
+    {
+      "class_index": 20,
+      "category_id": 21,
+      "class_name": "trash_rope",
+      "plastic_related": true
+    },
+    {
+      "class_index": 21,
+      "category_id": 22,
+      "class_name": "trash_net",
+      "plastic_related": true
+    }
+  ]
+}
