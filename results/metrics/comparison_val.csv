@@ -1,0 +1,3 @@
+exp_id,split,n,accuracy,macro_f1,weighted_f1,macro_f1_present,plastic_macro_f1
+E01,val,1782,0.2189,0.0757,0.2641,0.0757,0.0
+E02,val,1782,0.1605,0.0648,0.1671,0.0648,0.0165

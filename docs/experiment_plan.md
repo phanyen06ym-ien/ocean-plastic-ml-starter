@@ -45,5 +45,7 @@ Loss: sparse_categorical_crossentropy · Optimizer: Adam
 
 | EXP_ID | Ngày | Người chạy | Run trên Drive | Macro F1 val | Macro F1 nhóm nhựa (val) |
 |---|---|---|---|---:|---:|
-| E01 | | | | | |
-| E02 | | | | | |
+| E01 | 05/11/2026 | Yến (Colab T4) | `runs/E01_20261105-1513` | 0,0757 | 0,0000 |
+| E02 | 05/11/2026 | Yến (Colab T4) | `runs/E02_20261105-1515` | 0,0648 | 0,0165 |
+
+Kết luận Sprint 2: H2 không được xác nhận (E02 < E01). Hai mô hình chỉ cao hơn mức ngẫu nhiên (≈ 0,045) một chút; nguyên nhân và đề xuất: `docs/evaluation_report.md` mục 3–4. Mốc so sánh cho Sprint 3 là E01.
