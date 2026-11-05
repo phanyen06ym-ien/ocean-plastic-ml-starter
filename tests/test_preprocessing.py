@@ -16,7 +16,7 @@ from src.preprocessing import (
     grouped_split,
     run_preprocessing,
 )
-from tests.conftest import CATEGORY_NAMES
+from conftest import CATEGORY_NAMES  # thư mục tests/ nằm trong sys.path khi pytest chạy (tránh trùng gói "tests" khác trên Colab)
 
 
 def test_extract_video_id():
