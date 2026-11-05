@@ -49,4 +49,4 @@ Chỉ số chính: Macro F1 trên 22 lớp; nhóm nhựa = Macro F1 trên 6 lớ
 
 ## Demo (S2-DEMO)
 
-Checkpoint E01 (Macro F1 Validation cao nhất). CLI `python main.py --image <crop> --model runs/E01_20261105-1513/best.keras` chạy được và trả top-3; ví dụ một ảnh `rov` của Validation: `animal_shells` 69,6% · `trash_can` 14,6% · `rov` 12,7% (dự đoán sai, đúng với phân tích mục 3.1 của báo cáo đánh giá). Hình 8 ảnh Validation: Drive `exports/s2_results_1105-1518/results/figures/demo_val_predictions.png`.
+Checkpoint E01 (Macro F1 Validation cao nhất). CLI `python main.py --image <crop> --model runs/E01_20261105-1513/best.keras` chạy được và trả top-3; ví dụ một ảnh `rov` của Validation: `animal_shells` 69,6% · `trash_can` 14,6% · `rov` 12,7% (dự đoán sai, đúng với phân tích mục 3.1 của báo cáo đánh giá). Hình 8 ảnh Validation (1/8 đúng): `results/figures/demo_val_predictions.png`; ảnh mẫu mỗi lớp: `results/figures/eda_sample_crops.png` (bản rút gọn 16 lớp; bản đủ 22 lớp trên Drive `exports/`).
