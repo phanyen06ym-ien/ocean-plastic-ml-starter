@@ -45,9 +45,9 @@ except ImportError:  # pragma: no cover
     torch = None
 
 try:
-    from src.common import class_names, load_class_mapping, load_yaml, plastic_indices
+    from src.common import DEFAULT_MAPPING, class_names, load_class_mapping, load_yaml, plastic_indices
 except ImportError:  # pragma: no cover
-    from common import class_names, load_class_mapping, load_yaml, plastic_indices
+    from common import DEFAULT_MAPPING, class_names, load_class_mapping, load_yaml, plastic_indices
 
 # Legacy E01/E02 (Keras) defaults, kept so existing tests and notebooks can still import them.
 DEFAULT_CONFIG: dict[str, Any] = {
@@ -99,6 +99,17 @@ def _seed_worker(worker_id: int) -> None:
     s = torch.initial_seed() % 2**32
     np.random.seed(s)
     random.seed(s)
+
+
+def find_class_mapping(processed_dir: str | Path, name: str = "class_mapping.json") -> Path:
+    """Look next to the processed data first, then fall back to configs/class_mapping.json in the repo."""
+    mp = Path(name)
+    candidates = [mp] if mp.is_absolute() else [Path(processed_dir) / mp, Path(processed_dir).parent / mp]
+    candidates.append(Path(DEFAULT_MAPPING))
+    for c in candidates:
+        if c.exists():
+            return c
+    raise FileNotFoundError("class_mapping.json not found; tried: " + ", ".join(map(str, candidates)))
 
 
 # --------------------------------------------------------------------------- class weights
@@ -362,8 +373,9 @@ def run_training(cfg: dict[str, Any], processed_dir: str | Path, runs_root: str 
     device = device or ("cuda" if torch.cuda.is_available() else "cpu")
     run_dir = make_run_dir(runs_root, cfg["exp_id"])
 
-    mp = Path(cfg["data"].get("class_mapping_path", "class_mapping.json"))
-    mapping = load_class_mapping(mp if mp.is_absolute() else Path(processed_dir) / mp)
+    mapping_path = find_class_mapping(processed_dir, cfg["data"].get("class_mapping_path", "class_mapping.json"))
+    print(f"class mapping: {mapping_path}")
+    mapping = load_class_mapping(mapping_path)
     names, plastic = class_names(mapping), plastic_indices(mapping)
     if names != list(cfg["data"].get("class_names", names)):
         raise ValueError("class_mapping.json order differs from data.class_names in the config")
