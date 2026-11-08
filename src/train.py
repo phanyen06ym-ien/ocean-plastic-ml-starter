@@ -15,7 +15,7 @@ Phase 1: backbone frozen (kept in eval mode), train the classifier head.
 Phase 2: unfreeze model.features[k:], BatchNorm kept in eval mode, new optimizer with small learning rates.
 
 Usage (Colab):
-    python -m src.train --config configs/experiments/E03_transfer.yaml \
+    python -m src.train --config configs/experiments/E03_transfer_mobilenetv2.yaml \
         --processed-dir /content/processed/v1_crop128 \
         --runs-root /content/drive/MyDrive/ocean-plastic-ml/runs
     add --smoke for a 1-epoch-per-phase pipeline check.
@@ -65,9 +65,25 @@ def _require_torch() -> None:
 
 
 # --------------------------------------------------------------------------- setup
+def _deep_merge(base: dict[str, Any], over: dict[str, Any]) -> dict[str, Any]:
+    out = dict(base)
+    for k, v in over.items():
+        out[k] = _deep_merge(out[k], v) if isinstance(v, dict) and isinstance(out.get(k), dict) else v
+    return out
+
+
 def load_experiment_config(path: str | Path) -> dict[str, Any]:
-    """Read configs/experiments/<EXP_ID>_*.yaml as is (no defaults are merged in)."""
-    return load_yaml(path) or {}
+    """Read configs/experiments/<EXP_ID>_*.yaml (no defaults are merged in).
+
+    A tuning config may set `base_config: <file in the same folder>`; its keys are deep-merged
+    over that file, so a tuning run only states what it changes (S3-CNN tuning, E03a-f).
+    """
+    path = Path(path)
+    cfg = load_yaml(path) or {}
+    base = cfg.pop("base_config", None)
+    if base:
+        cfg = _deep_merge(load_experiment_config(path.parent / base), cfg)
+    return cfg
 
 
 def save_config(cfg: dict[str, Any], path: str | Path) -> None:

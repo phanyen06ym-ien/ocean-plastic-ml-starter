@@ -1,0 +1,7 @@
+# E03b — tuning run (S3-CNN, step B). Differs from E03 ONLY in: model.head.dropout 0.4 -> 0.6
+exp_id: E03b
+base_config: E03_transfer_mobilenetv2.yaml
+baseline_exp_id: E03
+changed_factor: "model.head.dropout 0.4 -> 0.6"
+description: E03 with head dropout 0.6
+model: {head: {dropout: 0.6}}

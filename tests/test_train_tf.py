@@ -2,10 +2,10 @@
 import numpy as np
 import pytest
 
-from src.train import DEFAULT_CONFIG
+from src.train_keras import DEFAULT_CONFIG
 
 tf = pytest.importorskip("tensorflow")
-from src.train import build_cnn, model_from_config  # noqa: E402
+from src.train_keras import build_cnn, model_from_config  # noqa: E402
 
 
 @pytest.mark.parametrize("num_classes", [2, 6, 22])
@@ -28,7 +28,7 @@ def test_tiny_training_run(tmp_path):
     """Huấn luyện 1 epoch trên dữ liệu giả để kiểm tra pipeline, không đánh giá độ chính xác."""
     from PIL import Image
     import json
-    from src.train import run_training
+    from src.train_keras import run_training
     names = ["a", "b", "c"]
     for s in ("train", "val"):
         for i, n in enumerate(names):
