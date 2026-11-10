@@ -19,6 +19,10 @@ Usage (Colab):
         --processed-dir /content/processed/v1_crop128 \
         --runs-root /content/drive/MyDrive/ocean-plastic-ml/runs
     add --smoke for a 1-epoch-per-phase pipeline check.
+
+Tuning / new runs without editing the YAML (every key must already exist in the config):
+    python -m src.train --config ... --exp-id E03a --set model.head.dropout=0.6
+    python -m src.train --config ... --exp-id E03d --set training.phase2.learning_rate.features=3e-5
 """
 from __future__ import annotations
 
@@ -83,6 +87,31 @@ def load_experiment_config(path: str | Path) -> dict[str, Any]:
     base = cfg.pop("base_config", None)
     if base:
         cfg = _deep_merge(load_experiment_config(path.parent / base), cfg)
+    return cfg
+
+
+def _parse_value(text: str) -> Any:
+    """'0.6' -> 0.6, '3e-5' -> 3e-05, 'true' -> True, '[1, 2]' -> list; anything else stays a string."""
+    try:
+        return json.loads(text)
+    except ValueError:
+        return text
+
+
+def apply_overrides(cfg: dict[str, Any], overrides: list[str] | None) -> dict[str, Any]:
+    """Apply 'a.b.c=value' strings to the nested config. Unknown keys raise, so typos cannot pass silently."""
+    for item in overrides or []:
+        key, sep, raw = item.partition("=")
+        if not sep:
+            raise ValueError(f"override must look like key=value, got: {item}")
+        parts, node = key.split("."), cfg
+        for part in parts[:-1]:
+            if not isinstance(node, dict) or part not in node:
+                raise KeyError(f"unknown config key: {key}")
+            node = node[part]
+        if not isinstance(node, dict) or parts[-1] not in node:
+            raise KeyError(f"unknown config key: {key}")
+        node[parts[-1]] = _parse_value(raw)
     return cfg
 
 
@@ -164,8 +193,8 @@ def ordered_image_folder(root, names: list[str], transform=None):
 
 
 def build_transform(cfg: dict[str, Any]):
-    _require_torch()
     """ToTensor -> ImageNet Normalize. Crops are already 128x128; no augmentation (E01 had none)."""
+    _require_torch()
     norm = cfg["input"]["normalize"]
     return transforms.Compose([transforms.ToTensor(), transforms.Normalize(norm["mean"], norm["std"])])
 
@@ -311,11 +340,16 @@ def run_phase(model, phase: dict[str, Any], tcfg, loaders, class_w, device, run_
     es = phase["early_stopping"]
     assert es["monitor"] == "val_loss" and es["mode"] == "min", "E03 keeps E01's val_loss selection rule"
     best, best_epoch, bad, best_state = float("inf"), 0, 0, None
+    best_f1, best_f1_epoch, best_f1_val_loss = -1.0, 0, float("nan")   # extra information, not the selection rule
     for epoch in range(1, int(phase["epochs"]) + 1):
         t0 = time.time()
         tr_loss = train_epoch(model, train_loader, opt, class_w, device, phase)
         val_loss, y, p = predict(model, val_loader, device)
         m = compute_metrics(y, p, names, plastic)["overall"]
+        if m["macro_f1"] > best_f1:
+            best_f1, best_f1_epoch, best_f1_val_loss = m["macro_f1"], epoch, val_loss
+            torch.save({k: v.detach().cpu().clone() for k, v in model.state_dict().items()},
+                       run_dir / ckpt_name.replace("best_", "bestf1_"))
         lrs = {g["name"]: g["lr"] for g in opt.param_groups}
         sched.step(val_loss)
         history.append({"phase": phase["name"], "epoch": epoch, "loss": tr_loss, "val_loss": val_loss,
@@ -337,7 +371,9 @@ def run_phase(model, phase: dict[str, Any], tcfg, loaders, class_w, device, run_
             break
     if es.get("restore_best_weights", True) and best_state is not None:
         model.load_state_dict(best_state)
-    return {"phase": phase["name"], "best_val_loss": best, "best_epoch": best_epoch, "checkpoint": ckpt_name}
+    return {"phase": phase["name"], "best_val_loss": best, "best_epoch": best_epoch, "checkpoint": ckpt_name,
+            "best_macro_f1": best_f1, "best_macro_f1_epoch": best_f1_epoch, "best_macro_f1_val_loss": best_f1_val_loss,
+            "best_macro_f1_checkpoint": ckpt_name.replace("best_", "bestf1_")}
 
 
 # --------------------------------------------------------------------------- efficiency
@@ -448,7 +484,7 @@ def run_training(cfg: dict[str, Any], processed_dir: str | Path, runs_root: str 
     summary = {"exp_id": cfg["exp_id"], "run_dir": str(run_dir), "phase1": r1, "phase2": r2, "selected": chosen,
                "macro_f1_val": metrics["overall"]["macro_f1"], "accuracy_val": metrics["overall"]["accuracy"],
                "macro_f1_plastic6_val": metrics["plastic_related"]["macro_f1"], "efficiency": eff,
-               "baseline_reference": cfg.get("baseline_reference")}
+               "baseline_reference": cfg.get("baseline_reference"), "overrides": cfg.get("overrides", [])}
     with open(run_dir / "summary.json", "w", encoding="utf-8") as f:
         json.dump(summary, f, ensure_ascii=False, indent=2)
     print(json.dumps({k: summary[k] for k in ("macro_f1_val", "accuracy_val", "macro_f1_plastic6_val", "efficiency")}, indent=2))
@@ -463,8 +499,15 @@ def main() -> None:
     ap.add_argument("--no-pretrained", action="store_true", help="skip ImageNet weights (offline smoke tests only)")
     ap.add_argument("--smoke", action="store_true", help="1 epoch per phase to check the pipeline")
     ap.add_argument("--device", default=None)
+    ap.add_argument("--exp-id", default=None, help="override exp_id, e.g. E03a (names the run folder and result files)")
+    ap.add_argument("--set", dest="overrides", action="append", default=[], metavar="KEY=VALUE",
+                    help="override a config value, e.g. model.head.dropout=0.6 (repeatable)")
     a = ap.parse_args()
     cfg = load_experiment_config(a.config)
+    if a.exp_id:
+        cfg["exp_id"] = a.exp_id
+    apply_overrides(cfg, a.overrides)
+    cfg["overrides"] = list(a.overrides)      # saved in config.json and summary.json
     run_training(cfg, a.processed_dir or cfg["data"]["processed_dir"], a.runs_root,
                  pretrained=not a.no_pretrained, smoke=a.smoke, device=a.device)
 
