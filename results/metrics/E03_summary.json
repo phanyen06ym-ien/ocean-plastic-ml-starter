@@ -1,0 +1,45 @@
+{
+  "exp_id": "E03",
+  "run_dir": "runs\\E03_20261108-1459",
+  "phase1": {
+    "phase": "frozen_backbone",
+    "best_val_loss": 2.2050050335165894,
+    "best_epoch": 2,
+    "checkpoint": "best_phase1.pt"
+  },
+  "phase2": {
+    "phase": "finetune_last_blocks",
+    "best_val_loss": 2.275217084103294,
+    "best_epoch": 1,
+    "checkpoint": "best_phase2.pt"
+  },
+  "selected": {
+    "phase": "frozen_backbone",
+    "best_val_loss": 2.2050050335165894,
+    "best_epoch": 2,
+    "checkpoint": "best_phase1.pt"
+  },
+  "macro_f1_val": 0.20340975875682635,
+  "accuracy_val": 0.4051627384960718,
+  "macro_f1_plastic6_val": 0.12278519795107473,
+  "efficiency": {
+    "params": {
+      "total": 2252054,
+      "trainable_phase2": 1709526
+    },
+    "file_size_mb": 9.23,
+    "input_size": [
+      128,
+      128
+    ],
+    "torch_threads": 4,
+    "inference_ms_cpu_bs1": 32.391
+  },
+  "baseline_reference": {
+    "macro_f1_val": 0.076,
+    "accuracy_val": 0.219,
+    "macro_f1_plastic6_val": 0.0,
+    "best_val_loss": 2.977,
+    "random_chance_macro_f1": 0.045
+  }
+}
