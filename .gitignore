@@ -22,6 +22,8 @@ runs/
 *.keras
 *.h5
 *.pt
+*.pth
+*.onnx
 *.ckpt
 
 # Large archives

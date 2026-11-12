@@ -1,10 +1,10 @@
-"""Kiểm thử src/train.py. Phần mô hình cần TensorFlow (chạy trên Colab); phần cấu hình chạy ở mọi máy."""
+"""Kiểm thử E01/E02 qua src/train_keras.py; src/train.py dành cho E03 PyTorch."""
 from pathlib import Path
 
 import numpy as np
 import pytest
 
-from src.train import DEFAULT_CONFIG, compute_class_weights, load_experiment_config
+from src.train_keras import DEFAULT_CONFIG, compute_class_weights, load_experiment_config
 
 ROOT = Path(__file__).resolve().parents[1]
 

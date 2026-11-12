@@ -176,7 +176,12 @@ Sprint 2 (05/11/2026, Colab T4, dữ liệu `v1_crop128`, Validation 1.782 crop)
 | E01 | CNN baseline + class weights | **0,076** | 0,219 | 0,000 | — |
 | E02 | E01 + Data Augmentation | 0,065 | 0,161 | 0,017 | — |
 
-Cả hai mô hình mới cao hơn mức ngẫu nhiên (≈ 0,045) một chút: mô hình học bối cảnh của từng video và phân bố lớp giữa Train và Validation lệch mạnh do chia theo video. Sprint 3 thử học chuyển giao (E03) và phiên bản chia dữ liệu mới. Tập Test chưa được dùng.
+Cả hai mô hình mới cao hơn mức ngẫu nhiên (≈ 0,045) một chút; phân bố lớp giữa Train và Validation lệch mạnh do chia theo video. Sprint 3 thử học chuyển giao (E03) trên **cùng split v1_crop128**. [Data Audit](docs/dataset_audit.md) quyết định `KEEP_V1_WITH_CONDITIONS`: giữ nguyên 22 class ID và split, còn ba điều kiện chưa xác minh. Tập Test chưa được dùng để đánh giá mô hình.
+
+Để thu thập bằng chứng 310/312 video, ảnh gần trùng xuyên split và nhãn lớp ít mẫu,
+chạy notebook CPU [05_data_audit_review.ipynb](notebooks/05_data_audit_review.ipynb)
+theo [hướng dẫn review](docs/dataset_audit_review.md). Công cụ xuất JSON/CSV/contact
+sheets lên Drive; chỉ thay verdict khi đủ bằng chứng và xác nhận của reviewer.
 
 ## 9. Trích dẫn
 
