@@ -1,5 +1,12 @@
 # Data Audit trước MobileNetV2 — v1_crop128
 
+Công cụ thu thập bằng chứng và quy trình review ba điều kiện được bổ sung tại
+[dataset_audit_review.md](dataset_audit_review.md), notebook CPU độc lập
+`notebooks/05_data_audit_review.ipynb`. `src.data_audit` giữ hành vi audit nền;
+`src.audit_review` bổ sung đối chiếu nguồn, dHash, contact sheets và tổng hợp có
+cổng nghiệm thu thủ công. Kết quả Colab mới nhất do người dùng xác nhận trước
+đợt bổ sung: **93 passed**, `automated_checks_passed=True`, `errors=0`.
+
 **Quyết định: `KEEP_V1_WITH_CONDITIONS`. Trạng thái: `CONDITIONAL`, chưa PASS hoàn toàn.**
 
 Phạm vi: TrashCan Instance, 22 lớp; kiểm tra tính toàn vẹn của dataset đã đóng băng.
