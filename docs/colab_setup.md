@@ -1,7 +1,8 @@
 # Hướng dẫn chạy trên Google Colab
 
 Trước khi tiếp tục MobileNetV2, chạy audit trên **bản v1 đã có**, không tiền
-xử lý/chia lại. Xem [Data Audit](dataset_audit.md): quyết định hiện tại là
+xử lý/chia lại. Notebook kiểm chứng PR #35 checkout nhánh
+`fix/dataset-audit-mobilenetv2` và in commit SHA. Xem [Data Audit](dataset_audit.md): quyết định hiện tại là
 `KEEP_V1_WITH_CONDITIONS`, chưa PASS hoàn toàn. E01/E02 import từ
 `src.train_keras`; E03 PyTorch dùng `src.train`. Đặt `BRANCH` ở notebook thành
 `fix/dataset-audit-mobilenetv2` khi kiểm tra PR chưa merge.
@@ -28,7 +29,10 @@ xử lý/chia lại. Xem [Data Audit](dataset_audit.md): quyết định hiện 
 ## 3. Khi Colab ngắt kết nối
 
 - Tiền xử lý đã lưu `.zip` trên Drive → chạy lại cell 3 sẽ giải nén thay vì xử lý lại.
+- Notebook kiểm chứng Data Audit chỉ khôi phục `v1_crop128` từ ZIP đã có trên Drive; nếu thiếu ZIP và thư mục, dừng và yêu cầu khôi phục bản lưu. Không tự tải TrashCan hay tạo lại v1/mapping.
 - Huấn luyện dở: `run_training(cfg, PROCESSED, RUNS, run_dir=RUNS/"E01_<thời gian>", resume=True)` chạy tiếp từ `last.keras`.
+
+Kết quả được export lên Drive. Nếu cần push lên GitHub, tạo PR riêng từ môi trường Git đã xác thực an toàn; không chèn token vào URL hoặc lệnh shell.
 
 ## 4. Làm việc với notebook khác
 

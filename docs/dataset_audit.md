@@ -146,11 +146,11 @@ manifest sai/thiếu, mapping đổi, output ngoài dataset, CLI lỗi, chuẩn 
 thực tế, head 22 đầu ra và nhãn ImageFolder. Import notebook được thực thi
 riêng; không mount Drive hoặc huấn luyện trong test.
 
-Kiểm chứng local ngày 12/11/2026: **85 passed, 1 skipped** (toàn bộ suite).
+Kiểm chứng local ngày 12/11/2026: **88 passed, 1 skipped** (toàn bộ suite;
+107,83 giây).
 Môi trường Python 3.11, pytest 9.2.0, torch 2.12.1+cpu, torchvision 0.27.1+cpu;
 module kiểm thử TensorFlow được skip vì chưa cài TensorFlow. Lần chạy cuối dùng
-thư mục tạm trên ổ D: vì ổ C: hết dung lượng; lỗi ghi file tạm ở lần chạy trước
-không được tính là kết quả đạt.
+thư mục tạm trên ổ D: vì ổ C: không đủ chỗ; lần chạy kết thúc thành công.
 
 Chưa chạy lại toàn bộ notebook trên Colab hoặc audit trên ảnh thật ở checkout
 này. Các kiểm tra chưa chạy được cũng được ghi trong mô tả Draft PR.
