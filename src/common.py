@@ -41,5 +41,20 @@ def class_names(mapping: list[dict[str, Any]]) -> list[str]:
     return [c["class_name"] for c in mapping]
 
 
+def validate_instance_mapping(mapping: list[dict[str, Any]]) -> None:
+    """Require the frozen 22 Instance class IDs, names and plastic flags.
+
+    Compare against the repository mapping, never ImageFolder alphabetical order
+    or a possibly modified mapping shipped with the processed dataset.
+    """
+    canonical = load_class_mapping(DEFAULT_MAPPING)
+    fields = ("class_index", "category_id", "class_name", "plastic_related")
+    if len(mapping) != 22 or any(
+        tuple(c.get(k) for k in fields) != tuple(ref.get(k) for k in fields)
+        for c, ref in zip(mapping, canonical)
+    ):
+        raise ValueError("class mapping must match the frozen 22 Instance class IDs (0..21)")
+
+
 def plastic_indices(mapping: list[dict[str, Any]]) -> list[int]:
     return [c["class_index"] for c in mapping if c.get("plastic_related")]

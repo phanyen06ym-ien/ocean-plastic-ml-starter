@@ -1,5 +1,11 @@
 # Báo cáo dữ liệu: TrashCan 1.0 Instance (S2-DATA)
 
+> Cập nhật trước MobileNetV2: **`KEEP_V1_WITH_CONDITIONS`**, chưa PASS hoàn toàn.
+> Audit Colab xác nhận 0 ảnh lỗi, 3 nhóm trùng pixel cùng nhãn/cùng split và
+> không có trùng pixel chính xác giữa split. Chênh lệch 310/312 video, ảnh gần
+> trùng giữa split và chất lượng nhãn lớp ít mẫu vẫn chưa xác minh.
+> Xem [báo cáo Data Audit và cách chạy lại](dataset_audit.md).
+
 | Mục | Giá trị |
 |---|---|
 | Phụ trách | Hùng (dự phòng: Yến) |
@@ -84,6 +90,10 @@ Nguồn: `results/metrics/dataset_split_counts.csv`; hình `results/figures/eda_
 | **Tổng** | **8.283** | **1.782** | **2.009** | **12.074** |
 
 Tỉ lệ mất cân bằng (lớn nhất / nhỏ nhất theo tổng crop): 3.297 / 59 ≈ 56.
+
+Riêng **Train**, tỉ lệ là 2.130 / 14 = **152,14 lần**. Số ảnh/video Train:
+`trash_cup` 14/1, `trash_snack_wrapper` 41/3, `trash_bottle` 95/4 (Colab đã xác
+nhận). Không dùng tỉ lệ theo tổng crop để mô tả mức mất cân bằng Train.
 
 ## 5. Kiểm tra đã thực hiện
 

@@ -49,9 +49,9 @@ except ImportError:  # pragma: no cover
     torch = None
 
 try:
-    from src.common import DEFAULT_MAPPING, class_names, load_class_mapping, load_yaml, plastic_indices
+    from src.common import DEFAULT_MAPPING, class_names, load_class_mapping, load_yaml, plastic_indices, validate_instance_mapping
 except ImportError:  # pragma: no cover
-    from common import DEFAULT_MAPPING, class_names, load_class_mapping, load_yaml, plastic_indices
+    from common import DEFAULT_MAPPING, class_names, load_class_mapping, load_yaml, plastic_indices, validate_instance_mapping
 
 # Legacy E01/E02 (Keras) defaults, kept so existing tests and notebooks can still import them.
 DEFAULT_CONFIG: dict[str, Any] = {
@@ -184,8 +184,35 @@ def compute_class_weights(counts: np.ndarray | list[int], mode: str | None = "ba
 
 
 # --------------------------------------------------------------------------- data
+IMAGENET_MEAN = [0.485, 0.456, 0.406]
+IMAGENET_STD = [0.229, 0.224, 0.225]
+
+
+def validate_mobilenet_config(cfg: dict[str, Any]) -> None:
+    """Reject label/preprocessing drift before creating loaders or checkpoints."""
+    data = cfg["data"]
+    canonical = class_names(load_class_mapping(DEFAULT_MAPPING))
+    if data["num_classes"] != 22 or data.get("class_names") != canonical:
+        raise ValueError("MobileNetV2 requires the frozen 22 class IDs in mapping order")
+    if data["data_version"] != "v1_crop128" or data.get("use_test_set") is not False:
+        raise ValueError("MobileNetV2 requires frozen v1_crop128 Train/Validation; use_test_set=false")
+    if cfg["input"]["image_size"] != [128, 128] or cfg["input"]["channels"] != 3:
+        raise ValueError("v1_crop128 requires 128x128 RGB input")
+    norm = cfg["input"]["normalize"]
+    if norm["mean"] != IMAGENET_MEAN or norm["std"] != IMAGENET_STD:
+        raise ValueError("MobileNetV2 requires ImageNet mean/std after ToTensor (pixel / 255)")
+
+
 def ordered_image_folder(root, names: list[str], transform=None):
     """ImageFolder whose label index follows class_mapping.json instead of alphabetical order."""
+    _require_torch()
+    expected = class_names(load_class_mapping(DEFAULT_MAPPING))
+    if names != expected:
+        raise ValueError("ImageFolder class IDs must follow the frozen 22-class mapping")
+    actual = {p.name for p in Path(root).iterdir() if p.is_dir()}
+    if actual != set(names):
+        raise ValueError(f"class folders differ from mapping: missing={sorted(set(names) - actual)}, "
+                         f"unexpected={sorted(actual - set(names))}")
     class _Ordered(datasets.ImageFolder):
         def find_classes(self, directory):
             return list(names), {n: i for i, n in enumerate(names)}
@@ -195,6 +222,7 @@ def ordered_image_folder(root, names: list[str], transform=None):
 def build_transform(cfg: dict[str, Any]):
     """ToTensor -> ImageNet Normalize. Crops are already 128x128; no augmentation (E01 had none)."""
     _require_torch()
+    validate_mobilenet_config(cfg)
     norm = cfg["input"]["normalize"]
     return transforms.Compose([transforms.ToTensor(), transforms.Normalize(norm["mean"], norm["std"])])
 
@@ -217,6 +245,7 @@ def make_loaders(cfg: dict[str, Any], processed_dir: str | Path, names: list[str
 # --------------------------------------------------------------------------- model
 def build_model(cfg: dict[str, Any], pretrained: bool = True) -> nn.Module:
     _require_torch()
+    validate_mobilenet_config(cfg)
     m = cfg["model"]
     assert m["backbone"] == "mobilenet_v2", "this script is written for torchvision mobilenet_v2"
     assert float(m.get("width_mult", 1.0)) == 1.0, "pretrained weights exist only for width_mult=1.0"
@@ -421,13 +450,14 @@ def measure_efficiency(model, cfg, device) -> dict[str, Any]:
 def run_training(cfg: dict[str, Any], processed_dir: str | Path, runs_root: str | Path,
                  pretrained: bool = True, smoke: bool = False, device: str | None = None):
     _require_torch()
+    validate_mobilenet_config(cfg)
     set_seed(int(cfg["seed"]), cfg.get("reproducibility"))
     device = device or ("cuda" if torch.cuda.is_available() else "cpu")
-    run_dir = make_run_dir(runs_root, cfg["exp_id"])
 
     mapping_path = find_class_mapping(processed_dir, cfg["data"].get("class_mapping_path", "class_mapping.json"))
     print(f"class mapping: {mapping_path}")
     mapping = load_class_mapping(mapping_path)
+    validate_instance_mapping(mapping)
     names, plastic = class_names(mapping), plastic_indices(mapping)
     if names != list(cfg["data"].get("class_names", names)):
         raise ValueError("class_mapping.json order differs from data.class_names in the config")
@@ -435,6 +465,7 @@ def run_training(cfg: dict[str, Any], processed_dir: str | Path, runs_root: str 
         raise ValueError(f"config has {cfg['data']['num_classes']} classes, mapping has {len(names)}")
 
     train_ds, val_ds, train_loader, val_loader = make_loaders(cfg, processed_dir, names)
+    run_dir = make_run_dir(runs_root, cfg["exp_id"])
     counts = np.bincount(train_ds.targets, minlength=len(names))
     wcfg = cfg["training"]["class_weights"]
     cw = compute_class_weights(counts, wcfg["mode"], float(wcfg.get("max_weight", 50.0)))

@@ -1,5 +1,11 @@
 # Hướng dẫn chạy trên Google Colab
 
+Trước khi tiếp tục MobileNetV2, chạy audit trên **bản v1 đã có**, không tiền
+xử lý/chia lại. Xem [Data Audit](dataset_audit.md): quyết định hiện tại là
+`KEEP_V1_WITH_CONDITIONS`, chưa PASS hoàn toàn. E01/E02 import từ
+`src.train_keras`; E03 PyTorch dùng `src.train`. Đặt `BRANCH` ở notebook thành
+`fix/dataset-audit-mobilenetv2` khi kiểm tra PR chưa merge.
+
 ## 1. Chuẩn bị (một lần)
 
 1. **Drive:** tạo thư mục `MyDrive/ocean-plastic-ml/` (notebook tự tạo `data/raw`, `data/processed`, `runs`). Nếu làm chung, Yến chia sẻ thư mục này cho cả nhóm và mỗi người *Add shortcut to Drive* vào `MyDrive/`.
