@@ -1,18 +1,29 @@
-﻿# IDE
+# IDE
 .idea/
 .vscode/
+
+# OS
+.DS_Store
+Thumbs.db
 
 # Python
 .venv/
 venv/
 __pycache__/
 *.pyc
+*.egg-info/
 .pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
 .ipynb_checkpoints/
 
-# Dataset — never commit TrashCan images, crops or annotations (keep folder skeleton only)
-data/*/*
-!data/*/.gitkeep
+# Colab
+sample_data/
+
+# Dataset — never commit TrashCan images, crops or annotations (only data/README.md is tracked)
+data/*
+!data/README.md
 
 # Trained models and run folders — stored on Google Drive
 models/*
@@ -22,7 +33,10 @@ runs/
 *.keras
 *.h5
 *.pt
+*.pth
 *.ckpt
+*.onnx
+*.tflite
 
 # Large archives
 *.zip
