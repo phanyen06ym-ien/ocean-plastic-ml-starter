@@ -1,0 +1,77 @@
+# E04 — MobileNetV2 trên dữ liệu tiền xử lý và chia lại (v2_crop224).
+#
+# E01, E02: CNN tự thiết kế (TensorFlow/Keras), dữ liệu v1_crop128.
+# E03:      MobileNetV2 (PyTorch), dữ liệu cũ v1_crop128.
+# E04:      MobileNetV2 giữ nguyên mô hình và cách huấn luyện của E03; CHỈ đổi dữ liệu:
+#             - tiền xử lý mới: crop vuông 224x224, lề 15%, bỏ box < 16 px (configs/data_contract_v2.yaml)
+#             - chia lại theo video bằng StratifiedGroupKFold 70/15/15, seed 42
+#             - augmentation chỉ trên tập Train
+#
+# Các khoá không ghi ở đây lấy nguyên từ E03 (base_config): mô hình, 2 pha huấn luyện, class weights,
+# optimizer, early stopping, cách đánh giá.
+#
+# Chạy (Colab):
+#   python -m src.preprocessing --raw-root /content/trashcan --out-dir /content/processed/v2_crop224 \
+#       --contract configs/data_contract_v2.yaml
+#   python -m src.train --config configs/experiments/E04_mobilenetv2_data_v2.yaml \
+#       --processed-dir /content/processed/v2_crop224 --runs-root /content/drive/MyDrive/ocean-plastic-ml/runs
+
+base_config: E03_transfer_mobilenetv2.yaml
+
+exp_id: E04
+name: mobilenetv2_data_v2
+description: >
+  MobileNetV2 (ImageNet pretrained), same model and 2-phase training as E03, trained on the
+  re-processed and re-split data v2_crop224 with train-only augmentation.
+baseline_exp_id: E03            # runs/E03_20261108-1459
+changed_factor: data            # v1_crop128 -> v2_crop224 (+ train-only augmentation)
+known_extra_differences:        # must be stated in the PR
+  - "crop: bbox + 10% padding, stretched -> square window around the bbox + 15% padding"
+  - "input size 128x128 -> 224x224 (MobileNetV2 pretraining size)"
+  - "minimum box side 8 px -> 16 px"
+  - "split: random video-group search -> StratifiedGroupKFold by video (Val/Test differ from E01-E03)"
+  - "train-only augmentation (E03 had none)"
+  - "E01-E03 are not directly comparable with E04 on Validation: different split"
+
+baseline_reference:             # E03 on v1_crop128 Validation (results/metrics/E03_val.json)
+  macro_f1_val: 0.203
+  accuracy_val: 0.405
+  macro_f1_plastic6_val: 0.123
+  best_val_loss: 2.205
+  random_chance_macro_f1: 0.045
+
+data:
+  data_version: v2_crop224
+  contract: configs/data_contract_v2.yaml
+  processed_dir: /content/processed/v2_crop224        # Colab local copy, unzipped from the Drive zip below
+  processed_zip: /content/drive/MyDrive/ocean-plastic-ml/data/processed/v2_crop224.zip
+  split_info:                                         # read-only: written by src/preprocessing.py
+    strategy: grouped_by_video
+    method: stratified_group_kfold
+    video_id_regex: 'vid_(\d+)'
+    ratios: {train: 0.70, val: 0.15, test: 0.15}
+    seed: 42
+  train_samples: null          # filled from preprocessing_summary.json after the v2 run
+  val_samples: null
+  use_test_set: false          # Test set must NOT be used for training or model selection
+
+input:
+  image_size: [224, 224]       # crops are saved at 224x224 by the v2 preprocessing
+  val_transform: [ToTensor, Normalize]   # Val/Test: no augmentation
+
+augmentation:                  # Train only (src/train.py build_transform(train=True))
+  enabled: true
+  random_resized_crop_scale: [0.8, 1.0]  # zoom vào 80–100% ảnh crop rồi đưa về 224x224
+  horizontal_flip_p: 0.5
+  rotation_degrees: 10
+  color_jitter:                # mô phỏng màu nước và ánh sáng khác nhau giữa các video
+    brightness: 0.2
+    contrast: 0.2
+    saturation: 0.2
+    hue: 0.05
+  note: >
+    Augmentation is applied on the fly to Train crops only; Validation and Test use the
+    same deterministic transform as E03 (ToTensor + ImageNet Normalize).
+
+paths:
+  output_dir: runs/E04_mobilenetv2_data_v2    # Drive: runs/E04_*

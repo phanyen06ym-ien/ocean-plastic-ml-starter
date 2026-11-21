@@ -35,7 +35,7 @@ data/
 | `DATA_VERSION`    | Dùng cho              | Thông số                                                           | Crop Train / Val / Test |
 | ----------------- | --------------------- | ------------------------------------------------------------------ | ----------------------- |
 | `v1_crop128`      | E01, E02, E03, E03a–f | 128×128, lề 10%, bỏ bbox < 8 px, chia theo video 70/15/15, seed 42 | 8.283 / 1.782 / 2.009   |
-| _(phiên bản mới)_ | E04                   | Ghi trong `docs/dataset_report.md`                                                   | —                       |
+| `v2_crop224`      | E04                   | Crop vuông 224×224, lề 15%, bỏ bbox < 16 px, chia theo video bằng StratifiedGroupKFold 70/15/15, seed 42 | Ghi sau khi chạy        |
 
 Thông số dùng chung khai báo trong [`configs/data_contract.yaml`](../configs/data_contract.yaml). Thống kê chi tiết: [`docs/dataset_report.md`](../docs/dataset_report.md).
 
@@ -50,6 +50,9 @@ Thông số dùng chung khai báo trong [`configs/data_contract.yaml`](../config
 
    ```bash
    python -m src.preprocessing --raw-root data/raw --out-dir data/processed/v1_crop128
+
+   # v2 cho E04
+   python -m src.preprocessing --raw-root data/raw --out-dir data/processed/v2_crop224 --contract configs/data_contract_v2.yaml
    ```
 
 3. Kiểm tra `data/processed/v1_crop128/preprocessing_summary.json`: số crop từng tập phải khớp bảng ở trên.

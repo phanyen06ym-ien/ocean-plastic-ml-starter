@@ -1,4 +1,7 @@
-"""Training pipeline (PyTorch): E03 transfer learning with torchvision MobileNetV2, 2 phases (S3-CNN).
+"""Training pipeline (PyTorch): E03–E04 transfer learning with torchvision MobileNetV2, 2 phases (S3-CNN).
+
+E03 = data v1_crop128, no augmentation. E04 = data v2_crop224 (configs/data_contract_v2.yaml) + train-only
+augmentation (`augmentation.enabled: true` in configs/experiments/E04_*.yaml); model and training are E03's.
 
 Replaces the Keras version used for E01/E02 (still available in git history, commit 7520c2b).
 Follows configs/experiments/E03_*.yaml and mirrors the E01 Keras pipeline
@@ -17,6 +20,9 @@ Phase 2: unfreeze model.features[k:], BatchNorm kept in eval mode, new optimizer
 Usage (Colab):
     python -m src.train --config configs/experiments/E03_transfer_mobilenetv2.yaml \
         --processed-dir /content/processed/v1_crop128 \
+        --runs-root /content/drive/MyDrive/ocean-plastic-ml/runs
+    python -m src.train --config configs/experiments/E04_mobilenetv2_data_v2.yaml \
+        --processed-dir /content/processed/v2_crop224 \
         --runs-root /content/drive/MyDrive/ocean-plastic-ml/runs
     add --smoke for a 1-epoch-per-phase pipeline check.
 
@@ -192,17 +198,41 @@ def ordered_image_folder(root, names: list[str], transform=None):
     return _Ordered(root, transform=transform)
 
 
-def build_transform(cfg: dict[str, Any]):
-    """ToTensor -> ImageNet Normalize. Crops are already 128x128; no augmentation (E01 had none)."""
+def _image_hw(cfg: dict[str, Any]) -> tuple[int, int]:
+    size = cfg["input"]["image_size"]
+    return (int(size), int(size)) if isinstance(size, int) else (int(size[0]), int(size[1]))
+
+
+def build_transform(cfg: dict[str, Any], train: bool = False):
+    """Validation / inference: ToTensor -> ImageNet Normalize (crops are already image_size, e.g. 128 or 224).
+
+    Training with `augmentation.enabled: true` (E04) adds, before ToTensor:
+    RandomResizedCrop(image_size, scale) -> RandomHorizontalFlip -> RandomRotation -> ColorJitter.
+    E03 has augmentation disabled, so its transform is unchanged.
+    """
     _require_torch()
     norm = cfg["input"]["normalize"]
-    return transforms.Compose([transforms.ToTensor(), transforms.Normalize(norm["mean"], norm["std"])])
+    tail = [transforms.ToTensor(), transforms.Normalize(norm["mean"], norm["std"])]
+    aug = cfg.get("augmentation") or {}
+    if not (train and aug.get("enabled")):
+        return transforms.Compose(tail)
+    ops = []
+    if aug.get("random_resized_crop_scale"):
+        lo, hi = aug["random_resized_crop_scale"]
+        ops.append(transforms.RandomResizedCrop(_image_hw(cfg), scale=(float(lo), float(hi)), antialias=True))
+    if aug.get("horizontal_flip_p"):
+        ops.append(transforms.RandomHorizontalFlip(float(aug["horizontal_flip_p"])))
+    if aug.get("rotation_degrees"):
+        ops.append(transforms.RandomRotation(float(aug["rotation_degrees"])))
+    cj = aug.get("color_jitter") or {}
+    if cj:
+        ops.append(transforms.ColorJitter(**{k: float(v) for k, v in cj.items()}))
+    return transforms.Compose(ops + tail)
 
 
 def make_loaders(cfg: dict[str, Any], processed_dir: str | Path, names: list[str]):
-    tf = build_transform(cfg)
-    train_ds = ordered_image_folder(Path(processed_dir) / "train", names, tf)
-    val_ds = ordered_image_folder(Path(processed_dir) / "val", names, tf)   # never open "test"
+    train_ds = ordered_image_folder(Path(processed_dir) / "train", names, build_transform(cfg, train=True))
+    val_ds = ordered_image_folder(Path(processed_dir) / "val", names, build_transform(cfg))   # never open "test"
     g = torch.Generator()
     g.manual_seed(int(cfg["seed"]))
     nw = int(cfg["data"].get("num_workers", 2))

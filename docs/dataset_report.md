@@ -110,3 +110,30 @@ python -m src.preprocessing --raw-root <thư-mục-TrashCan> --out-dir data/proc
 - [x] Ghi commit code đã chạy: `7520c2b` (05/11/2026, Colab T4).
 - [x] `v1_crop128.zip` (gồm `split_manifest.csv`) trên Drive nhóm: `MyDrive/ocean-plastic-ml/data/processed/v1_crop128.zip`.
 - [x] `configs/class_mapping.json` có trong repo.
+
+## 8. Phiên bản `v2_crop224` (E04)
+
+E03 (MobileNetV2 trên `v1_crop128`) chỉ đạt Macro F1 Validation 0,203. Phân tích ở mục 6 cho thấy nguyên nhân chính nằm ở dữ liệu, nên E04 giữ nguyên mô hình và cách huấn luyện của E03, chỉ làm lại dữ liệu. Thông số khoá trong `configs/data_contract_v2.yaml`; cấu hình thí nghiệm `configs/experiments/E04_mobilenetv2_data_v2.yaml`.
+
+| Thông số | v1 | v2 | Lý do |
+|---|---|---|---|
+| Phạm vi lớp | 22 lớp | 22 lớp, cùng `class_mapping.json` | Giữ so sánh được với E01–E03 |
+| Kích thước | 128×128 | 224×224 | MobileNetV2 được tiền huấn luyện ở 224×224; ảnh 128 làm mất chi tiết của vật nhỏ |
+| Cách cắt | Lề 10% theo từng chiều, resize thẳng | Cửa sổ vuông quanh tâm bbox, cạnh = cạnh dài bbox × 1,3; dời vào trong ảnh khi chạm mép | Resize thẳng làm méo vật dài (ống, dây, chai); cửa sổ vuông giữ đúng tỉ lệ |
+| Lề | 10% | 15% | Thêm một ít bối cảnh cho vật nhỏ nhưng không quá nhiều để mô hình học nền video |
+| Bbox tối thiểu | 8 px | 16 px | Box nhỏ hơn 16 px phóng lên 224 gần như chỉ còn nhiễu; số crop bị loại ghi ở `dropped_fraction` trong `preprocessing_summary.json` (cảnh báo khi > 5%) |
+| Chia tập | Theo video, thử ngẫu nhiên nhiều hoán vị | Theo video bằng `StratifiedGroupKFold` (group = video, stratify = lớp), 70/15/15, seed 42 | v1 để vài lớp chỉ có 1–4 mẫu ở Val/Test; v2 giữ phân bố lớp gần nhau giữa các tập mà vẫn không rò rỉ video |
+| Augmentation | Không | Chỉ Train: cắt ngẫu nhiên 80–100%, lật ngang, xoay ±10°, độ sáng / tương phản / bão hoà ±20%, sắc độ ±5% | E03 đạt tốt nhất ở epoch 1–2 rồi học thuộc bối cảnh video; augmentation mô phỏng khác biệt ánh sáng và màu nước giữa các video |
+| Chuẩn hoá | mean/std ImageNet | Giữ nguyên | Bắt buộc với MobileNetV2 tiền huấn luyện |
+| Mất cân bằng | Class weights `balanced` | Giữ nguyên | Không đổi thêm yếu tố |
+
+**Lưu ý khi so sánh:** v2 chia lại dữ liệu nên tập Validation và Test của E04 khác E01–E03. Tập Test chưa từng được dùng nên chia lại vẫn hợp lệ, nhưng số liệu Validation của E04 không so sánh trực tiếp từng con số với E01–E03.
+
+**Tạo dữ liệu:**
+
+```bash
+python -m src.preprocessing --raw-root <thư-mục-TrashCan> --out-dir data/processed/v2_crop224 --contract configs/data_contract_v2.yaml
+```
+
+Số crop từng tập và số lớp có mặt ở Val/Test sẽ được cập nhật vào mục này sau lần chạy trên dữ liệu thật.
+

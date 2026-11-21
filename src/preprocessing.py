@@ -1,16 +1,24 @@
-"""Tiền xử lý TrashCan 1.0 — Instance theo ADR-001 / configs/data_contract.yaml.
+"""Tiền xử lý TrashCan 1.0 — Instance theo data contract (configs/data_contract.yaml, configs/data_contract_v2.yaml).
 
 Quy trình (một lần chạy tạo lại toàn bộ dữ liệu):
     1. Tìm 2 file annotation COCO (train, val) trong thư mục dataset gốc.
     2. Sinh class mapping 22 lớp (class_index theo category_id tăng dần).
     3. Lập bảng đối tượng: mỗi dòng là một annotation (bbox) + ảnh nguồn + video id.
     4. Gộp train+val gốc, chia lại Train/Val/Test THEO VIDEO (chia trước khi crop).
-    5. Crop bbox (+ lề), bỏ box quá nhỏ, resize 128x128, lưu
+    5. Crop bbox (+ lề), bỏ box quá nhỏ, resize về input_size, lưu
        <out_dir>/<split>/<class_name>/<ann_id>.jpg
     6. Ghi split_manifest.csv, class_mapping.json, preprocessing_summary.json.
 
+Hai phiên bản dữ liệu (chọn bằng --contract):
+    v1_crop128 (E01–E03): crop theo bbox + 10% lề, resize thẳng 128x128, bỏ box < 8 px,
+                          chia theo video bằng cách thử ngẫu nhiên nhiều hoán vị.
+    v2_crop224 (E04):     mở bbox thành hình vuông + 15% lề, 224x224, bỏ box < 16 px,
+                          chia theo video bằng StratifiedGroupKFold (giữ phân bố lớp giữa các tập).
+
 Chạy từ dòng lệnh:
     python -m src.preprocessing --raw-root /path/to/trashcan --out-dir /path/to/processed/v1_crop128
+    python -m src.preprocessing --raw-root /path/to/trashcan --out-dir /path/to/processed/v2_crop224 \
+        --contract configs/data_contract_v2.yaml
 """
 from __future__ import annotations
 
@@ -207,6 +215,73 @@ def grouped_split(df: pd.DataFrame, ratios: dict[str, float], seed: int = 42, at
     return out, best_info
 
 
+def _split_key(df: pd.DataFrame, split: pd.Series, ratios: dict[str, float], classes: list[int]) -> tuple[tuple, dict]:
+    """Điểm của một phương án chia: (số lớp có ở cả val và test, số mẫu ít nhất của một lớp ở val/test, -độ lệch tỉ lệ)."""
+    tmp = df.assign(split=split.values)
+    counts = tmp.groupby(["split", "class_index"]).size()
+    covered = sum(1 for c in classes if all(counts.get((s, c), 0) > 0 for s in ("val", "test")))
+    min_eval = min(int(counts.get((s, c), 0)) for c in classes for s in ("val", "test"))
+    img_frac = tmp.groupby("split")["image_id"].nunique() / tmp["image_id"].nunique()
+    dev = sum(abs(float(img_frac.get(s, 0)) - ratios[s]) for s in SPLITS)
+    info = {"classes_in_val_and_test": covered, "num_classes": len(classes), "min_class_count_val_test": min_eval,
+            "image_fraction": {s: round(float(img_frac.get(s, 0)), 4) for s in SPLITS}}
+    return (covered, min(min_eval, 5), -round(dev, 4)), info
+
+
+def stratified_grouped_split(df: pd.DataFrame, ratios: dict[str, float], seed: int = 42,
+                             n_seeds: int = 20) -> tuple[pd.DataFrame, dict[str, Any]]:
+    """Chia theo video bằng StratifiedGroupKFold (v2, E04).
+
+    Mọi annotation của một video nằm trong cùng một tập (group = video_id), đồng thời các fold
+    giữ phân bố lớp gần với toàn bộ dữ liệu (stratify = class_index). Làm hai bước:
+      1. Tách Test: StratifiedGroupKFold với k = round(1 / ratio_test), lấy một fold.
+      2. Tách Val từ phần còn lại: k = round((1 - ratio_test) / ratio_val), lấy một fold.
+    Thử mọi fold với n_seeds hạt giống suy ra từ seed và chọn phương án có
+    (1) nhiều lớp có mặt ở cả val và test nhất, (2) lớp hiếm có nhiều mẫu nhất ở val/test (tối đa 5),
+    (3) tỉ lệ ảnh gần mục tiêu nhất. Kết quả xác định hoàn toàn bởi seed.
+    """
+    from sklearn.model_selection import StratifiedGroupKFold
+
+    if abs(sum(ratios[s] for s in SPLITS) - 1.0) > 1e-6:
+        raise ValueError("Tổng tỉ lệ chia phải bằng 1")
+    df = df.reset_index(drop=True)
+    y, groups = df["class_index"].to_numpy(), df["video_id"].to_numpy()
+    classes = sorted(df["class_index"].unique())
+    k_test = max(2, int(round(1 / ratios["test"])))
+    k_val = max(2, int(round((1 - ratios["test"]) / ratios["val"])))
+    rng = np.random.default_rng(seed)
+    best, best_key, best_info = None, None, None
+    for trial in range(n_seeds):
+        s1, s2 = (int(v) for v in rng.integers(0, 2**31 - 1, size=2))
+        outer = StratifiedGroupKFold(n_splits=k_test, shuffle=True, random_state=s1)
+        for rest_idx, test_idx in outer.split(df, y, groups):
+            inner = StratifiedGroupKFold(n_splits=k_val, shuffle=True, random_state=s2)
+            for tr, va in inner.split(rest_idx, y[rest_idx], groups[rest_idx]):
+                split = np.empty(len(df), dtype=object)
+                split[test_idx], split[rest_idx[va]], split[rest_idx[tr]] = "test", "val", "train"
+                key, info = _split_key(df, pd.Series(split), ratios, classes)
+                if best_key is None or key > best_key:
+                    best, best_key, best_info = split, key, {**info, "trial": trial}
+    out = df.copy()
+    out["split"] = best
+    best_info.update({"method": "stratified_group_kfold", "seed": seed, "k_test": k_test, "k_val": k_val,
+                      "num_videos": int(df["video_id"].nunique())})
+    return out, best_info
+
+
+def split_by_contract(df: pd.DataFrame, split_cfg: dict[str, Any]) -> tuple[pd.DataFrame, dict[str, Any]]:
+    """Chọn cách chia theo data contract: split.method = random_group_search (v1) | stratified_group_kfold (v2)."""
+    method = split_cfg.get("method", "random_group_search")
+    ratios, seed = split_cfg["ratios"], int(split_cfg["seed"])
+    if method == "stratified_group_kfold":
+        return stratified_grouped_split(df, ratios, seed)
+    if method == "random_group_search":
+        out, info = grouped_split(df, ratios, seed)
+        info["method"] = method
+        return out, info
+    raise ValueError(f"split.method không hỗ trợ: {method}")
+
+
 def check_no_leakage(df: pd.DataFrame) -> None:
     """Báo lỗi nếu một video hoặc một ảnh nguồn nằm ở hơn một tập."""
     for col in ("video_id", "image_id"):
@@ -217,16 +292,32 @@ def check_no_leakage(df: pd.DataFrame) -> None:
 
 
 # --------------------------------------------------------------------------- 5. Crop
+def _square_window(x: float, y: float, w: float, h: float, padding_ratio: float, W: int, H: int) -> tuple[int, int, int, int]:
+    """Cửa sổ vuông quanh tâm bbox, cạnh = max(w, h) * (1 + 2 * lề), dời vào trong ảnh khi chạm mép."""
+    side = min(max(w, h) * (1 + 2 * padding_ratio), W, H)
+    cx, cy = x + w / 2, y + h / 2
+    x0 = min(max(cx - side / 2, 0), W - side)
+    y0 = min(max(cy - side / 2, 0), H - side)
+    return int(round(x0)), int(round(y0)), int(round(x0 + side)), int(round(y0 + side))
+
+
 def crop_box(img: Image.Image, bbox: tuple[float, float, float, float], padding_ratio: float,
-             min_side: float, size: int) -> Image.Image | None:
-    """Crop bbox COCO (x, y, w, h) có lề, trả ảnh RGB size×size hoặc None nếu box không hợp lệ."""
+             min_side: float, size: int, square: bool = False) -> Image.Image | None:
+    """Crop bbox COCO (x, y, w, h) có lề, trả ảnh RGB size×size hoặc None nếu box không hợp lệ.
+
+    square=False (v1): lề theo từng chiều rồi resize thẳng (đối tượng có thể bị méo).
+    square=True  (v2): mở rộng thành cửa sổ vuông quanh tâm bbox, giữ đúng tỉ lệ đối tượng.
+    """
     x, y, w, h = bbox
     if w < min_side or h < min_side:
         return None
     W, H = img.size
-    px, py = w * padding_ratio, h * padding_ratio
-    x0, y0 = max(0, int(round(x - px))), max(0, int(round(y - py)))
-    x1, y1 = min(W, int(round(x + w + px))), min(H, int(round(y + h + py)))
+    if square:
+        x0, y0, x1, y1 = _square_window(x, y, w, h, padding_ratio, W, H)
+    else:
+        px, py = w * padding_ratio, h * padding_ratio
+        x0, y0 = max(0, int(round(x - px))), max(0, int(round(y - py)))
+        x1, y1 = min(W, int(round(x + w + px))), min(H, int(round(y + h + py)))
     if x1 - x0 < min_side or y1 - y0 < min_side:
         return None
     return img.crop((x0, y0, x1, y1)).convert("RGB").resize((size, size), Image.BILINEAR)
@@ -239,6 +330,7 @@ def export_crops(df: pd.DataFrame, out_dir: str | Path, class_names: list[str], 
     size = int(contract["image"]["input_size"])
     pad = float(contract["crop"]["padding_ratio"])
     min_side = float(contract["crop"]["min_box_side_px"])
+    square = bool(contract["crop"].get("square", False))
     for s in SPLITS:
         for c in class_names:
             (out_dir / s / c).mkdir(parents=True, exist_ok=True)
@@ -254,7 +346,7 @@ def export_crops(df: pd.DataFrame, out_dir: str | Path, class_names: list[str], 
             with Image.open(img_path) as im:
                 im.load()
                 for r in g.itertuples():
-                    crop = crop_box(im, (r.bbox_x, r.bbox_y, r.bbox_w, r.bbox_h), pad, min_side, size)
+                    crop = crop_box(im, (r.bbox_x, r.bbox_y, r.bbox_w, r.bbox_h), pad, min_side, size, square)
                     if crop is None:
                         status[r.uid], paths[r.uid] = "too_small", ""
                         continue
@@ -299,7 +391,7 @@ def run_preprocessing(raw_root: str | Path, out_dir: str | Path, contract_path: 
     if expected and len(mapping) != expected:
         raise ValueError(f"Data contract yêu cầu {expected} lớp nhưng dataset có {len(mapping)}")
 
-    df, split_info = grouped_split(df, contract["split"]["ratios"], int(contract["split"]["seed"]))
+    df, split_info = split_by_contract(df, contract["split"])
     check_no_leakage(df)
     names = [m["class_name"] for m in mapping]
     df = export_crops(df, out_dir, names, contract, verbose=verbose)
@@ -320,7 +412,11 @@ def run_preprocessing(raw_root: str | Path, out_dir: str | Path, contract_path: 
         "split": split_info,
         "crops_per_split": {s: int(table[s].sum()) for s in SPLITS},
         "classes_missing_in": {s: [c for c in names if table.loc[c, s] == 0] for s in SPLITS},
+        "dropped_fraction": round(float((df["crop_status"] != "ok").mean()), 4),
     }
+    if verbose and summary["dropped_fraction"] > 0.05:
+        print(f"  [CẢNH BÁO] {summary['dropped_fraction']:.1%} annotation bị loại (box nhỏ / thiếu ảnh) — "
+              "cân nhắc giảm crop.min_box_side_px")
     with open(out_dir / "preprocessing_summary.json", "w", encoding="utf-8") as f:
         json.dump(summary, f, ensure_ascii=False, indent=2)
     if verbose:

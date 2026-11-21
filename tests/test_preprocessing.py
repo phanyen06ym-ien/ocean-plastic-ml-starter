@@ -94,3 +94,48 @@ def test_eda_tables(fake_trashcan):
     assert table["total"].sum() == len(df)
     assert eda.imbalance_ratio(df) >= 1
     assert "pct_lt_32px" in eda.bbox_stats(df).columns
+
+
+# --------------------------------------------------------------------------- v2_crop224 (E04)
+def _v2_contract():
+    from pathlib import Path
+    return Path(__file__).resolve().parents[1] / "configs" / "data_contract_v2.yaml"
+
+
+def test_square_crop_keeps_aspect_and_stays_inside_image():
+    from src.preprocessing import _square_window
+    img = Image.new("RGB", (160, 120))
+    x0, y0, x1, y1 = _square_window(20, 30, 60, 20, 0.15, 160, 120)       # box dẹt 60x20
+    assert x1 - x0 == y1 - y0 == 78                                       # cạnh = 60 * 1.3
+    assert x0 <= 20 and x1 >= 80                                          # chứa trọn box
+    x0, y0, x1, y1 = _square_window(140, 100, 20, 20, 0.15, 160, 120)     # sát góc dưới phải
+    assert 0 <= x0 and x1 <= 160 and 0 <= y0 and y1 <= 120 and x1 - x0 == y1 - y0
+    out = crop_box(img, (20, 30, 60, 20), 0.15, 16, 224, square=True)
+    assert out.size == (224, 224)
+    assert crop_box(img, (20, 30, 60, 10), 0.15, 16, 224, square=True) is None   # cạnh < 16 px
+
+
+def test_stratified_split_no_leakage_deterministic_and_covers_classes(fake_trashcan):
+    from src.preprocessing import stratified_grouped_split
+    df, _ = build_object_table(fake_trashcan, load_contract(_v2_contract()))
+    ratios = {"train": 0.7, "val": 0.15, "test": 0.15}
+    out, info = stratified_grouped_split(df, ratios, seed=42, n_seeds=3)
+    check_no_leakage(out)
+    assert info["method"] == "stratified_group_kfold"
+    assert set(out["split"]) == {"train", "val", "test"}
+    frac = out.groupby("split")["image_id"].nunique() / out["image_id"].nunique()
+    assert frac["train"] > frac["val"] and frac["train"] > frac["test"]
+    out2, info2 = stratified_grouped_split(df, ratios, seed=42, n_seeds=3)
+    assert (out["split"] == out2["split"]).all() and info == info2
+
+
+def test_run_preprocessing_v2_end_to_end(fake_trashcan, tmp_path):
+    out_dir = tmp_path / "processed" / "v2_crop224"
+    summary = run_preprocessing(fake_trashcan, out_dir, contract_path=_v2_contract(), verbose=False)
+    assert summary["data_version"] == "v2_crop224"
+    assert summary["split"]["method"] == "stratified_group_kfold"
+    manifest = pd.read_csv(out_dir / "split_manifest.csv")
+    check_no_leakage(manifest)
+    ok = manifest[manifest["crop_status"] == "ok"]
+    assert Image.open(out_dir / ok.iloc[0]["crop_path"]).size == (224, 224)
+    assert 0 < summary["dropped_fraction"] < 1

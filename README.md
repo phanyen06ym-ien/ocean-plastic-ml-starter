@@ -87,15 +87,19 @@ Tên nhãn là loại đối tượng, _không_ phải bằng chứng chất li�
 
 ### 3.3. Tiền xử lý (`src/preprocessing.py`)
 
-| Bước         | `v1_crop128` (E01–E03)                                                                                                                          |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Crop         | Theo bbox COCO, mở rộng 10% mỗi phía, bỏ box có cạnh < 8 px                                                                                     |
-| Kích thước   | Resize thẳng về 128 × 128 RGB                                                                                                                   |
-| Chia tập     | Gộp train + val gốc, **chia lại theo video** 70 / 15 / 15, seed 42 — mọi khung hình của một video nằm trong cùng một tập để tránh rò rỉ dữ liệu |
-| Mất cân bằng | Giữ nguyên các lớp lớn, dùng class weights `balanced` khi huấn luyện                                                                            |
-| Chuẩn hóa    | CNN tự thiết kế: pixel / 255 · MobileNetV2: mean/std ImageNet                                                                                   |
+| Bước | `v1_crop128` (E01–E03) | `v2_crop224` (E04) |
+|---|---|---|
+| Crop | Theo bbox COCO, lề 10% mỗi phía, resize thẳng (đối tượng có thể méo) | **Cửa sổ vuông** quanh tâm bbox, lề 15%, giữ đúng tỉ lệ đối tượng |
+| Bbox tối thiểu | 8 px | 16 px |
+| Kích thước | 128 × 128 RGB | **224 × 224** RGB (kích thước MobileNetV2 được tiền huấn luyện) |
+| Chia tập | Gộp train + val gốc, **chia lại theo video** 70 / 15 / 15, seed 42; thử ngẫu nhiên nhiều hoán vị | Vẫn theo video 70 / 15 / 15, seed 42, nhưng bằng **StratifiedGroupKFold** để giữ phân bố lớp giữa các tập |
+| Augmentation (chỉ Train) | Không (E02 có, trên CNN) | Cắt ngẫu nhiên 80–100%, lật ngang, xoay ±10°, đổi độ sáng / tương phản / màu |
+| Mất cân bằng | Class weights `balanced` | Giữ nguyên |
+| Chuẩn hóa | CNN tự thiết kế: pixel / 255 · MobileNetV2: mean/std ImageNet | mean/std ImageNet |
 
-Mọi thông số dùng chung giữa các module được khóa trong [`configs/data_contract.yaml`](configs/data_contract.yaml). Phiên bản dữ liệu cho E04 sẽ được ghi trong [`docs/dataset_report.md`](docs/dataset_report.md).
+Mọi annotation của một video luôn nằm trong cùng một tập để tránh rò rỉ dữ liệu.
+
+Thông số dùng chung được khóa trong [`configs/data_contract.yaml`](configs/data_contract.yaml) (v1) và [`configs/data_contract_v2.yaml`](configs/data_contract_v2.yaml) (v2). Lý do chọn thông số v2: [`docs/dataset_report.md`](docs/dataset_report.md).
 
 ### 3.4. Hạn chế đã biết
 
@@ -151,7 +155,7 @@ Adam (lr 1e-3), batch 64, tối đa 40 epoch, EarlyStopping (patience 6), Reduce
 | E02    | CNN tự thiết kế | + Augmentation (lật ngang, xoay, zoom, tương phản) | `v1_crop128`  | `E02_augment.yaml`              |
 | E03    | MobileNetV2     | Mô hình: học chuyển giao                           | `v1_crop128`  | `E03_transfer_mobilenetv2.yaml` |
 | E03a–f | MobileNetV2     | Mỗi lần đổi một siêu tham số (dropout, lr, seed…)  | `v1_crop128`  | E03 + `--set` (xem `results/metrics/e03_candidates.csv`) |
-| E04    | MobileNetV2     | Dữ liệu: phiên bản mới                   | đang chuẩn bị | —                               |
+| E04    | MobileNetV2     | Dữ liệu: tiền xử lý và chia lại (+ augmentation khi train) | `v2_crop224` | `E04_mobilenetv2_data_v2.yaml` |
 
 Cấu hình từng thí nghiệm: `configs/experiments/` · Số liệu từng lần chạy: `results/metrics/<EXP_ID>_val.json`, `<EXP_ID>_history.csv`.
 
@@ -199,6 +203,10 @@ python -m src.preprocessing --raw-root <thư mục TrashCan> --out-dir data/proc
 # Huấn luyện MobileNetV2 (E03)
 python -m src.train --config configs/experiments/E03_transfer_mobilenetv2.yaml --processed-dir data/processed/v1_crop128
 
+# Dữ liệu v2 + huấn luyện E04
+python -m src.preprocessing --raw-root <thư mục TrashCan> --out-dir data/processed/v2_crop224 --contract configs/data_contract_v2.yaml
+python -m src.train --config configs/experiments/E04_mobilenetv2_data_v2.yaml --processed-dir data/processed/v2_crop224
+
 # Dự đoán (checkpoint Keras)
 python main.py --image path/to/crop.jpg --model runs/E01_<thời gian>/best.keras
 ```
@@ -218,9 +226,10 @@ MyDrive/ocean-plastic-ml/
 ocean-plastic-ml-starter/
 ├── .github/                         # Mẫu issue, mẫu PR, CODEOWNERS
 ├── configs/
-│   ├── data_contract.yaml           # Thông số dữ liệu dùng chung
+│   ├── data_contract.yaml           # Thông số dữ liệu v1 (E01–E03)
+│   ├── data_contract_v2.yaml        # Thông số dữ liệu v2 (E04)
 │   ├── class_mapping.json           # category_id → class_name → class_index
-│   └── experiments/                 # E01, E02, E03 (.yaml); E04 sắp thêm
+│   └── experiments/                 # E01, E02, E03, E04 (.yaml)
 ├── data/                            # Chỉ có README.md; dữ liệu lưu trên Drive (xem data/README.md)
 ├── docs/
 │   ├── problem_statement.md         # Bài toán, phạm vi, chỉ số
