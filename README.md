@@ -29,14 +29,14 @@ Cập nhật 21/11/2026 · Sprint 3 — hoàn thiện bản nộp giữa kỳ.
 
 | Giai đoạn                              | Nội dung                                                                               | Trạng thái   |
 | -------------------------------------- | -------------------------------------------------------------------------------------- | ------------ |
-| Xác định bài toán                      | Problem statement, phạm vi 22 lớp ([ADR-001](docs/decisions/ADR-001-class-scope.md))   | ✅ Xong      |
+| Xác định bài toán                      | Problem statement, phạm vi 22 lớp ([phân tích](docs/class_scope_analysis.md))   | ✅ Xong      |
 | Dữ liệu `v1_crop128`                   | Audit, EDA, crop 128×128, chia theo video 70/15/15                                     | ✅ Xong      |
 | CNN tự thiết kế                        | E01 (baseline + class weights), E02 (+ augmentation)                                   | ✅ Xong      |
 | MobileNetV2                            | E03 (2 pha) + tinh chỉnh E03a–E03f                                                     | ✅ Xong      |
 | Đánh giá Validation                    | Macro F1, nhóm nhựa, confusion matrix, phân tích lỗi E01–E03                           | ✅ Xong      |
-| Dữ liệu mới + E04                      | Làm lại bộ dữ liệu để cải thiện MobileNetV2; thông số chốt ở ADR-002                   | 🔄 Đang làm  |
-| Chốt mô hình cuối                      | So sánh trên Validation, ghi ADR                                                       | ⏳ Chờ E04   |
-| Đánh giá Test                          | Chạy **một lần** cho mô hình cuối (ADR-001 D7)                                         | ⏳ Chưa chạy |
+| Dữ liệu mới + E04                      | Làm lại bộ dữ liệu để cải thiện MobileNetV2; thông số ghi trong `dataset_report.md`                   | 🔄 Đang làm  |
+| Chốt mô hình cuối                      | So sánh trên Validation                                                       | ⏳ Chờ E04   |
+| Đánh giá Test                          | Chạy **một lần** cho mô hình cuối                                         | ⏳ Chưa chạy |
 | Demo                                   | CLI `main.py` chạy với checkpoint Keras (E01–E02); hỗ trợ checkpoint PyTorch (E03–E04) | 🔄 Đang làm  |
 | Báo cáo, slide, release `v0.1-midterm` |                                                                                        | ⏳           |
 
@@ -95,7 +95,7 @@ Tên nhãn là loại đối tượng, _không_ phải bằng chứng chất li�
 | Mất cân bằng | Giữ nguyên các lớp lớn, dùng class weights `balanced` khi huấn luyện                                                                            |
 | Chuẩn hóa    | CNN tự thiết kế: pixel / 255 · MobileNetV2: mean/std ImageNet                                                                                   |
 
-Mọi thông số dùng chung giữa các module được khóa trong [`configs/data_contract.yaml`](configs/data_contract.yaml). Phiên bản dữ liệu cho E04 sẽ được ghi trong ADR-002.
+Mọi thông số dùng chung giữa các module được khóa trong [`configs/data_contract.yaml`](configs/data_contract.yaml). Phiên bản dữ liệu cho E04 sẽ được ghi trong [`docs/dataset_report.md`](docs/dataset_report.md).
 
 ### 3.4. Hạn chế đã biết
 
@@ -141,7 +141,7 @@ Adam (lr 1e-3), batch 64, tối đa 40 epoch, EarlyStopping (patience 6), Reduce
 
 - Mỗi thí nghiệm chỉ đổi **một yếu tố** so với thí nghiệm gốc; cấu hình lưu trong `configs/experiments/`.
 - Cùng seed 42, cùng cách chia dữ liệu khi so sánh.
-- Chọn mô hình **chỉ dựa trên Validation**; tập Test chỉ chạy một lần cho mô hình cuối (ADR-001 D7).
+- Chọn mô hình **chỉ dựa trên Validation**; tập Test chỉ chạy một lần cho mô hình cuối.
 
 ## 5. Thực nghiệm
 
@@ -151,9 +151,9 @@ Adam (lr 1e-3), batch 64, tối đa 40 epoch, EarlyStopping (patience 6), Reduce
 | E02    | CNN tự thiết kế | + Augmentation (lật ngang, xoay, zoom, tương phản) | `v1_crop128`  | `E02_augment.yaml`              |
 | E03    | MobileNetV2     | Mô hình: học chuyển giao                           | `v1_crop128`  | `E03_transfer_mobilenetv2.yaml` |
 | E03a–f | MobileNetV2     | Mỗi lần đổi một siêu tham số (dropout, lr, seed…)  | `v1_crop128`  | `E03?_tune.yaml`                |
-| E04    | MobileNetV2     | Dữ liệu: phiên bản mới (ADR-002)                   | đang chuẩn bị | —                               |
+| E04    | MobileNetV2     | Dữ liệu: phiên bản mới                   | đang chuẩn bị | —                               |
 
-Nhật ký các lần chạy: [`docs/experiment_log.md`](docs/experiment_log.md) · Kế hoạch: [`docs/experiment_plan.md`](docs/experiment_plan.md).
+Cấu hình từng thí nghiệm: `configs/experiments/` · Số liệu từng lần chạy: `results/metrics/<EXP_ID>_val.json`, `<EXP_ID>_history.csv`.
 
 ## 6. Kết quả và phân tích
 
@@ -178,7 +178,7 @@ Mức ngẫu nhiên của Macro F1 với 22 lớp ≈ 0,045.
 
 **Nguyên nhân chính nằm ở dữ liệu** và là cơ sở cho E04: ảnh 128×128 nhỏ hơn kích thước MobileNetV2 được tiền huấn luyện (224×224); phân bố lớp giữa các tập lệch mạnh do chia theo video; nhiều bbox rất nhỏ; hai lớp lớn chiếm một nửa dữ liệu.
 
-Kết quả theo lớp với support nhỏ (dưới khoảng 10 mẫu) không đủ để kết luận. Phân tích đầy đủ: [`docs/evaluation_report.md`](docs/evaluation_report.md) · Hình: `results/figures/`.
+Kết quả theo lớp với support nhỏ (dưới khoảng 10 mẫu) không đủ để kết luận. Số liệu theo lớp: `results/metrics/<EXP_ID>_val.json` · Hình: `results/figures/` · Cách đánh giá: [`docs/evaluation_plan.md`](docs/evaluation_plan.md).
 
 ## 7. Tái lập kết quả
 
@@ -223,13 +223,12 @@ ocean-plastic-ml-starter/
 │   └── experiments/                 # E01, E02, E03, E03a–f (.yaml)
 ├── data/                            # Chỉ có README.md; dữ liệu lưu trên Drive (xem data/README.md)
 ├── docs/
-│   ├── problem_statement.md · class_scope_analysis.md
-│   ├── dataset_report.md · visual_inspection_protocol.md
-│   ├── experiment_plan.md · experiment_log.md
-│   ├── evaluation_plan.md · evaluation_report.md
-│   ├── demo_spec.md · colab_setup.md · sprint_plan.md
-│   ├── decisions/                   # ADR: quyết định đã chốt
-│   └── reports/                     # Báo cáo sprint
+│   ├── problem_statement.md         # Bài toán, phạm vi, chỉ số
+│   ├── dataset_report.md            # Thống kê dữ liệu, cách chia tập
+│   ├── evaluation_plan.md           # Cách đánh giá
+│   ├── colab_setup.md               # Hướng dẫn chạy trên Colab
+│   ├── class_scope_analysis.md      # Lý do chọn 22 lớp
+│   └── visual_inspection_protocol.md # Kiểm tra ảnh crop và nhãn
 ├── notebooks/
 │   ├── 00_pipeline_colab.ipynb      # Chạy toàn bộ quy trình
 │   ├── 01_trashcan_eda.ipynb · 02_preprocessing.ipynb
@@ -267,7 +266,7 @@ Quy ước làm việc: [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 | Sprint                           | Thời gian          | Mục tiêu                                                  |
 | -------------------------------- | ------------------ | --------------------------------------------------------- |
-| Sprint 1 — Foundation            | 23/10 – 03/11/2026 | Bài toán, kiến trúc, ADR-001, khung code                  |
+| Sprint 1 — Foundation            | 23/10 – 03/11/2026 | Bài toán, kiến trúc, phạm vi lớp, khung code                  |
 | Sprint 2 — Data & Baseline       | 04 – 05/11/2026    | Dữ liệu `v1_crop128`, E01, E02, đánh giá Validation       |
 | Sprint 3 — Improvement & Midterm | 05/11/2026 – nay   | E03, dữ liệu mới + E04, chốt mô hình, Test, demo, báo cáo |
 
@@ -279,9 +278,9 @@ Quy ước làm việc: [`CONTRIBUTING.md`](CONTRIBUTING.md).
 | ----------------------------------------------------------------------------------------------- | ------------------------------ |
 | [`problem_statement.md`](docs/problem_statement.md)                                             | Bài toán, phạm vi, chỉ số      |
 | [`dataset_report.md`](docs/dataset_report.md)                                                   | Thống kê dữ liệu đầy đủ        |
-| [`experiment_plan.md`](docs/experiment_plan.md) · [`experiment_log.md`](docs/experiment_log.md) | Thiết kế và nhật ký thí nghiệm |
-| [`evaluation_report.md`](docs/evaluation_report.md)                                             | Phân tích kết quả              |
-| [`decisions/`](docs/decisions/)                                                                 | Các quyết định đã chốt (ADR)   |
+| [`evaluation_plan.md`](docs/evaluation_plan.md)                                                 | Cách đánh giá, chỉ số          |
+| [`class_scope_analysis.md`](docs/class_scope_analysis.md)                                       | Lý do chọn phạm vi 22 lớp      |
+| [`visual_inspection_protocol.md`](docs/visual_inspection_protocol.md)                           | Kiểm tra ảnh crop và nhãn      |
 | [`colab_setup.md`](docs/colab_setup.md)                                                         | Hướng dẫn chạy trên Colab      |
 
 ## 12. Trích dẫn

@@ -119,7 +119,6 @@ Mọi quyết định thay đổi phạm vi, merge khi chưa có review, hoặc 
 | Module Python | `snake_case.py` trong `src/` | `src/preprocessing.py` |
 | Test | `tests/test_<module>.py` | `tests/test_evaluate.py` |
 | Tài liệu | `docs/<snake_case>.md` | `docs/dataset_report.md` |
-| Quyết định | `docs/decisions/ADR-<NNN>-<chu-de>.md` | `ADR-001-class-scope.md` |
 | Cấu hình thí nghiệm | `configs/experiments/<EXP_ID>_<mo_ta>.yaml` | `E01_baseline.yaml` |
 | Kết quả số liệu | `results/metrics/<EXP_ID>_<split>.json` | `E01_val.json` |
 | Hình | `results/figures/<EXP_ID>_<loai>.png` | `E01_confusion_matrix.png` |

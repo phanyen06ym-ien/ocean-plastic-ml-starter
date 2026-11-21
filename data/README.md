@@ -35,7 +35,7 @@ data/
 | `DATA_VERSION`    | Dùng cho              | Thông số                                                           | Crop Train / Val / Test |
 | ----------------- | --------------------- | ------------------------------------------------------------------ | ----------------------- |
 | `v1_crop128`      | E01, E02, E03, E03a–f | 128×128, lề 10%, bỏ bbox < 8 px, chia theo video 70/15/15, seed 42 | 8.283 / 1.782 / 2.009   |
-| _(phiên bản mới)_ | E04                   | Chốt tại ADR-002                                                   | —                       |
+| _(phiên bản mới)_ | E04                   | Ghi trong `docs/dataset_report.md`                                                   | —                       |
 
 Thông số dùng chung khai báo trong [`configs/data_contract.yaml`](../configs/data_contract.yaml). Thống kê chi tiết: [`docs/dataset_report.md`](../docs/dataset_report.md).
 
@@ -56,6 +56,6 @@ Thông số dùng chung khai báo trong [`configs/data_contract.yaml`](../config
 
 ## Lưu ý
 
-- Không sửa ảnh hoặc annotation trong `raw/`. Mọi thay đổi cách xử lý phải tạo `DATA_VERSION` mới và ghi ADR.
-- Không dùng tập `test/` khi huấn luyện hay chọn mô hình; chỉ đánh giá một lần cho mô hình cuối (ADR-001 D7).
+- Không sửa ảnh hoặc annotation trong `raw/`. Mọi thay đổi cách xử lý phải tạo `DATA_VERSION` mới và ghi vào `docs/dataset_report.md`.
+- Không dùng tập `test/` khi huấn luyện hay chọn mô hình; chỉ đánh giá một lần cho mô hình cuối.
 - Bộ dữ liệu thuộc quyền nhóm tác giả TrashCan (Hong, Fulton & Sattar, 2020); trích dẫn khi sử dụng.

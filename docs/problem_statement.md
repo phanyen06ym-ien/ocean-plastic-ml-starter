@@ -168,4 +168,4 @@ Kết quả mong đợi là một quy trình kỹ thuật có thể kiểm chứ
 
 Việc lựa chọn tập nhãn cần dựa trên Class Scope Analysis, kết quả Visual Inspection, tính khả thi của CNN và chiến lược đánh giá. Chưa có quyết định chính thức về số lớp hoặc tuyên bố hệ thống đã nhận diện được vật liệu nhựa.
 
-**Current status: APPROVED — Option D, xem `docs/decisions/ADR-001-class-scope.md`.**
+**Current status: APPROVED — Option D, xem `docs/class_scope_analysis.md`.**

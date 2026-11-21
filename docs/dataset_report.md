@@ -5,7 +5,7 @@
 | Phụ trách | Hùng (dự phòng: Yến) |
 | `DATA_VERSION` | `v1_crop128` |
 | Nguồn số liệu | Báo cáo của Hùng trên Drive nhóm (`TrashCan/dataset_report.md`, cập nhật 03/11/2026), chạy `src/preprocessing.py` trên dữ liệu thật |
-| Căn cứ | `docs/decisions/ADR-001-class-scope.md`, `configs/data_contract.yaml` v1 |
+| Căn cứ | `docs/class_scope_analysis.md`, `configs/data_contract.yaml` v1 |
 | Bản chính thức | Colab 05/11/2026, commit `7520c2b`, Drive `MyDrive/ocean-plastic-ml/data/processed/v1_crop128.zip` |
 
 ## 1. Nguồn dữ liệu
@@ -95,7 +95,7 @@ Tỉ lệ mất cân bằng (lớn nhất / nhỏ nhất theo tổng crop): 3.29
 ## 6. Hạn chế và lưu ý cho đánh giá
 
 - Mất cân bằng lớn: `rov` và `trash_unknown_instance` chiếm 50% số crop; `trash_cup` chỉ có 59. Huấn luyện dùng class weights (ADR-001 D6).
-- **Chia theo video làm lệch phân bố lớp giữa các tập** vì nhiều lớp chỉ xuất hiện trong ít video: `trash_cup` (4 video) có 14 Train / 36 Val; `animal_shells` (7 video) có 233 Train / 1 Val; `animal_crab` 185 / 3 / 121; `animal_starfish` 360 / 33 / 4. Đây là nguyên nhân chính khiến kết quả Validation của E01/E02 thấp (xem `docs/evaluation_report.md`).
+- **Chia theo video làm lệch phân bố lớp giữa các tập** vì nhiều lớp chỉ xuất hiện trong ít video: `trash_cup` (4 video) có 14 Train / 36 Val; `animal_shells` (7 video) có 233 Train / 1 Val; `animal_crab` 185 / 3 / 121; `animal_starfish` 360 / 33 / 4. Đây là nguyên nhân chính khiến kết quả Validation của E01/E02 thấp (số liệu: `results/metrics/E01_val.json`, `E02_val.json`).
 - Đủ 22 lớp có mặt ở cả ba tập, nhưng nhiều lớp có dưới 10 mẫu ở Validation hoặc Test (in đậm ở bảng mục 4). F1 của các lớp này dao động mạnh; báo cáo phải kèm support.
 - Trong nhóm lớp liên quan nhựa, `trash_bottle` chỉ có 3 mẫu Validation; `trash_tarp` 5 và `trash_rope` 7 mẫu Test.
 - 54 annotation bị loại vì bbox quá nhỏ.

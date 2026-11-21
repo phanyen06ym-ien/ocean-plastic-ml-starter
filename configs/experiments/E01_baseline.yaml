@@ -1,4 +1,4 @@
-# E01 — CNN baseline + class weights (docs/experiment_plan.md)
+# E01 — CNN baseline + class weights (configs/experiments/)
 exp_id: E01
 description: CNN baseline (4 conv blocks, BN, GAP) + balanced class weights
 data_version: v1_crop128
