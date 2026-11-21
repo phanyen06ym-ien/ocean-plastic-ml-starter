@@ -35,8 +35,8 @@ Cập nhật 21/11/2026 · Sprint 3 — hoàn thiện bản nộp giữa kỳ.
 | MobileNetV2                            | E03 (2 pha) + tinh chỉnh E03a–E03f                                                     | ✅ Xong      |
 | Đánh giá Validation                    | Macro F1, nhóm nhựa, confusion matrix, phân tích lỗi E01–E03                           | ✅ Xong      |
 | Dữ liệu `v2_crop224` + E04             | Gộp 22 → 18 lớp, crop vuông 224×224, chia lại theo video giữ 70/15/15 cho từng lớp; EfficientNet-B0, bù lớp hiếm, chọn checkpoint theo Macro F1 | ✅ Xong      |
-| Chốt mô hình cuối                      | So sánh trên Validation, chọn checkpoint                                               | 🔄 Chờ xác nhận |
-| Đánh giá Test                          | Chạy **một lần** cho mô hình cuối                                         | ⏳ Chưa chạy |
+| Chốt mô hình cuối                      | E04 (EfficientNet-B0, 18 lớp) — Macro F1 Validation cao nhất                            | ✅ Xong      |
+| Đánh giá Test                          | Chạy **một lần** cho E04 (21/11/2026): Macro F1 0,327, Accuracy 53,5%                   | ✅ Xong      |
 | Demo                                   | CLI `main.py` chạy với checkpoint Keras (E01–E02) và PyTorch (E03–E04)                  | ✅ Xong      |
 | Báo cáo, slide, release `v0.1-midterm` |                                                                                        | ⏳           |
 
@@ -179,11 +179,22 @@ Tập Validation: 1.782 crop, 22 lớp cho E01–E03 (`v1_crop128`); 1.704 crop,
 | E02                    |            0,065 |     0,161 |       0,167 |              0,017 |               — |
 | E03                    |            0,203 |     0,405 |       0,418 |              0,123 |               — |
 | E03f (tốt nhất E03a–f) |        **0,212** | **0,412** |   **0,420** |              0,117 |               — |
-| E04 ¹ (EfficientNet-B0, 18 lớp) | **0,339** | **0,579** | **0,546** | **0,153** | — |
+| E04 ¹ (EfficientNet-B0, 18 lớp) | **0,339** | **0,579** | **0,546** | **0,153** | **0,327** |
 
 Mức ngẫu nhiên của Macro F1: ≈ 0,045 với 22 lớp, ≈ 0,056 với 18 lớp.
 
-¹ E04 khác E01–E03 ở số lớp (18 so với 22) và ở tập Validation/Test (cách chia mới), nên so sánh chỉ mang tính tham khảo. Checkpoint E04 chọn theo Macro F1 Validation (pha 2, epoch 11); vì Validation vừa dùng để chọn checkpoint, con số này hơi lạc quan — số liệu chính thức là kết quả Test chạy một lần.
+**Kết quả chính thức trên tập Test (E04, chạy một lần, 1.751 crop từ các video chưa dùng khi huấn luyện và chọn mô hình):**
+
+| Chỉ số | Validation | **Test** |
+|---|---:|---:|
+| Macro F1 (18 lớp) | 0,339 | **0,327** |
+| Accuracy | 0,579 | **0,535** |
+| Weighted F1 | 0,546 | **0,497** |
+| Macro F1 nhóm nhựa | 0,153 | **0,119** |
+
+Kết quả Test thấp hơn Validation một chút, đúng như dự kiến khi Validation được dùng để chọn checkpoint; khoảng cách nhỏ cho thấy mô hình không bị chọn "may mắn" trên Validation. Trên Test, tốt nhất ở `animal_starfish` (F1 0,85), `rov` (0,84), `animal_crab` (0,69), `animal_fish` (0,68); kém nhất ở `trash_bottle`, `trash_snack_wrapper` (0), `trash_container` (0,02), `trash_tarp` (0,07), `trash_rope` (0,09) — phần lớn bị đoán vào `trash_other`. Nguồn: `results/metrics/E04_test.json`, hình `results/figures/E04_test_confusion_matrix.png`.
+
+¹ E04 khác E01–E03 ở số lớp (18 so với 22) và ở tập Validation/Test (cách chia mới), nên so sánh chỉ mang tính tham khảo. Checkpoint E04 chọn theo Macro F1 Validation (pha 2, epoch 11); vì Validation vừa dùng để chọn checkpoint, con số này hơi lạc quan — số liệu chính thức là kết quả Test chạy một lần (bên dưới).
 
 **Nhận xét**
 
