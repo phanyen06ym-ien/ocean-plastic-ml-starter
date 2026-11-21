@@ -163,17 +163,34 @@ def load_coco(path: str | Path) -> dict[str, Any]:
 
 
 # --------------------------------------------------------------------------- 2. Class mapping
-def build_class_mapping(categories: list[dict[str, Any]], plastic_related: list[str] | None = None) -> list[dict[str, Any]]:
-    """category_id → class_name → class_index (0..K-1 theo category_id tăng dần)."""
+def build_class_mapping(categories: list[dict[str, Any]], plastic_related: list[str] | None = None,
+                        merge: dict[str, str] | None = None) -> list[dict[str, Any]]:
+    """category_id → class_name → class_index.
+
+    Không gộp (v1): 22 lớp, class_index 0..21 theo category_id tăng dần.
+    merge = {tên_gốc: tên_mới} (v2): các category cùng tên mới thành một lớp; thứ tự lớp theo
+    category_id nhỏ nhất của nhóm. Mỗi phần tử có thêm `category_ids` và `source_names`.
+    """
     plastic = set(plastic_related or [])
+    merge = merge or {}
     cats = sorted(categories, key=lambda c: c["id"])
     names = [c["name"] for c in cats]
     if len(set(names)) != len(names):
         raise ValueError("Tên category bị trùng")
-    return [
-        {"class_index": i, "category_id": c["id"], "class_name": c["name"], "plastic_related": c["name"] in plastic}
-        for i, c in enumerate(cats)
-    ]
+    unknown = set(merge) - set(names)
+    if unknown:
+        raise ValueError(f"classes.merge có tên không tồn tại trong dataset: {sorted(unknown)}")
+    groups: dict[str, list[dict[str, Any]]] = {}
+    for c in cats:                                   # dict giữ thứ tự xuất hiện → theo category_id nhỏ nhất
+        groups.setdefault(merge.get(c["name"], c["name"]), []).append(c)
+    out = []
+    for i, (name, members) in enumerate(groups.items()):
+        entry = {"class_index": i, "category_id": members[0]["id"], "class_name": name, "plastic_related": name in plastic}
+        if merge:
+            entry["category_ids"] = [m["id"] for m in members]
+            entry["source_names"] = [m["name"] for m in members]
+        out.append(entry)
+    return out
 
 
 def save_class_mapping(mapping: list[dict[str, Any]], path: str | Path, source: str = "") -> None:
@@ -181,7 +198,7 @@ def save_class_mapping(mapping: list[dict[str, Any]], path: str | Path, source: 
     payload = {
         "dataset": "TrashCan 1.0 — Instance",
         "num_classes": len(mapping),
-        "index_order": "category_id_ascending",
+        "index_order": "min_category_id_of_group" if any("category_ids" in m for m in mapping) else "category_id_ascending",
         "source_annotations": source,
         "classes": mapping,
     }
@@ -226,8 +243,9 @@ def build_object_table(raw_root: str | Path, contract: dict[str, Any]) -> tuple[
     if len(set(cat_sets)) != 1:
         raise ValueError("Danh sách category giữa train và val gốc không giống nhau")
     mapping = build_class_mapping(next(iter(cocos.values()))["categories"],
-                                  contract["classes"].get("plastic_related_candidates"))
-    by_cat = {m["category_id"]: m for m in mapping}
+                                  contract["classes"].get("plastic_related_candidates"),
+                                  contract["classes"].get("merge"))
+    by_cat = {cid: m for m in mapping for cid in m.get("category_ids", [m["category_id"]])}
 
     idx = index_images(raw_root)
     pattern = contract["split"].get("video_id_regex", r"vid_(\d+)")

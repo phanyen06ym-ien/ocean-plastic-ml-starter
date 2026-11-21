@@ -12,10 +12,10 @@ Trọng số các mô hình đã huấn luyện (E01–E04).
 | E01 | CNN tự thiết kế (Keras) | `v1_crop128` | `runs/E01_20261105-1513/` | `best.keras` | — |
 | E02 | E01 + augmentation (Keras) | `v1_crop128` | `runs/E02_20261105-1515/` | `best.keras` | — |
 | E03 | MobileNetV2 (PyTorch) | `v1_crop128` | `runs/E03_20261108-1459/` (máy của Bách; bản chạy lại trên Drive: `runs/E03_20261112-1613/`) | `best.pt` (9,2 MB) | `config.json` cùng thư mục |
-| E04 | MobileNetV2 (PyTorch) | `v2_crop224` | `runs/E04_20261121-0952/` | `best.pt` | `config.json` cùng thư mục |
+| E04 | EfficientNet-B0 (PyTorch), 18 lớp | `v2_crop224` | `runs/E04_20261121-1102/` | `best.pt` (16,4 MB) | `config.json`, `class_mapping.json` cùng thư mục |
 
 Mỗi thư mục run còn có `history.csv`, `config.json`, `class_mapping.json` và `<EXP_ID>_val.json`.
-Thứ tự lớp đầu ra của mọi mô hình theo [`configs/class_mapping.json`](../configs/class_mapping.json) (22 lớp, `class_index` 0–21).
+Thứ tự lớp đầu ra: E01–E03 theo [`configs/class_mapping.json`](../configs/class_mapping.json) (22 lớp); E04 theo [`configs/class_mapping_v2.json`](../configs/class_mapping_v2.json) (18 lớp). `main.py` tự dùng `class_mapping.json` nằm cạnh checkpoint.
 
 ## Dùng checkpoint
 

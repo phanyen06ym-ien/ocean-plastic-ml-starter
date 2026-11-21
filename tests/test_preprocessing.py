@@ -139,3 +139,28 @@ def test_run_preprocessing_v2_end_to_end(fake_trashcan, tmp_path):
     ok = manifest[manifest["crop_status"] == "ok"]
     assert Image.open(out_dir / ok.iloc[0]["crop_path"]).size == (224, 224)
     assert 0 < summary["dropped_fraction"] < 1
+
+
+def test_class_merge_keeps_plastic_classes_and_orders_by_category_id():
+    cats = [{"id": i + 1, "name": n} for i, n in enumerate(CATEGORY_NAMES)]
+    contract = load_contract(_v2_contract())
+    m = build_class_mapping(cats, contract["classes"]["plastic_related_candidates"], contract["classes"]["merge"])
+    names = [x["class_name"] for x in m]
+    assert len(m) == contract["classes"]["num_classes"] == 18
+    assert "trash_other" in names and "trash_unknown_instance" not in names
+    assert sum(x["plastic_related"] for x in m) == 6
+    other = next(x for x in m if x["class_name"] == "trash_other")
+    assert sorted(other["source_names"]) == ["trash_clothing", "trash_cup", "trash_unknown_instance", "trash_wreckage"]
+    assert [x["class_index"] for x in m] == list(range(18))
+    with pytest.raises(ValueError):
+        build_class_mapping(cats, [], {"not_a_class": "x"})
+
+
+def test_sample_weights_rebalance_classes():
+    import numpy as np
+    from src.train import sample_weights
+    targets = [0] * 100 + [1] * 4
+    w = sample_weights(targets, 3, "sqrt_inverse")
+    share_rare = w[100:].sum() / w.sum()
+    assert 4 / 104 < share_rare < 0.5                        # lớp hiếm được bù nhưng không vượt lớp lớn
+    assert np.isclose(sample_weights(targets, 3, "inverse")[100:].sum() / sample_weights(targets, 3, "inverse").sum(), 0.5)

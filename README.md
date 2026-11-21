@@ -4,7 +4,7 @@
 
 **Phân loại và giám sát rác thải nhựa đại dương** — đồ án môn Học máy và Khai phá dữ liệu.
 
-Dự án xây dựng mô hình mạng nơ-ron tích chập (CNN) phân loại **ảnh thực tế dưới nước** theo **loại đối tượng** của bộ dữ liệu **TrashCan 1.0 — Instance** (22 lớp). Trọng tâm phân tích là **nhóm 6 lớp rác liên quan đến nhựa** (túi, chai, vỏ bao bì, lưới, dây, bạt). Nhóm so sánh CNN tự thiết kế (E01–E02) với học chuyển giao MobileNetV2 (E03–E04) trên cùng một cách chia dữ liệu theo video.
+Dự án xây dựng mô hình mạng nơ-ron tích chập (CNN) phân loại **ảnh thực tế dưới nước** theo **loại đối tượng** của bộ dữ liệu **TrashCan 1.0 — Instance** (22 lớp; mô hình cuối E04 gộp còn 18 lớp). Trọng tâm phân tích là **nhóm 6 lớp rác liên quan đến nhựa** (túi, chai, vỏ bao bì, lưới, dây, bạt). Nhóm so sánh CNN tự thiết kế (E01–E02), học chuyển giao MobileNetV2 (E03) và mô hình cải tiến EfficientNet-B0 trên dữ liệu làm lại (E04); mọi cách chia dữ liệu đều theo video để tránh rò rỉ.
 
 ## Mục lục
 
@@ -34,7 +34,7 @@ Cập nhật 21/11/2026 · Sprint 3 — hoàn thiện bản nộp giữa kỳ.
 | CNN tự thiết kế                        | E01 (baseline + class weights), E02 (+ augmentation)                                   | ✅ Xong      |
 | MobileNetV2                            | E03 (2 pha) + tinh chỉnh E03a–E03f                                                     | ✅ Xong      |
 | Đánh giá Validation                    | Macro F1, nhóm nhựa, confusion matrix, phân tích lỗi E01–E03                           | ✅ Xong      |
-| Dữ liệu `v2_crop224` + E04             | Crop vuông 224×224, chia lại theo video giữ 70/15/15 cho từng lớp; E04 huấn luyện trên Colab T4 (30,6 phút) | ✅ Xong      |
+| Dữ liệu `v2_crop224` + E04             | Gộp 22 → 18 lớp, crop vuông 224×224, chia lại theo video giữ 70/15/15 cho từng lớp; EfficientNet-B0, bù lớp hiếm, chọn checkpoint theo Macro F1 | ✅ Xong      |
 | Chốt mô hình cuối                      | So sánh trên Validation, chọn checkpoint                                               | 🔄 Chờ xác nhận |
 | Đánh giá Test                          | Chạy **một lần** cho mô hình cuối                                         | ⏳ Chưa chạy |
 | Demo                                   | CLI `main.py` chạy với checkpoint Keras (E01–E02) và PyTorch (E03–E04)                  | ✅ Xong      |
@@ -46,8 +46,8 @@ Cập nhật 21/11/2026 · Sprint 3 — hoàn thiện bản nộp giữa kỳ.
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | Loại bài toán         | Phân loại ảnh có giám sát, đa lớp (supervised multi-class image classification)                                                              |
 | Đầu vào               | Ảnh RGB **một đối tượng**, cắt (crop) từ khung hình video dưới nước theo bounding box của TrashCan-Instance                                  |
-| Đầu ra                | Một trong **22 lớp**: tên lớp, `class_index` và vector xác suất softmax                                                                      |
-| Chỉ số chính          | **Macro F1** trên 22 lớp và **Macro F1 nhóm 6 lớp liên quan nhựa**                                                                           |
+| Đầu ra                | Một trong **22 lớp** (E01–E03) hoặc **18 lớp** sau khi gộp lớp mơ hồ / quá hiếm (E04): tên lớp, `class_index` và vector xác suất softmax |
+| Chỉ số chính          | **Macro F1** trên toàn bộ lớp và **Macro F1 nhóm 6 lớp liên quan nhựa** (6 lớp này giữ nguyên ở mọi thí nghiệm)                              |
 | Chỉ số phụ            | Accuracy, Precision, Recall, Weighted F1, F1 từng lớp, Confusion Matrix; số tham số, kích thước file và thời gian suy luận (hướng tới robot) |
 | Ngoài phạm vi giữa kỳ | Object Detection, phục hồi ảnh dưới nước, video thời gian thực, điều khiển robot                                                             |
 
@@ -70,7 +70,7 @@ Macro F1 được chọn làm chỉ số chính vì dữ liệu mất cân bằn
 | Số video                          |                                           310 |
 | Crop hợp lệ / loại vì bbox < 8 px |                                   12.074 / 54 |
 | Crop Train / Validation / Test    |                         8.283 / 1.782 / 2.009 |
-| Crop Train / Validation / Test (`v2_crop224`) | 7.866 / 1.687 / 1.717 |
+| Crop Train / Validation / Test (`v2_crop224`, 18 lớp) | 7.815 / 1.704 / 1.751 |
 | Kiểm tra rò rỉ dữ liệu            | Đạt: không video, không ảnh nào nằm ở hai tập |
 
 Dữ liệu **mất cân bằng mạnh**: `rov` (27%) và `trash_unknown_instance` (23%) chiếm khoảng một nửa số annotation, trong khi `trash_cup` chỉ có 59 mẫu.
@@ -90,12 +90,13 @@ Tên nhãn là loại đối tượng, _không_ phải bằng chứng chất li�
 
 | Bước | `v1_crop128` (E01–E03) | `v2_crop224` (E04) |
 |---|---|---|
+| Lớp | 22 lớp TrashCan-Instance | **18 lớp**: `trash_unknown_instance`, `trash_cup`, `trash_clothing`, `trash_wreckage` → `trash_other`; `animal_shells`, `animal_etc` → `animal_other`; giữ nguyên 6 lớp nhựa |
 | Crop | Theo bbox COCO, lề 10% mỗi phía, resize thẳng (đối tượng có thể méo) | **Cửa sổ vuông** quanh tâm bbox, lề 15%, giữ đúng tỉ lệ đối tượng |
 | Bbox tối thiểu | 8 px | 16 px |
-| Kích thước | 128 × 128 RGB | **224 × 224** RGB (kích thước MobileNetV2 được tiền huấn luyện) |
+| Kích thước | 128 × 128 RGB | **224 × 224** RGB (kích thước ảnh tiền huấn luyện ImageNet) |
 | Chia tập | Gộp train + val gốc, **chia lại theo video** 70 / 15 / 15, seed 42; thử ngẫu nhiên nhiều hoán vị | Vẫn theo video, seed 42, nhưng **tìm phân công video giữ tỉ lệ 70 / 15 / 15 cho từng lớp** (lớp hiếm cũng có mẫu ở cả 3 tập) |
 | Augmentation (chỉ Train) | Không (E02 có, trên CNN) | Cắt ngẫu nhiên 80–100%, lật ngang, xoay ±10°, đổi độ sáng / tương phản / màu |
-| Mất cân bằng | Class weights `balanced` | Giữ nguyên |
+| Mất cân bằng | Class weights `balanced` | Lấy mẫu theo √(1/số mẫu) + focal loss (γ = 2) |
 | Chuẩn hóa | CNN tự thiết kế: pixel / 255 · MobileNetV2: mean/std ImageNet | mean/std ImageNet |
 
 Mọi annotation của một video luôn nằm trong cùng một tập để tránh rò rỉ dữ liệu.
@@ -104,7 +105,7 @@ Thông số dùng chung được khóa trong [`configs/data_contract.yaml`](conf
 
 ### 3.4. Hạn chế đã biết
 
-- `v1_crop128`: chia theo video làm lệch số mẫu giữa các tập, vài lớp chỉ có 1–4 mẫu ở Validation hoặc Test (`animal_shells` 1, `trash_bottle` 3 ở Val; `animal_starfish` 4 ở Test). `v2_crop224` khắc phục: mọi lớp có ít nhất 8 mẫu ở Val và Test, tỉ lệ ảnh 69,8 / 15,0 / 15,2%.
+- `v1_crop128`: chia theo video làm lệch số mẫu giữa các tập, vài lớp chỉ có 1–4 mẫu ở Validation hoặc Test (`animal_shells` 1, `trash_bottle` 3 ở Val; `animal_starfish` 4 ở Test). `v2_crop224` khắc phục: mọi lớp có ít nhất 10 mẫu ở Val và Test, tỉ lệ ảnh 70,0 / 15,1 / 15,0%.
 - `v2_crop224` bỏ 858 annotation (7,1%) có bbox cạnh < 16 px; các vật thể rất nhỏ này không được mô hình học.
 - Nhiều bbox nhỏ (trung vị khoảng 90 × 66 px ở Train); một số bbox có toạ độ vượt ngoài ảnh (được giới hạn lại khi crop).
 - `trash_unknown_instance` là lớp mơ hồ, dễ nhầm với các lớp rác khác.
@@ -136,12 +137,19 @@ Input 128×128×3 → Rescaling(1/255)
 
 Adam (lr 1e-3), batch 64, tối đa 40 epoch, EarlyStopping (patience 6), ReduceLROnPlateau (patience 3).
 
-**Học chuyển giao MobileNetV2 (E03–E04, PyTorch)**
+**Học chuyển giao MobileNetV2 (E03, PyTorch)**
 
 - Backbone `torchvision` MobileNetV2 tiền huấn luyện ImageNet; thay bộ phân loại bằng `Dropout → Linear(1280, 22)`. Khoảng 2,25 triệu tham số, file 9,2 MB, suy luận khoảng 30 ms/ảnh trên CPU.
 - **Pha 1:** đóng băng backbone, chỉ huấn luyện bộ phân loại (lr 1e-3, tối đa 15 epoch).
 - **Pha 2:** mở khoá các block cuối (`features[14:]`), học với lr nhỏ (1e-5 cho backbone, 1e-4 cho bộ phân loại), giữ BatchNorm ở chế độ eval.
 - Chọn checkpoint có `val_loss` thấp nhất giữa hai pha.
+
+**Mô hình cải tiến E04 — EfficientNet-B0 (PyTorch)**
+
+- Backbone `torchvision` EfficientNet-B0 tiền huấn luyện ImageNet (khoảng 4 triệu tham số), `Dropout(0.3) → Linear(1280, 18)`; vẫn đủ nhẹ cho robot.
+- Cùng quy trình 2 pha như E03; pha 2 mở khoá `features[4:]` (5/9 khối) với lr 5e-5 (backbone) / 5e-4 (đầu phân loại).
+- Bù lớp hiếm: `WeightedRandomSampler` lấy mẫu theo √(1/số mẫu) của lớp + focal loss (γ = 2), không dùng class weights.
+- Dừng sớm và chọn checkpoint theo **Macro F1 Validation** (chỉ số chính) thay vì `val_loss`.
 
 ### 4.3. Nguyên tắc thực nghiệm
 
@@ -157,13 +165,13 @@ Adam (lr 1e-3), batch 64, tối đa 40 epoch, EarlyStopping (patience 6), Reduce
 | E02    | CNN tự thiết kế | + Augmentation (lật ngang, xoay, zoom, tương phản) | `v1_crop128`  | `E02_augment.yaml`              |
 | E03    | MobileNetV2     | Mô hình: học chuyển giao                           | `v1_crop128`  | `E03_transfer_mobilenetv2.yaml` |
 | E03a–f | MobileNetV2     | Mỗi lần đổi một siêu tham số (dropout, lr, seed…)  | `v1_crop128`  | E03 + `--set` (xem `results/metrics/e03_candidates.csv`) |
-| E04    | MobileNetV2     | Dữ liệu: tiền xử lý và chia lại (+ augmentation khi train) | `v2_crop224` | `E04_mobilenetv2_data_v2.yaml` |
+| E04    | EfficientNet-B0 | Dữ liệu v2 (18 lớp) + backbone + bù lớp hiếm + chọn checkpoint theo Macro F1 + augmentation | `v2_crop224` | `E04_efficientnet_b0_data_v2.yaml` |
 
 Cấu hình từng thí nghiệm: `configs/experiments/` · Số liệu từng lần chạy: `results/metrics/<EXP_ID>_val.json`, `<EXP_ID>_history.csv`.
 
 ## 6. Kết quả và phân tích
 
-Tập Validation: 1.782 crop cho E01–E03 (`v1_crop128`), 1.687 crop cho E04 (`v2_crop224`). Nguồn: `results/metrics/comparison_val.csv`, `results/metrics/e03_candidates.csv`, `results/metrics/E04_val.json`.
+Tập Validation: 1.782 crop, 22 lớp cho E01–E03 (`v1_crop128`); 1.704 crop, 18 lớp cho E04 (`v2_crop224`). Nguồn: `results/metrics/comparison_val.csv`, `results/metrics/e03_candidates.csv`, `results/metrics/E04_val.json`.
 
 | EXP_ID                 |         Macro F1 |  Accuracy | Weighted F1 | Macro F1 nhóm nhựa | Macro F1 (Test) |
 | ---------------------- | ---------------: | --------: | ----------: | -----------------: | --------------: |
@@ -171,11 +179,11 @@ Tập Validation: 1.782 crop cho E01–E03 (`v1_crop128`), 1.687 crop cho E04 (`
 | E02                    |            0,065 |     0,161 |       0,167 |              0,017 |               — |
 | E03                    |            0,203 |     0,405 |       0,418 |              0,123 |               — |
 | E03f (tốt nhất E03a–f) |        **0,212** | **0,412** |   **0,420** |              0,117 |               — |
-| E04 ¹                  |        **0,219** | **0,427** |   **0,421** |              0,119 |               — |
+| E04 ¹ (EfficientNet-B0, 18 lớp) | **0,339** | **0,579** | **0,546** | **0,153** | — |
 
-Mức ngẫu nhiên của Macro F1 với 22 lớp ≈ 0,045.
+Mức ngẫu nhiên của Macro F1: ≈ 0,045 với 22 lớp, ≈ 0,056 với 18 lớp.
 
-¹ E04 dùng cách chia mới nên tập Validation khác E01–E03; so sánh với E03 chỉ mang tính tham khảo. Checkpoint chọn theo `val_loss` thấp nhất (pha 1, epoch 4) như E03. Nếu chọn theo Macro F1 Validation (chỉ số chính), checkpoint tốt nhất của E04 ở pha 2, epoch 15 đạt Macro F1 0,258, Accuracy 0,462.
+¹ E04 khác E01–E03 ở số lớp (18 so với 22) và ở tập Validation/Test (cách chia mới), nên so sánh chỉ mang tính tham khảo. Checkpoint E04 chọn theo Macro F1 Validation (pha 2, epoch 11); vì Validation vừa dùng để chọn checkpoint, con số này hơi lạc quan — số liệu chính thức là kết quả Test chạy một lần.
 
 **Nhận xét**
 
@@ -183,7 +191,8 @@ Mức ngẫu nhiên của Macro F1 với 22 lớp ≈ 0,045.
 2. **Augmentation không giúp CNN tự thiết kế** (E02 thấp hơn E01): mô hình nhỏ huấn luyện từ đầu chưa học được đặc trưng ổn định.
 3. **Kết quả theo lớp rất chênh lệch** (E03f): tốt ở `rov` (F1 0,76), `animal_eel` (0,67), `animal_starfish` (0,52); bằng 0 ở nhiều lớp ít mẫu như `trash_bottle`, `trash_tarp`, `trash_rope`, `trash_snack_wrapper`, `trash_cup`.
 4. **Mô hình học thuộc nhanh:** E03 đạt `val_loss` tốt nhất ngay ở epoch 2 trong khi loss trên Train vẫn giảm mạnh — mô hình học bối cảnh của từng video hơn là hình dạng vật thể.
-5. **Làm lại dữ liệu (E04) cải thiện có giới hạn.** So với E03, Macro F1 tăng từ 0,203 lên 0,219 và Accuracy từ 0,405 lên 0,427; Macro F1 nhóm nhựa gần như không đổi (0,123 → 0,119). Augmentation giúp mô hình học lâu hơn (pha 2 vẫn cải thiện Macro F1 đến epoch 15) nhưng `val_loss` gần như đứng yên quanh 1,9–2,1 trong khi loss Train giảm còn 0,44: khoảng cách giữa các video vẫn là trở ngại chính. Lớp tốt nhất: `rov` (F1 0,77), `animal_fish` (0,60), `trash_container` (0,55); vẫn bằng 0 ở `animal_shells`, `trash_snack_wrapper`, `trash_cup`, `trash_wreckage`, `trash_rope`.
+5. **E04 cải thiện rõ nhất.** Kết hợp dữ liệu 224×224 chia lại theo từng lớp, gộp lớp mơ hồ / quá hiếm, EfficientNet-B0, bù lớp hiếm và chọn checkpoint theo Macro F1: Macro F1 0,339, Accuracy 57,9% (E03: 0,203 và 40,5%). Một lần thử trước đó chỉ làm lại dữ liệu và giữ MobileNetV2 (22 lớp) chỉ đạt Macro F1 0,219, Accuracy 42,7%: phần lớn cải thiện đến từ backbone mạnh hơn và việc gộp lớp. Tốt nhất ở `rov` (F1 0,91), `animal_crab` (0,69), `animal_eel` (0,59), `animal_fish` (0,58).
+6. **Hạn chế còn lại.** `trash_pipe`, `trash_bottle`, `trash_snack_wrapper` vẫn F1 = 0 và `trash_bag` chỉ 0,16: nhiều vật rác bị đoán vào lớp gộp `trash_other` (lớp lớn thứ hai), nên Macro F1 nhóm nhựa chỉ tăng nhẹ (0,153). Loss Train về gần 0 trong khi loss Validation đứng quanh 1,55: mô hình vẫn học thuộc bối cảnh video.
 
 **Nguyên nhân chính nằm ở dữ liệu** và là cơ sở cho E04: ảnh 128×128 nhỏ hơn kích thước MobileNetV2 được tiền huấn luyện (224×224); phân bố lớp giữa các tập lệch mạnh do chia theo video; nhiều bbox rất nhỏ; hai lớp lớn chiếm một nửa dữ liệu.
 
@@ -209,8 +218,8 @@ python -m src.preprocessing --raw-root <thư mục TrashCan> --out-dir data/proc
 python -m src.train --config configs/experiments/E03_transfer_mobilenetv2.yaml --processed-dir data/processed/v1_crop128
 
 # Dữ liệu v2 + huấn luyện E04
-python -m src.preprocessing --raw-root <thư mục TrashCan> --out-dir data/processed/v2_crop224 --contract configs/data_contract_v2.yaml
-python -m src.train --config configs/experiments/E04_mobilenetv2_data_v2.yaml --processed-dir data/processed/v2_crop224
+python -m src.preprocessing --raw-root <thư mục TrashCan> --out-dir data/processed/v2_crop224 --contract configs/data_contract_v2.yaml --mapping-out configs/class_mapping_v2.json
+python -m src.train --config configs/experiments/E04_efficientnet_b0_data_v2.yaml --processed-dir data/processed/v2_crop224
 
 # Dự đoán (checkpoint Keras)
 python main.py --image path/to/crop.jpg --model runs/E01_<thời gian>/best.keras
@@ -232,7 +241,8 @@ ocean-plastic-ml-starter/
 ├── .github/                         # Mẫu issue, mẫu PR, CODEOWNERS
 ├── configs/
 │   ├── data_contract.yaml           # Thông số dữ liệu v1 (E01–E03)
-│   ├── data_contract_v2.yaml        # Thông số dữ liệu v2 (E04)
+│   ├── data_contract_v2.yaml        # Thông số dữ liệu v2 (E04, 18 lớp)
+│   ├── class_mapping_v2.json        # 18 lớp sau khi gộp (E04)
 │   ├── class_mapping.json           # category_id → class_name → class_index
 │   └── experiments/                 # E01, E02, E03, E04 (.yaml)
 ├── data/                            # Chỉ có README.md; dữ liệu lưu trên Drive (xem data/README.md)
@@ -241,7 +251,7 @@ ocean-plastic-ml-starter/
 │   ├── dataset_report.md            # Thống kê dữ liệu, cách chia tập
 │   ├── evaluation_plan.md           # Cách đánh giá
 │   ├── colab_setup.md               # Hướng dẫn chạy trên Colab
-│   ├── class_scope_analysis.md      # Lý do chọn 22 lớp
+│   ├── class_scope_analysis.md      # Lý do chọn phạm vi lớp
 │   └── visual_inspection_protocol.md # Kiểm tra ảnh crop và nhãn
 ├── notebooks/
 │   ├── 00_pipeline_colab.ipynb      # Chạy toàn bộ quy trình
@@ -250,7 +260,7 @@ ocean-plastic-ml-starter/
 ├── src/                             # Code dùng chung, notebook chỉ gọi lại
 │   ├── eda.py                       # Thống kê và vẽ biểu đồ dữ liệu (notebook 01)
 │   ├── preprocessing.py             # Đọc data contract, tải dữ liệu, crop, chia tập (notebook 02)
-│   ├── train.py                     # Huấn luyện E01–E02 (Keras) và E03–E04 (PyTorch) (notebook 03)
+│   ├── train.py                     # Huấn luyện E01–E02 (Keras), E03 MobileNetV2 và E04 EfficientNet-B0 (PyTorch) (notebook 03)
 │   ├── evaluate.py                  # Chỉ số, confusion matrix, đánh giá checkpoint (notebook 04)
 │   └── predict.py                   # Dự đoán ảnh mới (main.py)
 ├── tests/                           # pytest cho từng module

@@ -36,4 +36,4 @@ def test_pipeline_is_chosen_from_config():
     assert is_keras_config(load_experiment_config(exp / "E01_baseline.yaml"))
     assert is_keras_config(load_experiment_config(exp / "E02_augment.yaml"))
     assert not is_keras_config(load_experiment_config(exp / "E03_transfer_mobilenetv2.yaml"))
-    assert not is_keras_config(load_experiment_config(exp / "E04_mobilenetv2_data_v2.yaml"))
+    assert not is_keras_config(load_experiment_config(exp / "E04_efficientnet_b0_data_v2.yaml"))

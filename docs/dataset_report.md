@@ -113,40 +113,40 @@ python -m src.preprocessing --raw-root <thư-mục-TrashCan> --out-dir data/proc
 
 ## 8. Phiên bản `v2_crop224` (E04)
 
-E03 (MobileNetV2 trên `v1_crop128`) chỉ đạt Macro F1 Validation 0,203. Phân tích ở mục 6 cho thấy nguyên nhân chính nằm ở dữ liệu, nên E04 giữ nguyên mô hình và cách huấn luyện của E03, chỉ làm lại dữ liệu. Thông số khoá trong `configs/data_contract_v2.yaml`; cấu hình thí nghiệm `configs/experiments/E04_mobilenetv2_data_v2.yaml`.
+E03 (MobileNetV2 trên `v1_crop128`) chỉ đạt Macro F1 Validation 0,203. Phân tích ở mục 6 cho thấy nguyên nhân chính nằm ở dữ liệu, nên E04 làm lại dữ liệu (mục này) cùng với mô hình và cách huấn luyện (xem README). Thông số khoá trong `configs/data_contract_v2.yaml`; danh sách lớp `configs/class_mapping_v2.json`; cấu hình thí nghiệm `configs/experiments/E04_efficientnet_b0_data_v2.yaml`.
 
 | Thông số | v1 | v2 | Lý do |
 |---|---|---|---|
-| Phạm vi lớp | 22 lớp | 22 lớp, cùng `class_mapping.json` | Giữ so sánh được với E01–E03 |
-| Kích thước | 128×128 | 224×224 | MobileNetV2 được tiền huấn luyện ở 224×224; ảnh 128 làm mất chi tiết của vật nhỏ |
+| Phạm vi lớp | 22 lớp | **18 lớp**: `trash_unknown_instance`, `trash_cup`, `trash_clothing`, `trash_wreckage` → `trash_other`; `animal_shells`, `animal_etc` → `animal_other`; giữ nguyên 6 lớp nhựa | `trash_unknown_instance` là lớp "không rõ loại" hút nhầm từ mọi lớp rác; `trash_cup` (44 crop, 4 video), `trash_clothing` (73), `trash_wreckage` (165), `animal_shells` (121) quá ít để học và đều có F1 = 0 ở E03 |
+| Kích thước | 128×128 | 224×224 | Kích thước ảnh tiền huấn luyện ImageNet; ảnh 128 làm mất chi tiết của vật nhỏ |
 | Cách cắt | Lề 10% theo từng chiều, resize thẳng | Cửa sổ vuông quanh tâm bbox, cạnh = cạnh dài bbox × 1,3; dời vào trong ảnh khi chạm mép | Resize thẳng làm méo vật dài (ống, dây, chai); cửa sổ vuông giữ đúng tỉ lệ |
 | Lề | 10% | 15% | Thêm một ít bối cảnh cho vật nhỏ nhưng không quá nhiều để mô hình học nền video |
-| Bbox tối thiểu | 8 px | 16 px | Box nhỏ hơn 16 px phóng lên 224 gần như chỉ còn nhiễu; số crop bị loại ghi ở `dropped_fraction` trong `preprocessing_summary.json` (cảnh báo khi > 5%) |
-| Chia tập | Theo video, thử ngẫu nhiên nhiều hoán vị | Theo video, tìm phân công video sao cho **từng lớp** có tỉ lệ Train/Val/Test gần 70/15/15 (khởi tạo ngẫu nhiên, lần lượt chuyển video sang tập khác nếu giảm độ lệch, 30 lần khởi tạo, seed 42) | v1 để vài lớp chỉ có 1–4 mẫu ở Val/Test. Đã thử `StratifiedGroupKFold` trên dữ liệu thật nhưng vẫn lệch mạnh (ví dụ `trash_bottle` chỉ 14 mẫu Train, `trash_clothing` 1 mẫu Val) vì nhiều lớp chỉ có trong vài video |
+| Bbox tối thiểu | 8 px | 16 px | Box nhỏ hơn 16 px phóng lên 224 gần như chỉ còn nhiễu; số crop bị loại ghi ở `dropped_fraction` (cảnh báo khi > 5%) |
+| Chia tập | Theo video, thử ngẫu nhiên nhiều hoán vị | Theo video, tìm phân công video sao cho **từng lớp** có tỉ lệ Train/Val/Test gần 70/15/15 (khởi tạo ngẫu nhiên, lần lượt chuyển video sang tập khác nếu giảm độ lệch, 30 lần khởi tạo, seed 42) | v1 để vài lớp chỉ có 1–4 mẫu ở Val/Test. Đã thử `StratifiedGroupKFold` trên dữ liệu thật nhưng vẫn lệch mạnh (ví dụ `trash_bottle` chỉ 14 mẫu Train) vì nhiều lớp chỉ có trong vài video |
 | Augmentation | Không | Chỉ Train: cắt ngẫu nhiên 80–100%, lật ngang, xoay ±10°, độ sáng / tương phản / bão hoà ±20%, sắc độ ±5% | E03 đạt tốt nhất ở epoch 1–2 rồi học thuộc bối cảnh video; augmentation mô phỏng khác biệt ánh sáng và màu nước giữa các video |
-| Chuẩn hoá | mean/std ImageNet | Giữ nguyên | Bắt buộc với MobileNetV2 tiền huấn luyện |
-| Mất cân bằng | Class weights `balanced` | Giữ nguyên | Không đổi thêm yếu tố |
-
-**Lưu ý khi so sánh:** v2 chia lại dữ liệu nên tập Validation và Test của E04 khác E01–E03. Tập Test chưa từng được dùng nên chia lại vẫn hợp lệ, nhưng số liệu Validation của E04 không so sánh trực tiếp từng con số với E01–E03.
-
-**Tạo dữ liệu:**
-
-```bash
-python -m src.preprocessing --raw-root <thư-mục-TrashCan> --out-dir data/processed/v2_crop224 --contract configs/data_contract_v2.yaml
-```
+| Chuẩn hoá | mean/std ImageNet | Giữ nguyên | Bắt buộc với backbone tiền huấn luyện ImageNet |
+| Mất cân bằng | Class weights `balanced` | Lấy mẫu theo √(1/số mẫu) + focal loss (γ = 2) | Lớp hiếm được thấy thường hơn khi train mà không lặp quá nhiều; focal loss tập trung vào mẫu khó |
 
 **Kết quả trên dữ liệu thật** (Colab, 21/11/2026; nguồn `results/metrics/preprocessing_summary_v2.json`, `dataset_split_counts_v2.csv`, hình `results/figures/eda_v2_split_counts.png`):
 
 | Chỉ số | v1_crop128 | v2_crop224 |
 |---|---:|---:|
+| Số lớp | 22 | 18 |
 | Annotation / ảnh nguồn / video | 12.128 / 7.083 / 310 | 12.128 / 7.083 / 310 |
 | Crop hợp lệ / bị loại (box nhỏ) | 12.074 / 54 | 11.270 / 858 (7,1%) |
-| Crop Train / Val / Test | 8.283 / 1.782 / 2.009 | 7.866 / 1.687 / 1.717 |
-| Tỉ lệ ảnh nguồn Train / Val / Test | 69,9 / 14,9 / 15,2% | 69,8 / 15,0 / 15,2% |
-| Số mẫu ít nhất của một lớp ở Val/Test | 1 (`animal_shells` Val) | 8 (`trash_cup` Val) |
+| Crop Train / Val / Test | 8.283 / 1.782 / 2.009 | 7.815 / 1.704 / 1.751 |
+| Tỉ lệ ảnh nguồn Train / Val / Test | 69,9 / 14,9 / 15,2% | 70,0 / 15,1 / 15,0% |
+| Số mẫu ít nhất của một lớp ở Val/Test | 1 (`animal_shells` Val) | 10 (`trash_snack_wrapper` Test) |
+| Độ lệch lớn nhất của tỉ lệ một lớp so với 70/15/15 | — | 11,4 điểm phần trăm |
 | Kiểm tra rò rỉ video | Đạt | Đạt |
 
-Một số lớp trong nhóm nhựa ở v2 (Train / Val / Test): `trash_bottle` 70 / 14 / 40, `trash_tarp` 82 / 17 / 22, `trash_rope` 85 / 17 / 12, `trash_snack_wrapper` 42 / 10 / 20.
+Nhóm nhựa ở v2 (Train / Val / Test): `trash_bag` 619 / 130 / 136, `trash_bottle` 85 / 22 / 17, `trash_snack_wrapper` 43 / 19 / 10, `trash_tarp` 85 / 18 / 18, `trash_rope` 77 / 20 / 17, `trash_net` 88 / 19 / 19.
 
-Tỉ lệ bị loại 7,1% vượt ngưỡng cảnh báo 5% của pipeline: các box nhỏ hơn 16 px bị bỏ. Giữ nguyên ngưỡng 16 px cho E04 vì box nhỏ hơn khi phóng lên 224×224 gần như không còn chi tiết; có thể thử 12 px nếu cần giữ thêm vật nhỏ.
+Tỉ lệ bị loại 7,1% vượt ngưỡng cảnh báo 5% của pipeline: các box nhỏ hơn 16 px bị bỏ. Giữ nguyên ngưỡng 16 px vì box nhỏ hơn khi phóng lên 224×224 gần như không còn chi tiết; có thể thử 12 px nếu cần giữ thêm vật nhỏ.
 
+**Tạo dữ liệu:**
+
+```bash
+python -m src.preprocessing --raw-root <thư-mục-TrashCan> --out-dir data/processed/v2_crop224 \
+    --contract configs/data_contract_v2.yaml --mapping-out configs/class_mapping_v2.json
+```

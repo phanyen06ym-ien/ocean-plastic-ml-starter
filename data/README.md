@@ -35,7 +35,7 @@ data/
 | `DATA_VERSION`    | Dùng cho              | Thông số                                                           | Crop Train / Val / Test |
 | ----------------- | --------------------- | ------------------------------------------------------------------ | ----------------------- |
 | `v1_crop128`      | E01, E02, E03, E03a–f | 128×128, lề 10%, bỏ bbox < 8 px, chia theo video 70/15/15, seed 42 | 8.283 / 1.782 / 2.009   |
-| `v2_crop224`      | E04                   | Crop vuông 224×224, lề 15%, bỏ bbox < 16 px, chia theo video giữ 70/15/15 cho từng lớp, seed 42 | 7.866 / 1.687 / 1.717   |
+| `v2_crop224`      | E04                   | 18 lớp (gộp lớp mơ hồ / hiếm), crop vuông 224×224, lề 15%, bỏ bbox < 16 px, chia theo video giữ 70/15/15 cho từng lớp, seed 42 | 7.815 / 1.704 / 1.751   |
 
 Thông số dùng chung khai báo trong [`configs/data_contract.yaml`](../configs/data_contract.yaml). Thống kê chi tiết: [`docs/dataset_report.md`](../docs/dataset_report.md).
 

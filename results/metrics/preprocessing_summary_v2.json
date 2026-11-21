@@ -11,22 +11,22 @@
     "method": "stratified_video_search",
     "seed": 42,
     "n_restarts": 30,
-    "loss": 0.8151,
-    "classes_in_val_and_test": 22,
-    "num_classes": 22,
-    "min_class_count_val_test": 8,
-    "max_class_share_deviation": 0.2,
+    "loss": 0.187,
+    "classes_in_val_and_test": 18,
+    "num_classes": 18,
+    "min_class_count_val_test": 10,
+    "max_class_share_deviation": 0.1139,
     "image_fraction": {
-      "train": 0.6982,
-      "val": 0.1504,
-      "test": 0.1515
+      "train": 0.6997,
+      "val": 0.1505,
+      "test": 0.1498
     },
     "num_videos": 310
   },
   "crops_per_split": {
-    "train": 7866,
-    "val": 1687,
-    "test": 1717
+    "train": 7815,
+    "val": 1704,
+    "test": 1751
   },
   "classes_missing_in": {
     "train": [],

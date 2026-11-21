@@ -19,7 +19,6 @@ import argparse
 import sys
 from pathlib import Path
 
-from src.preprocessing import DEFAULT_MAPPING
 from src.predict import InferenceError, Predictor
 
 PLASTIC_TAG = " [liên quan nhựa]"
@@ -37,7 +36,8 @@ def build_parser() -> argparse.ArgumentParser:
                     help="Checkpoint .keras/.h5 (E01–E02) hoặc .pt/.pth (E03–E04)")
     ap.add_argument("--config", default=None,
                     help="config.json của run, chỉ cần cho .pt/.pth khi không nằm cùng thư mục checkpoint")
-    ap.add_argument("--mapping", default=str(DEFAULT_MAPPING), help="class_mapping.json (mặc định: configs/)")
+    ap.add_argument("--mapping", default=None,
+                    help="class_mapping.json (mặc định: file cạnh checkpoint, nếu không có thì configs/class_mapping.json)")
     ap.add_argument("--top-k", type=int, default=3, help="Số lớp có xác suất cao nhất cần in (mặc định 3)")
     ap.add_argument("--device", default=None, help="cpu hoặc cuda (chỉ dùng cho PyTorch; mặc định tự chọn)")
     ap.add_argument("--out", help="Ghi kết quả --folder ra file CSV")

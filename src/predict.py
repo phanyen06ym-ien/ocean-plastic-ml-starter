@@ -154,12 +154,25 @@ def top_k(probs: np.ndarray, mapping: list[dict[str, Any]], k: int = 3) -> list[
             for i in order]
 
 
+def default_mapping_for(checkpoint: str | Path | None) -> Path:
+    """class_mapping.json cạnh checkpoint (thư mục run, đúng số lớp của mô hình) nếu có; nếu không thì configs/."""
+    if checkpoint:
+        near = Path(checkpoint).parent / "class_mapping.json"
+        if near.exists():
+            return near
+    try:
+        from src.preprocessing import DEFAULT_MAPPING
+    except ImportError:  # pragma: no cover
+        from preprocessing import DEFAULT_MAPPING
+    return Path(DEFAULT_MAPPING)
+
+
 class Predictor:
     """Nạp mô hình + mapping một lần, dự đoán nhiều ảnh."""
 
-    def __init__(self, checkpoint: str | Path, mapping_path: str | Path, model=None,
+    def __init__(self, checkpoint: str | Path, mapping_path: str | Path | None = None, model=None,
                  config: str | Path | None = None, device: str | None = None):
-        mapping_path = Path(mapping_path)
+        mapping_path = Path(mapping_path) if mapping_path else default_mapping_for(checkpoint)
         if not mapping_path.exists():
             raise InferenceError(f"Không tìm thấy class mapping: {mapping_path}")
         self.mapping = load_class_mapping(mapping_path)

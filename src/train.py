@@ -4,9 +4,10 @@ Hai pipeline trong một module, chọn tự động theo file cấu hình (run_
 - E01–E02: CNN tự thiết kế, TensorFlow/Keras (cấu hình phẳng: filters, dense_units, ...).
   Chuẩn hoá /255 nằm trong mô hình; augmentation (E02) chỉ chạy khi train; class weights "balanced";
   thư mục run runs/<EXP_ID>_<YYYYMMDD-HHMM>/, tiếp tục huấn luyện được khi Colab ngắt (resume).
-- E03–E04: học chuyển giao MobileNetV2 ImageNet, PyTorch, 2 pha (cấu hình có khoá `model.backbone`).
-  E03 = dữ liệu v1_crop128, không augmentation. E04 = dữ liệu v2_crop224 (configs/data_contract_v2.yaml)
-  + augmentation chỉ trên Train; mô hình và cách huấn luyện giữ nguyên E03.
+- E03–E04: học chuyển giao ImageNet, PyTorch, 2 pha (cấu hình có khoá `model.backbone`).
+  E03 = MobileNetV2, dữ liệu v1_crop128 (22 lớp), class weights, chọn checkpoint theo val_loss.
+  E04 = EfficientNet-B0, dữ liệu v2_crop224 (18 lớp, configs/data_contract_v2.yaml), augmentation chỉ trên Train,
+  lấy mẫu bù lớp hiếm (training.sampler) + focal loss (training.loss: focal), chọn checkpoint theo val Macro F1.
 
 TensorFlow và PyTorch chỉ được import khi cần, nên phần cấu hình / class weights chạy được ở mọi máy.
 
@@ -29,7 +30,7 @@ Usage (Colab):
     python -m src.train --config configs/experiments/E03_transfer_mobilenetv2.yaml \
         --processed-dir /content/processed/v1_crop128 \
         --runs-root /content/drive/MyDrive/ocean-plastic-ml/runs
-    python -m src.train --config configs/experiments/E04_mobilenetv2_data_v2.yaml \
+    python -m src.train --config configs/experiments/E04_efficientnet_b0_data_v2.yaml \
         --processed-dir /content/processed/v2_crop224 \
         --runs-root /content/drive/MyDrive/ocean-plastic-ml/runs
     add --smoke for a 1-epoch-per-phase pipeline check.
@@ -58,7 +59,7 @@ try:  # config / class-weight helpers below keep working on machines without PyT
     import torch
     import torch.nn as nn
     import torch.nn.functional as F
-    from torch.utils.data import DataLoader
+    from torch.utils.data import DataLoader, WeightedRandomSampler
     from torchvision import datasets, models, transforms
 except ImportError:  # pragma: no cover
     torch = None
@@ -257,19 +258,51 @@ def make_loaders(cfg: dict[str, Any], processed_dir: str | Path, names: list[str
     common = dict(batch_size=int(cfg["training"]["batch_size"]), num_workers=nw,
                   pin_memory=torch.cuda.is_available(),
                   worker_init_fn=_seed_worker if nw > 0 else None, persistent_workers=nw > 0)
-    train_loader = DataLoader(train_ds, shuffle=True, generator=g, **common)
+    sampler = make_sampler(train_ds.targets, cfg["training"].get("sampler"), len(names), g)
+    if sampler is not None:
+        train_loader = DataLoader(train_ds, sampler=sampler, **common)
+    else:
+        train_loader = DataLoader(train_ds, shuffle=True, generator=g, **common)
     val_loader = DataLoader(val_ds, shuffle=False, **common)
     return train_ds, val_ds, train_loader, val_loader
 
 
+def sample_weights(targets, num_classes: int, mode: str) -> np.ndarray:
+    """Trọng số lấy mẫu cho từng ảnh Train. sqrt_inverse: p(lớp) ∝ sqrt(số mẫu) (lớp hiếm được bù, không quá tay);
+    inverse: mọi lớp xuất hiện đều nhau."""
+    targets = np.asarray(targets)
+    counts = np.bincount(targets, minlength=num_classes).astype(float)
+    power = {"sqrt_inverse": 0.5, "inverse": 1.0}[mode]
+    per_class = np.zeros(num_classes)
+    per_class[counts > 0] = counts[counts > 0] ** -power
+    return per_class[targets]
+
+
+def make_sampler(targets, sampler_cfg: dict[str, Any] | None, num_classes: int, generator):
+    """WeightedRandomSampler (lấy mẫu có hoàn lại) khi training.sampler.mode được đặt; None = xáo trộn thường."""
+    if not sampler_cfg or not sampler_cfg.get("mode"):
+        return None
+    w = sample_weights(targets, num_classes, sampler_cfg["mode"])
+    return WeightedRandomSampler(torch.as_tensor(w, dtype=torch.double), num_samples=len(w), replacement=True,
+                                 generator=generator)
+
+
 # --------------------------------------------------------------------------- model
+BACKBONES = {  # tên trong config → (hàm torchvision, enum trọng số)
+    "mobilenet_v2": ("mobilenet_v2", "MobileNet_V2_Weights"),
+    "efficientnet_b0": ("efficientnet_b0", "EfficientNet_B0_Weights"),
+}
+
+
 def build_model(cfg: dict[str, Any], pretrained: bool = True) -> nn.Module:
+    """MobileNetV2 (E03) hoặc EfficientNet-B0 (E04), tiền huấn luyện ImageNet; thay classifier bằng Dropout → Linear."""
     _require_torch()
     m = cfg["model"]
-    assert m["backbone"] == "mobilenet_v2", "this script is written for torchvision mobilenet_v2"
+    assert m["backbone"] in BACKBONES, f"backbone không hỗ trợ: {m['backbone']} (có: {sorted(BACKBONES)})"
     assert float(m.get("width_mult", 1.0)) == 1.0, "pretrained weights exist only for width_mult=1.0"
-    weights = models.MobileNet_V2_Weights[m["pretrained_weights"]] if pretrained and m.get("pretrained_weights") else None
-    net = models.mobilenet_v2(weights=weights)
+    fn_name, weights_enum = BACKBONES[m["backbone"]]
+    weights = getattr(models, weights_enum)[m["pretrained_weights"]] if pretrained and m.get("pretrained_weights") else None
+    net = getattr(models, fn_name)(weights=weights)
     net.classifier = nn.Sequential(nn.Dropout(float(m["head"]["dropout"])),
                                    nn.Linear(int(m["head"]["in_features"]), int(cfg["data"]["num_classes"])))
     return net
@@ -310,28 +343,36 @@ def make_optimizer(model: nn.Module, phase: dict[str, Any], tcfg: dict[str, Any]
     return torch.optim.Adam(groups, eps=float(tcfg.get("adam_eps", 1e-7)), weight_decay=float(tcfg.get("weight_decay", 0.0)))
 
 
-def make_scheduler(opt, phase: dict[str, Any], tcfg: dict[str, Any]):
-    """Keras ReduceLROnPlateau(patience=P) cuts after P bad epochs; torch cuts after P+1, so use P-1."""
+def make_scheduler(opt, phase: dict[str, Any], tcfg: dict[str, Any], mode: str = "min"):
+    """Keras ReduceLROnPlateau(patience=P) cuts after P bad epochs; torch cuts after P+1, so use P-1.
+    mode="max" khi theo dõi val Macro F1 (E04)."""
     s = tcfg["lr_scheduler"]
     min_lr = phase.get("min_lr", s["min_lr"])       # list order = optimizer param groups
     return torch.optim.lr_scheduler.ReduceLROnPlateau(
-        opt, mode="min", factor=float(s["factor"]), patience=max(int(s["patience"]) - 1, 0),
+        opt, mode=mode, factor=float(s["factor"]), patience=max(int(s["patience"]) - 1, 0),
         threshold=1e-4, threshold_mode="abs", min_lr=min_lr)
 
 
-def weighted_ce(logits: torch.Tensor, y: torch.Tensor, class_w: torch.Tensor) -> torch.Tensor:
-    """Keras class_weight semantics: mean over the batch of (loss_i * weight[y_i])."""
-    return (F.cross_entropy(logits, y, reduction="none") * class_w[y]).mean()
+def weighted_ce(logits: torch.Tensor, y: torch.Tensor, class_w: torch.Tensor, gamma: float = 0.0) -> torch.Tensor:
+    """Keras class_weight semantics: mean over the batch of (loss_i * weight[y_i]).
+
+    gamma > 0 → focal loss (Lin et al., 2017): loss_i * (1 - p_i)^gamma, giảm trọng số mẫu dễ để mô hình
+    tập trung vào mẫu khó / lớp hiếm. gamma = 0 là cross-entropy thường.
+    """
+    ce = F.cross_entropy(logits, y, reduction="none")
+    if gamma:
+        ce = ce * (1.0 - torch.exp(-ce)).pow(gamma)
+    return (ce * class_w[y]).mean()
 
 
 # --------------------------------------------------------------------------- train / eval loops
-def train_epoch(model, loader, opt, class_w, device, phase) -> float:
+def train_epoch(model, loader, opt, class_w, device, phase, gamma: float = 0.0) -> float:
     set_train_mode(model, phase)
     total, n = 0.0, 0
     for x, y in loader:
         x, y = x.to(device, non_blocking=True), y.to(device, non_blocking=True)
         opt.zero_grad(set_to_none=True)
-        loss = weighted_ce(model(x), y, class_w)
+        loss = weighted_ce(model(x), y, class_w, gamma)
         loss.backward()
         opt.step()
         total += loss.item() * len(y)
@@ -384,14 +425,18 @@ def run_phase(model, phase: dict[str, Any], tcfg, loaders, class_w, device, run_
     train_loader, val_loader = loaders
     configure_phase(model, phase)
     opt = make_optimizer(model, phase, tcfg)
-    sched = make_scheduler(opt, phase, tcfg)
     es = phase["early_stopping"]
-    assert es["monitor"] == "val_loss" and es["mode"] == "min", "E03 keeps E01's val_loss selection rule"
-    best, best_epoch, bad, best_state = float("inf"), 0, 0, None
+    monitor = es.get("monitor", "val_loss")
+    assert (monitor, es.get("mode", "min")) in {("val_loss", "min"), ("val_macro_f1", "max")}, \
+        "early_stopping: val_loss/min (E03) hoặc val_macro_f1/max (E04)"
+    sched = make_scheduler(opt, phase, tcfg, mode="max" if monitor == "val_macro_f1" else "min")
+    gamma = float(tcfg.get("focal_gamma", 0.0)) if tcfg.get("loss") == "focal" else 0.0
+    sign = -1.0 if monitor == "val_macro_f1" else 1.0      # so sánh "nhỏ hơn là tốt hơn" cho cả hai chỉ số
+    best, best_epoch, bad, best_state, best_val_loss = float("inf"), 0, 0, None, float("nan")
     best_f1, best_f1_epoch, best_f1_val_loss = -1.0, 0, float("nan")   # extra information, not the selection rule
     for epoch in range(1, int(phase["epochs"]) + 1):
         t0 = time.time()
-        tr_loss = train_epoch(model, train_loader, opt, class_w, device, phase)
+        tr_loss = train_epoch(model, train_loader, opt, class_w, device, phase, gamma)
         val_loss, y, p = predict(model, val_loader, device)
         m = compute_metrics(y, p, names, plastic)["overall"]
         if m["macro_f1"] > best_f1:
@@ -399,15 +444,16 @@ def run_phase(model, phase: dict[str, Any], tcfg, loaders, class_w, device, run_
             torch.save({k: v.detach().cpu().clone() for k, v in model.state_dict().items()},
                        run_dir / ckpt_name.replace("best_", "bestf1_"))
         lrs = {g["name"]: g["lr"] for g in opt.param_groups}
-        sched.step(val_loss)
+        sched.step(m["macro_f1"] if monitor == "val_macro_f1" else val_loss)
         history.append({"phase": phase["name"], "epoch": epoch, "loss": tr_loss, "val_loss": val_loss,
                         "val_accuracy": m["accuracy"], "val_macro_f1": m["macro_f1"],
                         "lr_classifier": lrs["classifier"], "lr_features": lrs.get("features", 0.0),
                         "seconds": round(time.time() - t0, 1)})
         pd.DataFrame(history).to_csv(run_dir / "history.csv", index=False)
-        improved = val_loss < best
+        score = sign * (m["macro_f1"] if monitor == "val_macro_f1" else val_loss)
+        improved = score < best
         if improved:
-            best, best_epoch, bad = val_loss, epoch, 0
+            best, best_epoch, bad, best_val_loss = score, epoch, 0, val_loss
             best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
             torch.save(best_state, run_dir / ckpt_name)
         else:
@@ -419,7 +465,8 @@ def run_phase(model, phase: dict[str, Any], tcfg, loaders, class_w, device, run_
             break
     if es.get("restore_best_weights", True) and best_state is not None:
         model.load_state_dict(best_state)
-    return {"phase": phase["name"], "best_val_loss": best, "best_epoch": best_epoch, "checkpoint": ckpt_name,
+    return {"phase": phase["name"], "monitor": monitor, "best_score": sign * best, "best_val_loss": best_val_loss,
+            "best_epoch": best_epoch, "checkpoint": ckpt_name,
             "best_macro_f1": best_f1, "best_macro_f1_epoch": best_f1_epoch, "best_macro_f1_val_loss": best_f1_val_loss,
             "best_macro_f1_checkpoint": ckpt_name.replace("best_", "bestf1_")}
 
@@ -621,7 +668,8 @@ def run_training_torch(cfg: dict[str, Any], processed_dir: str | Path, runs_root
     train_ds, val_ds, train_loader, val_loader = make_loaders(cfg, processed_dir, names)
     counts = np.bincount(train_ds.targets, minlength=len(names))
     wcfg = cfg["training"]["class_weights"]
-    cw = compute_class_weights(counts, wcfg["mode"], float(wcfg.get("max_weight", 50.0)))
+    cw = compute_class_weights(counts, wcfg.get("mode"), float(wcfg.get("max_weight", 50.0)))
+    cw = cw or {i: 1.0 for i in range(len(names))}       # mode null → không trọng số lớp (E04 dùng sampler)
     class_w = torch.tensor([cw[i] for i in range(len(names))], dtype=torch.float32, device=device)
 
     cfg_out = {**cfg, "train_counts": dict(zip(names, map(int, counts))), "class_weights": cw,
@@ -642,8 +690,11 @@ def run_training_torch(cfg: dict[str, Any], processed_dir: str | Path, runs_root
     r1 = run_phase(model, p1, tcfg, loaders, class_w, device, run_dir, "best_phase1.pt", history, names, plastic)
     r2 = run_phase(model, p2, tcfg, loaders, class_w, device, run_dir, "best_phase2.pt", history, names, plastic)
 
-    # Final checkpoint = phase with the lower val_loss (same rule as E01's best.keras)
-    chosen = r2 if r2["best_val_loss"] <= r1["best_val_loss"] else r1
+    # Checkpoint cuối = pha có chỉ số theo dõi tốt hơn: val_loss thấp hơn (E01–E03) hoặc val Macro F1 cao hơn (E04)
+    if r1["monitor"] == "val_macro_f1":
+        chosen = r2 if r2["best_score"] >= r1["best_score"] else r1
+    else:
+        chosen = r2 if r2["best_val_loss"] <= r1["best_val_loss"] else r1
     state = torch.load(run_dir / chosen["checkpoint"], map_location=device)
     model.load_state_dict(state)
     torch.save(state, run_dir / "best.pt")
