@@ -13,11 +13,21 @@ Module này cung cấp toàn bộ công cụ cần thiết cho quy trình đánh
 - Trích xuất và phân tích lỗi phân loại (Error Analysis: Top Confused Pairs, Misclassified Samples).
 - Thiết kế bảng so sánh thực nghiệm (Experiment Comparison Table).
 - Xuất kết quả đánh giá ra các định dạng chuẩn (JSON, CSV, Markdown).
+- Chạy đánh giá một checkpoint trên một tập:
+    * Keras (E01–E02): evaluate_run(run_dir, processed_dir, split)
+    * PyTorch MobileNetV2 (E03–E04): evaluate_torch_checkpoint(run_dir, ckpt, processed_dir, split)
+  Tập "test" chỉ được chạy MỘT lần cho mô hình cuối.
+
+Dòng lệnh (PyTorch):
+    python -m src.evaluate --run runs/E04_<thời gian> --ckpt best.pt --processed-dir <...>/v2_crop224 --split val
+    python -m src.evaluate            # không tham số: chạy smoke test của module
 """
 
+import argparse
 import os
 import sys
 import json
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 # Bảo đảm mã hóa UTF-8 an toàn trên Windows terminal
@@ -42,7 +52,13 @@ from sklearn.metrics import (
     f1_score,
     confusion_matrix,
     classification_report,
+    precision_recall_fscore_support,
 )
+
+try:
+    from src.preprocessing import class_names, load_class_mapping, plastic_indices
+except ImportError:  # pragma: no cover
+    from preprocessing import class_names, load_class_mapping, plastic_indices
 
 
 def compute_classification_metrics(
@@ -1014,5 +1030,198 @@ def smoke_test() -> bool:
     return True
 
 
+# =============================================================================
+# CHẠY ĐÁNH GIÁ MỘT CHECKPOINT (Keras E01–E02)
+# Kết quả theo quy ước tên file:
+#     results/metrics/<EXP_ID>_<split>.json, <EXP_ID>_<split>_predictions.csv
+#     results/figures/<EXP_ID>_<split>_confusion_matrix.png, <EXP_ID>_learning_curves.png,
+#                     <EXP_ID>_<split>_misclassified.png
+# Báo cáo hai cấp: tổng thể 22 lớp và nhóm lớp liên quan nhựa.
+# =============================================================================
+def group_metrics(y_true, y_pred, indices: list[int]) -> dict[str, Any]:
+    """Macro P/R/F1 chỉ trên các lớp trong `indices` (mô hình vẫn dự đoán 22 lớp).
+
+    Lớp không có mẫu thật trong tập đánh giá bị loại khỏi trung bình và được liệt kê.
+    """
+    y_true, y_pred = np.asarray(y_true), np.asarray(y_pred)
+    present = [i for i in indices if (y_true == i).any()]
+    if not present:
+        return {"classes": indices, "classes_evaluated": [], "macro_precision": None, "macro_recall": None, "macro_f1": None}
+    p, r, f, s = precision_recall_fscore_support(y_true, y_pred, labels=present, zero_division=0)
+    return {
+        "classes": indices,
+        "classes_evaluated": present,
+        "classes_without_samples": [i for i in indices if i not in present],
+        "macro_precision": float(p.mean()), "macro_recall": float(r.mean()), "macro_f1": float(f.mean()),
+        "support": int(s.sum()),
+    }
+
+
+def summarize(y_true, y_pred, probs, mapping: list[dict[str, Any]], exp_id: str, split: str) -> dict[str, Any]:
+    names = class_names(mapping)
+    labels = list(range(len(names)))
+    overall = compute_classification_metrics(y_true, y_pred, labels=labels, target_names=names)
+    present = sorted(set(np.asarray(y_true).tolist()))
+    p, r, f, _ = precision_recall_fscore_support(y_true, y_pred, labels=present, zero_division=0)
+    return {
+        "exp_id": exp_id,
+        "split": split,
+        "num_samples": int(len(y_true)),
+        "num_classes": len(names),
+        "overall": overall,
+        "macro_f1_present_classes": float(f.mean()),   # chỉ tính lớp có mẫu trong tập này
+        "plastic_related": group_metrics(y_true, y_pred, plastic_indices(mapping)),
+        "note": "Kết quả trên TrashCan-Instance; lớp có support nhỏ cần diễn giải thận trọng.",
+    }
+
+
+def predict_split(model, processed_dir: str | Path, split: str, mapping: list[dict[str, Any]],
+                  input_size: int = 128, batch_size: int = 128) -> tuple[np.ndarray, np.ndarray, list[str]]:
+    """Dự đoán toàn bộ ảnh của một tập theo thứ tự cố định. Trả (y_true, probs, file_paths)."""
+    import tensorflow as tf
+    names = class_names(mapping)
+    ds = tf.keras.utils.image_dataset_from_directory(
+        str(Path(processed_dir) / split), labels="inferred", label_mode="int", class_names=names, color_mode="rgb",
+        image_size=(input_size, input_size), batch_size=batch_size, shuffle=False)
+    paths = list(ds.file_paths)
+    y_true = np.concatenate([y.numpy() for _, y in ds]) if paths else np.array([], dtype=int)
+    probs = model.predict(ds, verbose=0) if paths else np.zeros((0, len(names)))
+    return y_true, probs, paths
+
+
+def evaluate_run(run_dir: str | Path, processed_dir: str | Path, split: str = "val",
+                 results_dir: str | Path = "results", checkpoint: str = "best.keras") -> dict[str, Any]:
+    """Đánh giá checkpoint trong run_dir trên `split`; ghi file kết quả; trả dict chỉ số."""
+    import tensorflow as tf
+    if split == "test":
+        print("[CHÚ Ý] Đang đánh giá tập TEST — chỉ chạy MỘT lần cho mô hình cuối (ADR mô hình cuối).")
+    run_dir, results_dir = Path(run_dir), Path(results_dir)
+    cfg = json.loads((run_dir / "config.json").read_text(encoding="utf-8"))
+    exp_id = cfg["exp_id"]
+    mapping = load_class_mapping(run_dir / "class_mapping.json")
+    names = class_names(mapping)
+    model = tf.keras.models.load_model(str(run_dir / checkpoint))
+
+    y_true, probs, paths = predict_split(model, processed_dir, split, mapping, cfg["input_shape"][0])
+    y_pred = probs.argmax(axis=1)
+    result = summarize(y_true, y_pred, probs, mapping, exp_id, split)
+    result.update({"run_dir": str(run_dir), "checkpoint": checkpoint, "data_version": cfg.get("data_version")})
+
+    (results_dir / "metrics").mkdir(parents=True, exist_ok=True)
+    (results_dir / "figures").mkdir(parents=True, exist_ok=True)
+    with open(results_dir / "metrics" / f"{exp_id}_{split}.json", "w", encoding="utf-8") as f:
+        json.dump(result, f, ensure_ascii=False, indent=2, default=float)
+    pd.DataFrame({"file_path": [Path(p).name for p in paths], "y_true": y_true, "y_pred": y_pred,
+                  "true_name": [names[i] for i in y_true], "pred_name": [names[i] for i in y_pred],
+                  "confidence": probs.max(axis=1) if len(probs) else []}
+                 ).to_csv(results_dir / "metrics" / f"{exp_id}_{split}_predictions.csv", index=False)
+
+    cm = compute_confusion_matrix(y_true, y_pred, labels=list(range(len(names))), normalize="true")
+    plot_confusion_matrix(np.nan_to_num(cm), target_names=names, normalize=True, figsize=(14, 12),
+                             title=f"{exp_id} — {split} (normalized)",
+                             save_path=str(results_dir / "figures" / f"{exp_id}_{split}_confusion_matrix.png"))
+    hist_path = run_dir / "history.csv"
+    if hist_path.exists():
+        plot_learning_curves(pd.read_csv(hist_path).to_dict(orient="list"), title_prefix=exp_id,
+                                save_path=str(results_dir / "figures" / f"{exp_id}_learning_curves.png"))
+    wrong = identify_misclassified_samples(y_true, y_pred, probabilities=probs, target_names=names)
+    if wrong:
+        from PIL import Image
+        wrong = sorted(wrong, key=lambda w: -w.get("confidence", 0))[:16]
+        imgs = [np.asarray(Image.open(paths[w["sample_index"]]).convert("RGB")) for w in wrong]
+        plot_misclassified_samples(imgs, [{**w, "sample_index": i} for i, w in enumerate(wrong)], target_names=names,
+                                      max_samples=16, figsize=(12, 12),
+                                      save_path=str(results_dir / "figures" / f"{exp_id}_{split}_misclassified.png"))
+    return result
+
+
+def comparison_table(metric_files: list[str | Path]) -> pd.DataFrame:
+    """Bảng so sánh các thí nghiệm từ file results/metrics/<EXP_ID>_<split>.json."""
+    rows = []
+    for p in metric_files:
+        r = json.loads(Path(p).read_text(encoding="utf-8"))
+        o, g = r["overall"], r["plastic_related"]
+        rows.append({"exp_id": r["exp_id"], "split": r["split"], "n": r["num_samples"],
+                     "accuracy": o["accuracy"], "macro_f1": o["macro_f1"], "weighted_f1": o.get("weighted_f1"),
+                     "macro_f1_present": r.get("macro_f1_present_classes", o["macro_f1"]), "plastic_macro_f1": g["macro_f1"],
+                     "data_version": r.get("data_version")})
+    return pd.DataFrame(rows).round(4)
+
+
+# =============================================================================
+# CHẠY ĐÁNH GIÁ MỘT CHECKPOINT (PyTorch MobileNetV2, E03–E04)
+# =============================================================================
+def evaluate_torch_checkpoint(run_dir: str | Path, checkpoint: str, processed_dir: str | Path, split: str = "val",
+                              out_dir: str | Path | None = None, device: str | None = None) -> dict[str, Any]:
+    """Đánh giá một checkpoint PyTorch (state_dict do src/train.py lưu) trên `split`.
+
+    Đọc <run_dir>/config.json; ghi cạnh checkpoint (hoặc vào out_dir):
+        <EXP_ID>_<split>.json                  Macro F1, Macro F1 nhóm nhựa, chỉ số từng lớp, kích thước, thời gian
+        <EXP_ID>_<split>_confusion_counts.csv  ma trận nhầm lẫn (số mẫu)
+        <EXP_ID>_<split>_predictions.csv       đường dẫn ảnh, nhãn thật, nhãn dự đoán
+    split="test" chỉ dùng MỘT lần cho mô hình cuối.
+    """
+    import torch
+    from torch.utils.data import DataLoader
+    try:
+        from src.train import (build_model, build_transform, compute_metrics, find_class_mapping, measure_efficiency,
+                               ordered_image_folder, predict)
+    except ImportError:  # pragma: no cover
+        from train import (build_model, build_transform, compute_metrics, find_class_mapping, measure_efficiency,
+                           ordered_image_folder, predict)
+
+    if split not in ("train", "val", "test"):
+        raise ValueError(f"split phải là train/val/test, nhận: {split}")
+    if split == "test":
+        print("[CHÚ Ý] Đang đánh giá tập TEST — chỉ chạy MỘT lần cho mô hình cuối.")
+    run = Path(run_dir)
+    cfg = json.loads((run / "config.json").read_text(encoding="utf-8"))
+    device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+    mapping = load_class_mapping(find_class_mapping(processed_dir, cfg["data"].get("class_mapping_path", "class_mapping.json")))
+    names, plastic = class_names(mapping), plastic_indices(mapping)
+    if names != list(cfg["data"].get("class_names", names)):
+        raise ValueError("Thứ tự lớp khác với lúc huấn luyện")
+
+    ds = ordered_image_folder(Path(processed_dir) / split, names, build_transform(cfg))
+    loader = DataLoader(ds, batch_size=int(cfg["training"]["batch_size"]), shuffle=False, num_workers=0)
+    model = build_model(cfg, pretrained=False).to(device)
+    model.load_state_dict(torch.load(run / checkpoint, map_location=device))
+    loss, y, p = predict(model, loader, device)
+    metrics = compute_metrics(y, p, names, plastic)
+    metrics.update({"exp_id": cfg["exp_id"], "checkpoint": checkpoint, "split": split, "num_samples": int(len(y)),
+                    "num_classes": len(names), "loss_unweighted": loss, "data_version": cfg["data"].get("data_version"),
+                    "run_dir": str(run), "efficiency": measure_efficiency(model, cfg, device)})
+
+    out = Path(out_dir) if out_dir else run
+    out.mkdir(parents=True, exist_ok=True)
+    stem = f"{cfg['exp_id']}_{split}"
+    (out / f"{stem}.json").write_text(json.dumps(metrics, ensure_ascii=False, indent=2), encoding="utf-8")
+    cm = confusion_matrix(y, p, labels=list(range(len(names))))
+    pd.DataFrame(cm, index=names, columns=names).to_csv(out / f"{stem}_confusion_counts.csv")
+    pd.DataFrame({"path": [Path(s[0]).relative_to(processed_dir).as_posix() for s in ds.samples],
+                  "y_true": y, "y_pred": p}).to_csv(out / f"{stem}_predictions.csv", index=False)
+    o = metrics["overall"]
+    print(f"{cfg['exp_id']} / {checkpoint} / {split}: macro_f1 {o['macro_f1']:.4f}  "
+          f"plastic6 {metrics['plastic_related']['macro_f1']:.4f}  acc {o['accuracy']:.4f}")
+    return metrics
+
+
+def main(argv: list[str] | None = None) -> None:
+    ap = argparse.ArgumentParser(description="Đánh giá checkpoint PyTorch (E03–E04); không tham số = smoke test")
+    ap.add_argument("--run", help="thư mục run, ví dụ runs/E04_20261121-1000")
+    ap.add_argument("--ckpt", default="best.pt", help="checkpoint trong thư mục run")
+    ap.add_argument("--processed-dir")
+    ap.add_argument("--split", default="val", choices=["train", "val", "test"])
+    ap.add_argument("--out-dir", default=None)
+    ap.add_argument("--device", default=None)
+    a = ap.parse_args(argv)
+    if not a.run:
+        smoke_test()
+        return
+    if not a.processed_dir:
+        ap.error("--processed-dir là bắt buộc khi có --run")
+    evaluate_torch_checkpoint(a.run, a.ckpt, a.processed_dir, a.split, a.out_dir, a.device)
+
+
 if __name__ == "__main__":
-    smoke_test()
+    main()

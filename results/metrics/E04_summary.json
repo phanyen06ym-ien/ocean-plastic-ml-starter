@@ -1,0 +1,59 @@
+{
+  "exp_id": "E04",
+  "run_dir": "/content/drive/MyDrive/ocean-plastic-ml/runs/E04_20261121-0952",
+  "phase1": {
+    "phase": "frozen_backbone",
+    "best_val_loss": 1.9191145973228179,
+    "best_epoch": 4,
+    "checkpoint": "best_phase1.pt",
+    "best_macro_f1": 0.2393223333603575,
+    "best_macro_f1_epoch": 7,
+    "best_macro_f1_val_loss": 1.9309182769106066,
+    "best_macro_f1_checkpoint": "bestf1_phase1.pt"
+  },
+  "phase2": {
+    "phase": "finetune_last_blocks",
+    "best_val_loss": 1.988845935995648,
+    "best_epoch": 12,
+    "checkpoint": "best_phase2.pt",
+    "best_macro_f1": 0.25779886944150315,
+    "best_macro_f1_epoch": 15,
+    "best_macro_f1_val_loss": 1.9951739738025676,
+    "best_macro_f1_checkpoint": "bestf1_phase2.pt"
+  },
+  "selected": {
+    "phase": "frozen_backbone",
+    "best_val_loss": 1.9191145973228179,
+    "best_epoch": 4,
+    "checkpoint": "best_phase1.pt",
+    "best_macro_f1": 0.2393223333603575,
+    "best_macro_f1_epoch": 7,
+    "best_macro_f1_val_loss": 1.9309182769106066,
+    "best_macro_f1_checkpoint": "bestf1_phase1.pt"
+  },
+  "macro_f1_val": 0.21884969271718974,
+  "accuracy_val": 0.42679312388855956,
+  "macro_f1_plastic6_val": 0.11885843042307837,
+  "efficiency": {
+    "params": {
+      "total": 2252054,
+      "trainable_phase2": 1709526
+    },
+    "file_size_mb": 9.235,
+    "input_size": [
+      224,
+      224
+    ],
+    "torch_threads": 1,
+    "inference_ms_cpu_bs1": 27.418,
+    "inference_ms_cuda_bs1": 4.918
+  },
+  "baseline_reference": {
+    "macro_f1_val": 0.203,
+    "accuracy_val": 0.405,
+    "macro_f1_plastic6_val": 0.123,
+    "best_val_loss": 2.205,
+    "random_chance_macro_f1": 0.045
+  },
+  "overrides": []
+}

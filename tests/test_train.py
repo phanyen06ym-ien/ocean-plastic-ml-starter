@@ -28,3 +28,12 @@ def test_experiment_configs_differ_only_in_augmentation():
     diff = {k for k in set(e1) | set(e2) if e1.get(k) != e2.get(k)}
     assert diff == {"exp_id", "description", "augmentation"}
     assert e1["num_classes"] == 22 and e1["input_shape"] == [128, 128, 3]
+
+
+def test_pipeline_is_chosen_from_config():
+    from src.train import is_keras_config
+    exp = ROOT / "configs/experiments"
+    assert is_keras_config(load_experiment_config(exp / "E01_baseline.yaml"))
+    assert is_keras_config(load_experiment_config(exp / "E02_augment.yaml"))
+    assert not is_keras_config(load_experiment_config(exp / "E03_transfer_mobilenetv2.yaml"))
+    assert not is_keras_config(load_experiment_config(exp / "E04_mobilenetv2_data_v2.yaml"))

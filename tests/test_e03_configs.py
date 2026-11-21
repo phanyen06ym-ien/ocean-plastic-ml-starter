@@ -43,7 +43,7 @@ def test_e04_keeps_e03_model_and_training_changes_only_data():
 
 
 def test_e04_matches_data_contract_v2():
-    from src.common import load_contract
+    from src.preprocessing import load_contract
     root = EXP.parents[1]
     e04 = load_experiment_config(EXP / "E04_mobilenetv2_data_v2.yaml")
     contract = load_contract(root / e04["data"]["contract"])

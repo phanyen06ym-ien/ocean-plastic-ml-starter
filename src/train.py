@@ -1,11 +1,16 @@
-"""Training pipeline (PyTorch): E03–E04 transfer learning with torchvision MobileNetV2, 2 phases (S3-CNN).
+"""Huấn luyện mọi thí nghiệm E01–E04 (S1–S3-CNN).
 
-E03 = data v1_crop128, no augmentation. E04 = data v2_crop224 (configs/data_contract_v2.yaml) + train-only
-augmentation (`augmentation.enabled: true` in configs/experiments/E04_*.yaml); model and training are E03's.
+Hai pipeline trong một module, chọn tự động theo file cấu hình (run_training / dòng lệnh):
+- E01–E02: CNN tự thiết kế, TensorFlow/Keras (cấu hình phẳng: filters, dense_units, ...).
+  Chuẩn hoá /255 nằm trong mô hình; augmentation (E02) chỉ chạy khi train; class weights "balanced";
+  thư mục run runs/<EXP_ID>_<YYYYMMDD-HHMM>/, tiếp tục huấn luyện được khi Colab ngắt (resume).
+- E03–E04: học chuyển giao MobileNetV2 ImageNet, PyTorch, 2 pha (cấu hình có khoá `model.backbone`).
+  E03 = dữ liệu v1_crop128, không augmentation. E04 = dữ liệu v2_crop224 (configs/data_contract_v2.yaml)
+  + augmentation chỉ trên Train; mô hình và cách huấn luyện giữ nguyên E03.
 
-Replaces the Keras version used for E01/E02 (still available in git history, commit 7520c2b).
-Follows configs/experiments/E03_*.yaml and mirrors the E01 Keras pipeline
-so the comparison stays fair:
+TensorFlow và PyTorch chỉ được import khi cần, nên phần cấu hình / class weights chạy được ở mọi máy.
+
+Pipeline PyTorch bám theo pipeline Keras của E01 để so sánh công bằng:
 - same data folders <processed_dir>/{train,val}/<class_name>/*.jpg, same class order (class_mapping.json);
 - same class weights (compute_class_weights from src/train.py, "balanced");
 - Keras-style class weighting: per-sample loss * weight, plain mean over the batch;
@@ -18,6 +23,9 @@ Phase 1: backbone frozen (kept in eval mode), train the classifier head.
 Phase 2: unfreeze model.features[k:], BatchNorm kept in eval mode, new optimizer with small learning rates.
 
 Usage (Colab):
+    python -m src.train --config configs/experiments/E01_baseline.yaml \
+        --processed-dir /content/processed/v1_crop128 \
+        --runs-root /content/drive/MyDrive/ocean-plastic-ml/runs
     python -m src.train --config configs/experiments/E03_transfer_mobilenetv2.yaml \
         --processed-dir /content/processed/v1_crop128 \
         --runs-root /content/drive/MyDrive/ocean-plastic-ml/runs
@@ -36,6 +44,7 @@ import argparse
 import json
 import os
 import random
+import sys
 import tempfile
 import time
 from datetime import datetime
@@ -55,11 +64,11 @@ except ImportError:  # pragma: no cover
     torch = None
 
 try:
-    from src.common import DEFAULT_MAPPING, class_names, load_class_mapping, load_yaml, plastic_indices
+    from src.preprocessing import DEFAULT_MAPPING, class_names, load_class_mapping, load_yaml, plastic_indices
 except ImportError:  # pragma: no cover
-    from common import DEFAULT_MAPPING, class_names, load_class_mapping, load_yaml, plastic_indices
+    from preprocessing import DEFAULT_MAPPING, class_names, load_class_mapping, load_yaml, plastic_indices
 
-# Legacy E01/E02 (Keras) defaults, kept so existing tests and notebooks can still import them.
+# Mặc định cho cấu hình Keras (E01–E02); file configs/experiments/E01_*.yaml, E02_*.yaml ghi đè lên.
 DEFAULT_CONFIG: dict[str, Any] = {
     "exp_id": "E01", "description": "CNN baseline + class weights", "seed": 42, "data_version": "v1_crop128",
     "input_shape": [128, 128, 3], "num_classes": 22, "filters": [32, 64, 128, 256], "batch_norm": True,
@@ -93,7 +102,14 @@ def load_experiment_config(path: str | Path) -> dict[str, Any]:
     base = cfg.pop("base_config", None)
     if base:
         cfg = _deep_merge(load_experiment_config(path.parent / base), cfg)
+    if is_keras_config(cfg):
+        cfg = {**DEFAULT_CONFIG, **cfg}
     return cfg
+
+
+def is_keras_config(cfg: dict[str, Any]) -> bool:
+    """E01–E02 (CNN tự thiết kế, Keras) dùng cấu hình phẳng; E03–E04 (MobileNetV2) có khoá model.backbone."""
+    return not (isinstance(cfg.get("model"), dict) and "backbone" in cfg["model"])
 
 
 def _parse_value(text: str) -> Any:
@@ -138,6 +154,8 @@ def set_seed(seed: int, repro: dict[str, Any] | None = None) -> None:
     random.seed(seed)
     np.random.seed(seed)
     os.environ["PYTHONHASHSEED"] = str(seed)
+    if "tensorflow" in sys.modules:          # pipeline Keras đã import TensorFlow
+        sys.modules["tensorflow"].random.set_seed(seed)
     if torch is None:
         return
     torch.manual_seed(seed)
@@ -447,9 +465,145 @@ def measure_efficiency(model, cfg, device) -> dict[str, Any]:
     return out
 
 
+# =========================================================================== E01–E02: CNN tự thiết kế (Keras)
+# --------------------------------------------------------------------------- mô hình (Keras)
+def build_augmentation(aug: dict[str, Any] | None):
+    from tensorflow import keras
+    from tensorflow.keras import layers
+    if not aug:
+        return None
+    ops = []
+    if aug.get("flip"):
+        ops.append(layers.RandomFlip(aug["flip"]))
+    if aug.get("rotation"):
+        ops.append(layers.RandomRotation(aug["rotation"]))
+    if aug.get("zoom"):
+        ops.append(layers.RandomZoom(aug["zoom"]))
+    if aug.get("contrast"):
+        ops.append(layers.RandomContrast(aug["contrast"]))
+    return keras.Sequential(ops, name="augmentation") if ops else None
+
+
+def build_cnn(input_shape=(128, 128, 3), num_classes: int = 22, filters=(32, 64, 128, 256), dense_units: int = 128,
+              dropout: float = 0.4, batch_norm: bool = True, augmentation: dict[str, Any] | None = None):
+    """CNN baseline: Rescaling → [Conv-BN-ReLU-MaxPool]×(N-1) → Conv-BN-ReLU → GAP → Dense → Softmax.
+
+    Đầu vào: ảnh RGB pixel 0..255 (float hoặc uint8). Augmentation chỉ chạy khi training=True.
+    """
+    from tensorflow import keras
+    from tensorflow.keras import layers
+
+    inputs = keras.Input(shape=tuple(input_shape), name="image")
+    x = inputs
+    aug = build_augmentation(augmentation)
+    if aug is not None:
+        x = aug(x)
+    x = layers.Rescaling(1.0 / 255, name="rescale")(x)
+    for i, f in enumerate(filters):
+        x = layers.Conv2D(f, 3, padding="same", use_bias=not batch_norm, name=f"conv{i + 1}")(x)
+        if batch_norm:
+            x = layers.BatchNormalization(name=f"bn{i + 1}")(x)
+        x = layers.Activation("relu", name=f"relu{i + 1}")(x)
+        if i < len(filters) - 1:
+            x = layers.MaxPooling2D(2, name=f"pool{i + 1}")(x)
+    x = layers.GlobalAveragePooling2D(name="gap")(x)
+    x = layers.Dropout(dropout, name="dropout1")(x)
+    x = layers.Dense(dense_units, activation="relu", name="fc1")(x)
+    x = layers.Dropout(dropout, name="dropout2")(x)
+    outputs = layers.Dense(num_classes, activation="softmax", name="predictions")(x)
+    return keras.Model(inputs, outputs, name="cnn_baseline")
+
+
+def compile_model(model, cfg: dict[str, Any]):
+    from tensorflow import keras
+    loss = "sparse_categorical_crossentropy" if cfg["label_mode"] == "int" else "categorical_crossentropy"
+    model.compile(optimizer=keras.optimizers.Adam(learning_rate=cfg["learning_rate"]), loss=loss, metrics=["accuracy"])
+    return model
+
+
+def model_from_config(cfg: dict[str, Any]):
+    return compile_model(build_cnn(cfg["input_shape"], cfg["num_classes"], cfg["filters"], cfg["dense_units"],
+                                   cfg["dropout"], cfg.get("batch_norm", True), cfg.get("augmentation")), cfg)
+
+
+def get_callbacks(run_dir: str | Path, cfg: dict[str, Any]):
+    from tensorflow import keras
+    run_dir = str(run_dir)
+    os.makedirs(run_dir, exist_ok=True)
+    cbs = [
+        keras.callbacks.ModelCheckpoint(os.path.join(run_dir, "best.keras"), monitor="val_loss", save_best_only=True, verbose=1),
+        keras.callbacks.ModelCheckpoint(os.path.join(run_dir, "last.keras"), save_best_only=False, verbose=0),
+        keras.callbacks.EarlyStopping(monitor="val_loss", patience=cfg["early_stopping_patience"], restore_best_weights=True),
+        keras.callbacks.CSVLogger(os.path.join(run_dir, "history.csv"), append=True),
+    ]
+    if cfg.get("reduce_lr_patience"):
+        cbs.append(keras.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.5, patience=cfg["reduce_lr_patience"], min_lr=1e-5))
+    return cbs
+
+
+# --------------------------------------------------------------------------- dữ liệu (Keras)
+def load_split(processed_dir: str | Path, split: str, names: list[str], cfg: dict[str, Any], shuffle: bool):
+    """Đọc <processed_dir>/<split>/<class_name>/*.jpg; nhãn = class_index theo class mapping."""
+    import tensorflow as tf
+    h, w, _ = cfg["input_shape"]
+    ds = tf.keras.utils.image_dataset_from_directory(
+        str(Path(processed_dir) / split), labels="inferred", label_mode=cfg["label_mode"], class_names=names,
+        color_mode="rgb", image_size=(h, w), batch_size=cfg["batch_size"], shuffle=shuffle, seed=cfg["seed"])
+    return ds
+
+
+def load_datasets(processed_dir: str | Path, cfg: dict[str, Any], mapping_path: str | Path | None = None):
+    import tensorflow as tf
+    mapping = load_class_mapping(mapping_path or Path(processed_dir) / "class_mapping.json")
+    names = class_names(mapping)
+    if len(names) != cfg["num_classes"]:
+        raise ValueError(f"Config có {cfg['num_classes']} lớp nhưng class mapping có {len(names)}")
+    train = load_split(processed_dir, "train", names, cfg, shuffle=True).prefetch(tf.data.AUTOTUNE)
+    val = load_split(processed_dir, "val", names, cfg, shuffle=False).prefetch(tf.data.AUTOTUNE)
+    return train, val, mapping
+
+
+# --------------------------------------------------------------------------- huấn luyện (Keras)
+def run_training_keras(cfg: dict[str, Any], processed_dir: str | Path, runs_root: str | Path,
+                       run_dir: str | Path | None = None, resume: bool = False):
+    """Huấn luyện một thí nghiệm. Trả (model, history_dict, run_dir).
+
+    resume=True + run_dir có sẵn → nạp last.keras và chạy tiếp từ epoch đã lưu trong history.csv.
+    """
+    import pandas as pd
+    import tensorflow as tf
+
+    set_seed(cfg["seed"])            # TensorFlow đã được import ở trên → seed cả TF
+    run_dir = Path(run_dir) if run_dir else make_run_dir(runs_root, cfg["exp_id"])
+    train_ds, val_ds, mapping = load_datasets(processed_dir, cfg)
+    names = class_names(mapping)
+
+    counts = count_images_per_class(Path(processed_dir) / "train", names)
+    cw = compute_class_weights(counts, cfg.get("class_weight"))
+    save_config({**cfg, "train_counts": dict(zip(names, map(int, counts))), "class_weights": cw,
+                 "processed_dir": str(processed_dir)}, run_dir / "config.json")
+    with open(run_dir / "class_mapping.json", "w", encoding="utf-8") as f:
+        json.dump({"classes": mapping}, f, ensure_ascii=False, indent=2)
+
+    initial_epoch = 0
+    if resume and (run_dir / "last.keras").exists():
+        model = tf.keras.models.load_model(str(run_dir / "last.keras"))
+        initial_epoch = len(pd.read_csv(run_dir / "history.csv"))
+        print(f"Tiếp tục từ epoch {initial_epoch}")
+    else:
+        model = model_from_config(cfg)
+
+    hist = model.fit(train_ds, validation_data=val_ds, epochs=cfg["epochs"], initial_epoch=initial_epoch,
+                     class_weight=cw, callbacks=get_callbacks(run_dir, cfg), verbose=2)
+    history = pd.read_csv(run_dir / "history.csv").to_dict(orient="list")
+    return model, history, run_dir
+
+
+# =========================================================================== E03–E04: MobileNetV2 (PyTorch)
 # --------------------------------------------------------------------------- main entry
-def run_training(cfg: dict[str, Any], processed_dir: str | Path, runs_root: str | Path,
-                 pretrained: bool = True, smoke: bool = False, device: str | None = None):
+def run_training_torch(cfg: dict[str, Any], processed_dir: str | Path, runs_root: str | Path,
+                       pretrained: bool = True, smoke: bool = False, device: str | None = None):
+    """E03–E04: MobileNetV2, 2 pha. Trả (model, history, run_dir)."""
     _require_torch()
     set_seed(int(cfg["seed"]), cfg.get("reproducibility"))
     device = device or ("cuda" if torch.cuda.is_available() else "cpu")
@@ -521,13 +675,24 @@ def run_training(cfg: dict[str, Any], processed_dir: str | Path, runs_root: str 
     return model, history, run_dir
 
 
+def run_training(cfg: dict[str, Any], processed_dir: str | Path, runs_root: str | Path, **kwargs):
+    """Huấn luyện một thí nghiệm, tự chọn pipeline theo cấu hình. Trả (model, history, run_dir).
+
+    Keras (E01–E02): kwargs run_dir, resume. PyTorch (E03–E04): kwargs pretrained, smoke, device.
+    """
+    if is_keras_config(cfg):
+        return run_training_keras(cfg, processed_dir, runs_root, **kwargs)
+    return run_training_torch(cfg, processed_dir, runs_root, **kwargs)
+
+
 def main() -> None:
-    ap = argparse.ArgumentParser(description="E03 transfer learning (PyTorch)")
+    ap = argparse.ArgumentParser(description="Huấn luyện E01–E04 (Keras cho E01–E02, PyTorch cho E03–E04)")
     ap.add_argument("--config", required=True)
     ap.add_argument("--processed-dir", default=None, help="default: data.processed_dir in the config")
     ap.add_argument("--runs-root", default="runs")
-    ap.add_argument("--no-pretrained", action="store_true", help="skip ImageNet weights (offline smoke tests only)")
-    ap.add_argument("--smoke", action="store_true", help="1 epoch per phase to check the pipeline")
+    ap.add_argument("--no-pretrained", action="store_true", help="PyTorch: skip ImageNet weights (offline smoke tests only)")
+    ap.add_argument("--smoke", action="store_true", help="1 epoch (per phase) to check the pipeline")
+    ap.add_argument("--resume-run", default=None, help="Keras: tiếp tục huấn luyện trong thư mục run này")
     ap.add_argument("--device", default=None)
     ap.add_argument("--exp-id", default=None, help="override exp_id, e.g. E03a (names the run folder and result files)")
     ap.add_argument("--set", dest="overrides", action="append", default=[], metavar="KEY=VALUE",
@@ -538,8 +703,15 @@ def main() -> None:
         cfg["exp_id"] = a.exp_id
     apply_overrides(cfg, a.overrides)
     cfg["overrides"] = list(a.overrides)      # saved in config.json and summary.json
-    run_training(cfg, a.processed_dir or cfg["data"]["processed_dir"], a.runs_root,
-                 pretrained=not a.no_pretrained, smoke=a.smoke, device=a.device)
+    if is_keras_config(cfg):
+        if not a.processed_dir:
+            ap.error("--processed-dir là bắt buộc với E01–E02")
+        if a.smoke:
+            cfg["epochs"] = 1
+        run_training(cfg, a.processed_dir, a.runs_root, run_dir=a.resume_run, resume=bool(a.resume_run))
+    else:
+        run_training(cfg, a.processed_dir or cfg["data"]["processed_dir"], a.runs_root,
+                     pretrained=not a.no_pretrained, smoke=a.smoke, device=a.device)
 
 
 if __name__ == "__main__":

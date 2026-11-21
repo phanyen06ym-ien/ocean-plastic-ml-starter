@@ -19,7 +19,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from src.common import DEFAULT_MAPPING
+from src.preprocessing import DEFAULT_MAPPING
 from src.predict import InferenceError, Predictor
 
 PLASTIC_TAG = " [liên quan nhựa]"

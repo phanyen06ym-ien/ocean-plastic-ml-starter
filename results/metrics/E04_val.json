@@ -1,0 +1,234 @@
+{
+  "overall": {
+    "accuracy": 0.42679312388855956,
+    "macro_precision": 0.2470774253892662,
+    "macro_recall": 0.2592523620114758,
+    "macro_f1": 0.21884969271718974,
+    "weighted_precision": 0.4536822198822668,
+    "weighted_recall": 0.42679312388855956,
+    "weighted_f1": 0.421318318584128,
+    "per_class": {
+      "rov": {
+        "label": 0,
+        "precision": 0.7505030181086519,
+        "recall": 0.7836134453781513,
+        "f1_score": 0.7667009249743063,
+        "support": 476
+      },
+      "plant": {
+        "label": 1,
+        "precision": 0.3333333333333333,
+        "recall": 0.12,
+        "f1_score": 0.17647058823529413,
+        "support": 75
+      },
+      "animal_fish": {
+        "label": 2,
+        "precision": 0.5639097744360902,
+        "recall": 0.6521739130434783,
+        "f1_score": 0.6048387096774194,
+        "support": 115
+      },
+      "animal_starfish": {
+        "label": 3,
+        "precision": 0.28846153846153844,
+        "recall": 0.375,
+        "f1_score": 0.32608695652173914,
+        "support": 40
+      },
+      "animal_shells": {
+        "label": 4,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1_score": 0.0,
+        "support": 16
+      },
+      "animal_crab": {
+        "label": 5,
+        "precision": 0.42105263157894735,
+        "recall": 0.38095238095238093,
+        "f1_score": 0.4,
+        "support": 42
+      },
+      "animal_eel": {
+        "label": 6,
+        "precision": 0.29838709677419356,
+        "recall": 0.9736842105263158,
+        "f1_score": 0.4567901234567901,
+        "support": 38
+      },
+      "animal_etc": {
+        "label": 7,
+        "precision": 0.08108108108108109,
+        "recall": 0.0967741935483871,
+        "f1_score": 0.08823529411764706,
+        "support": 31
+      },
+      "trash_clothing": {
+        "label": 8,
+        "precision": 0.0423728813559322,
+        "recall": 0.4166666666666667,
+        "f1_score": 0.07692307692307693,
+        "support": 12
+      },
+      "trash_pipe": {
+        "label": 9,
+        "precision": 0.5,
+        "recall": 0.07692307692307693,
+        "f1_score": 0.13333333333333333,
+        "support": 39
+      },
+      "trash_bottle": {
+        "label": 10,
+        "precision": 0.4,
+        "recall": 0.14285714285714285,
+        "f1_score": 0.21052631578947367,
+        "support": 14
+      },
+      "trash_bag": {
+        "label": 11,
+        "precision": 0.3113207547169811,
+        "recall": 0.25190839694656486,
+        "f1_score": 0.27848101265822783,
+        "support": 131
+      },
+      "trash_snack_wrapper": {
+        "label": 12,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1_score": 0.0,
+        "support": 10
+      },
+      "trash_can": {
+        "label": 13,
+        "precision": 0.09302325581395349,
+        "recall": 0.12121212121212122,
+        "f1_score": 0.10526315789473684,
+        "support": 66
+      },
+      "trash_cup": {
+        "label": 14,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1_score": 0.0,
+        "support": 8
+      },
+      "trash_container": {
+        "label": 15,
+        "precision": 0.5324675324675324,
+        "recall": 0.5694444444444444,
+        "f1_score": 0.5503355704697986,
+        "support": 72
+      },
+      "trash_unknown_instance": {
+        "label": 16,
+        "precision": 0.39555555555555555,
+        "recall": 0.23796791443850268,
+        "f1_score": 0.29716193656093487,
+        "support": 374
+      },
+      "trash_branch": {
+        "label": 17,
+        "precision": 0.26666666666666666,
+        "recall": 0.07692307692307693,
+        "f1_score": 0.11940298507462686,
+        "support": 52
+      },
+      "trash_wreckage": {
+        "label": 18,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1_score": 0.0,
+        "support": 27
+      },
+      "trash_tarp": {
+        "label": 19,
+        "precision": 0.08064516129032258,
+        "recall": 0.29411764705882354,
+        "f1_score": 0.12658227848101267,
+        "support": 17
+      },
+      "trash_rope": {
+        "label": 20,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1_score": 0.0,
+        "support": 17
+      },
+      "trash_net": {
+        "label": 21,
+        "precision": 0.07692307692307693,
+        "recall": 0.13333333333333333,
+        "f1_score": 0.0975609756097561,
+        "support": 15
+      }
+    },
+    "total_samples": 1687,
+    "target_names": [
+      "rov",
+      "plant",
+      "animal_fish",
+      "animal_starfish",
+      "animal_shells",
+      "animal_crab",
+      "animal_eel",
+      "animal_etc",
+      "trash_clothing",
+      "trash_pipe",
+      "trash_bottle",
+      "trash_bag",
+      "trash_snack_wrapper",
+      "trash_can",
+      "trash_cup",
+      "trash_container",
+      "trash_unknown_instance",
+      "trash_branch",
+      "trash_wreckage",
+      "trash_tarp",
+      "trash_rope",
+      "trash_net"
+    ]
+  },
+  "plastic_related": {
+    "classes": [
+      10,
+      11,
+      12,
+      19,
+      20,
+      21
+    ],
+    "classes_evaluated": [
+      10,
+      11,
+      12,
+      19,
+      20,
+      21
+    ],
+    "macro_precision": 0.14481483215506344,
+    "macro_recall": 0.13703608669931075,
+    "macro_f1": 0.11885843042307837,
+    "support": 204
+  },
+  "exp_id": "E04",
+  "split": "val",
+  "num_samples": 1687,
+  "num_classes": 22,
+  "val_loss_unweighted": 1.9191145973228179,
+  "selected_phase": "frozen_backbone",
+  "best_epoch": 4,
+  "framework": "pytorch",
+  "data_version": "v2_crop224",
+  "run_dir": "/content/drive/MyDrive/ocean-plastic-ml/runs/E04_20261121-0952",
+  "checkpoint": "best.pt",
+  "baseline_exp_id": "E03",
+  "known_extra_differences": [
+    "crop: bbox + 10% padding, stretched -> square window around the bbox + 15% padding",
+    "input size 128x128 -> 224x224 (MobileNetV2 pretraining size)",
+    "minimum box side 8 px -> 16 px",
+    "split: random video-group search -> per-class stratified video search (Val/Test differ from E01-E03)",
+    "train-only augmentation (E03 had none)",
+    "E01-E03 are not directly comparable with E04 on Validation: different split"
+  ]
+}

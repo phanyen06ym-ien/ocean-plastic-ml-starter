@@ -6,7 +6,7 @@ import pytest
 from PIL import Image
 
 from src import eda
-from src.common import load_class_mapping, load_contract
+from src.preprocessing import load_class_mapping, load_contract
 from src.preprocessing import (
     build_class_mapping,
     build_object_table,
@@ -119,13 +119,13 @@ def test_stratified_split_no_leakage_deterministic_and_covers_classes(fake_trash
     from src.preprocessing import stratified_grouped_split
     df, _ = build_object_table(fake_trashcan, load_contract(_v2_contract()))
     ratios = {"train": 0.7, "val": 0.15, "test": 0.15}
-    out, info = stratified_grouped_split(df, ratios, seed=42, n_seeds=3)
+    out, info = stratified_grouped_split(df, ratios, seed=42, n_restarts=3)
     check_no_leakage(out)
-    assert info["method"] == "stratified_group_kfold"
+    assert info["method"] == "stratified_video_search"
     assert set(out["split"]) == {"train", "val", "test"}
     frac = out.groupby("split")["image_id"].nunique() / out["image_id"].nunique()
     assert frac["train"] > frac["val"] and frac["train"] > frac["test"]
-    out2, info2 = stratified_grouped_split(df, ratios, seed=42, n_seeds=3)
+    out2, info2 = stratified_grouped_split(df, ratios, seed=42, n_restarts=3)
     assert (out["split"] == out2["split"]).all() and info == info2
 
 
@@ -133,7 +133,7 @@ def test_run_preprocessing_v2_end_to_end(fake_trashcan, tmp_path):
     out_dir = tmp_path / "processed" / "v2_crop224"
     summary = run_preprocessing(fake_trashcan, out_dir, contract_path=_v2_contract(), verbose=False)
     assert summary["data_version"] == "v2_crop224"
-    assert summary["split"]["method"] == "stratified_group_kfold"
+    assert summary["split"]["method"] == "stratified_video_search"
     manifest = pd.read_csv(out_dir / "split_manifest.csv")
     check_no_leakage(manifest)
     ok = manifest[manifest["crop_status"] == "ok"]

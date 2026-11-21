@@ -21,9 +21,9 @@ import numpy as np
 from PIL import Image, UnidentifiedImageError
 
 try:
-    from src.common import load_class_mapping
+    from src.preprocessing import load_class_mapping
 except ImportError:  # pragma: no cover
-    from common import load_class_mapping
+    from preprocessing import load_class_mapping
 
 SUPPORTED_EXTS = {".jpg", ".jpeg", ".png", ".bmp"}
 KERAS_EXTS = {".keras", ".h5"}

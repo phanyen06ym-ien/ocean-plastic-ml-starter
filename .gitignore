@@ -27,7 +27,7 @@ data/*
 
 # Trained models and run folders — stored on Google Drive
 models/*
-!models/.gitkeep
+!models/README.md
 checkpoints/
 runs/
 *.keras

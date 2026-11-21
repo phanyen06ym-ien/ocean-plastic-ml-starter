@@ -34,10 +34,10 @@ Cập nhật 21/11/2026 · Sprint 3 — hoàn thiện bản nộp giữa kỳ.
 | CNN tự thiết kế                        | E01 (baseline + class weights), E02 (+ augmentation)                                   | ✅ Xong      |
 | MobileNetV2                            | E03 (2 pha) + tinh chỉnh E03a–E03f                                                     | ✅ Xong      |
 | Đánh giá Validation                    | Macro F1, nhóm nhựa, confusion matrix, phân tích lỗi E01–E03                           | ✅ Xong      |
-| Dữ liệu mới + E04                      | Làm lại bộ dữ liệu để cải thiện MobileNetV2; thông số ghi trong `dataset_report.md`                   | 🔄 Đang làm  |
-| Chốt mô hình cuối                      | So sánh trên Validation                                                       | ⏳ Chờ E04   |
+| Dữ liệu `v2_crop224` + E04             | Crop vuông 224×224, chia lại theo video giữ 70/15/15 cho từng lớp; E04 huấn luyện trên Colab T4 (30,6 phút) | ✅ Xong      |
+| Chốt mô hình cuối                      | So sánh trên Validation, chọn checkpoint                                               | 🔄 Chờ xác nhận |
 | Đánh giá Test                          | Chạy **một lần** cho mô hình cuối                                         | ⏳ Chưa chạy |
-| Demo                                   | CLI `main.py` chạy với checkpoint Keras (E01–E02); hỗ trợ checkpoint PyTorch (E03–E04) | 🔄 Đang làm  |
+| Demo                                   | CLI `main.py` chạy với checkpoint Keras (E01–E02) và PyTorch (E03–E04)                  | ✅ Xong      |
 | Báo cáo, slide, release `v0.1-midterm` |                                                                                        | ⏳           |
 
 ## 2. Bài toán
@@ -59,7 +59,7 @@ Macro F1 được chọn làm chỉ số chính vì dữ liệu mất cân bằn
 
 - **TrashCan 1.0** — 7.212 ảnh là khung hình từ video quay dưới nước, annotation dạng COCO (bounding box và segmentation). Nhóm dùng bản nhãn **Instance** (theo loại đối tượng), không dùng bản Material.
 - Nguồn: [UMN Data Repository](https://conservancy.umn.edu/items/6dd6a960-c44a-4510-a679-efb8c82ebfb7) · Bài báo: Hong, Fulton & Sattar, [arXiv:2007.08097](https://arxiv.org/abs/2007.08097).
-- Dữ liệu **không commit lên GitHub**; lưu trên Google Drive của nhóm. Tải tự động bằng `src/download.py`.
+- Dữ liệu **không commit lên GitHub**; lưu trên Google Drive của nhóm. Tải tự động bằng `download_trashcan` trong `src/preprocessing.py`.
 
 ### 3.2. Thống kê (phiên bản `v1_crop128`)
 
@@ -70,6 +70,7 @@ Macro F1 được chọn làm chỉ số chính vì dữ liệu mất cân bằn
 | Số video                          |                                           310 |
 | Crop hợp lệ / loại vì bbox < 8 px |                                   12.074 / 54 |
 | Crop Train / Validation / Test    |                         8.283 / 1.782 / 2.009 |
+| Crop Train / Validation / Test (`v2_crop224`) | 7.866 / 1.687 / 1.717 |
 | Kiểm tra rò rỉ dữ liệu            | Đạt: không video, không ảnh nào nằm ở hai tập |
 
 Dữ liệu **mất cân bằng mạnh**: `rov` (27%) và `trash_unknown_instance` (23%) chiếm khoảng một nửa số annotation, trong khi `trash_cup` chỉ có 59 mẫu.
@@ -92,7 +93,7 @@ Tên nhãn là loại đối tượng, _không_ phải bằng chứng chất li�
 | Crop | Theo bbox COCO, lề 10% mỗi phía, resize thẳng (đối tượng có thể méo) | **Cửa sổ vuông** quanh tâm bbox, lề 15%, giữ đúng tỉ lệ đối tượng |
 | Bbox tối thiểu | 8 px | 16 px |
 | Kích thước | 128 × 128 RGB | **224 × 224** RGB (kích thước MobileNetV2 được tiền huấn luyện) |
-| Chia tập | Gộp train + val gốc, **chia lại theo video** 70 / 15 / 15, seed 42; thử ngẫu nhiên nhiều hoán vị | Vẫn theo video 70 / 15 / 15, seed 42, nhưng bằng **StratifiedGroupKFold** để giữ phân bố lớp giữa các tập |
+| Chia tập | Gộp train + val gốc, **chia lại theo video** 70 / 15 / 15, seed 42; thử ngẫu nhiên nhiều hoán vị | Vẫn theo video, seed 42, nhưng **tìm phân công video giữ tỉ lệ 70 / 15 / 15 cho từng lớp** (lớp hiếm cũng có mẫu ở cả 3 tập) |
 | Augmentation (chỉ Train) | Không (E02 có, trên CNN) | Cắt ngẫu nhiên 80–100%, lật ngang, xoay ±10°, đổi độ sáng / tương phản / màu |
 | Mất cân bằng | Class weights `balanced` | Giữ nguyên |
 | Chuẩn hóa | CNN tự thiết kế: pixel / 255 · MobileNetV2: mean/std ImageNet | mean/std ImageNet |
@@ -103,7 +104,8 @@ Thông số dùng chung được khóa trong [`configs/data_contract.yaml`](conf
 
 ### 3.4. Hạn chế đã biết
 
-- Chia theo video làm lệch số mẫu giữa các tập: vài lớp chỉ có 1–4 mẫu ở Validation hoặc Test (`animal_shells` 1, `trash_bottle` 3 ở Val; `animal_starfish` 4 ở Test).
+- `v1_crop128`: chia theo video làm lệch số mẫu giữa các tập, vài lớp chỉ có 1–4 mẫu ở Validation hoặc Test (`animal_shells` 1, `trash_bottle` 3 ở Val; `animal_starfish` 4 ở Test). `v2_crop224` khắc phục: mọi lớp có ít nhất 8 mẫu ở Val và Test, tỉ lệ ảnh 69,8 / 15,0 / 15,2%.
+- `v2_crop224` bỏ 858 annotation (7,1%) có bbox cạnh < 16 px; các vật thể rất nhỏ này không được mô hình học.
 - Nhiều bbox nhỏ (trung vị khoảng 90 × 66 px ở Train); một số bbox có toạ độ vượt ngoài ảnh (được giới hạn lại khi crop).
 - `trash_unknown_instance` là lớp mơ hồ, dễ nhầm với các lớp rác khác.
 
@@ -115,9 +117,9 @@ Thông số dùng chung được khóa trong [`configs/data_contract.yaml`](conf
 TrashCan-Instance (COCO JSON + ảnh)
   → Audit & EDA                     notebooks/01 · src/eda.py
   → Crop đối tượng + chia theo video notebooks/02 · src/preprocessing.py
-  → Huấn luyện                      notebooks/03 · src/train_keras.py (E01–E02) · src/train.py (E03–E04)
+  → Huấn luyện                      notebooks/03 · src/train.py (Keras cho E01–E02, PyTorch cho E03–E04)
   → Đánh giá Validation → chọn mô hình → đánh giá Test 1 lần
-                                    notebooks/04 · src/evaluate.py · src/evaluation_runner.py
+                                    notebooks/04 · src/evaluate.py
   → Dự đoán ảnh mới (demo)          src/predict.py · main.py
 ```
 
@@ -161,7 +163,7 @@ Cấu hình từng thí nghiệm: `configs/experiments/` · Số liệu từng l
 
 ## 6. Kết quả và phân tích
 
-Tập Validation, 1.782 crop. Nguồn: `results/metrics/comparison_val.csv`, `results/metrics/e03_candidates.csv`.
+Tập Validation: 1.782 crop cho E01–E03 (`v1_crop128`), 1.687 crop cho E04 (`v2_crop224`). Nguồn: `results/metrics/comparison_val.csv`, `results/metrics/e03_candidates.csv`, `results/metrics/E04_val.json`.
 
 | EXP_ID                 |         Macro F1 |  Accuracy | Weighted F1 | Macro F1 nhóm nhựa | Macro F1 (Test) |
 | ---------------------- | ---------------: | --------: | ----------: | -----------------: | --------------: |
@@ -169,9 +171,11 @@ Tập Validation, 1.782 crop. Nguồn: `results/metrics/comparison_val.csv`, `re
 | E02                    |            0,065 |     0,161 |       0,167 |              0,017 |               — |
 | E03                    |            0,203 |     0,405 |       0,418 |              0,123 |               — |
 | E03f (tốt nhất E03a–f) |        **0,212** | **0,412** |   **0,420** |              0,117 |               — |
-| E04                    | _đang thực hiện_ |           |             |                    |               — |
+| E04 ¹                  |        **0,219** | **0,427** |   **0,421** |              0,119 |               — |
 
 Mức ngẫu nhiên của Macro F1 với 22 lớp ≈ 0,045.
+
+¹ E04 dùng cách chia mới nên tập Validation khác E01–E03; so sánh với E03 chỉ mang tính tham khảo. Checkpoint chọn theo `val_loss` thấp nhất (pha 1, epoch 4) như E03. Nếu chọn theo Macro F1 Validation (chỉ số chính), checkpoint tốt nhất của E04 ở pha 2, epoch 15 đạt Macro F1 0,258, Accuracy 0,462.
 
 **Nhận xét**
 
@@ -179,6 +183,7 @@ Mức ngẫu nhiên của Macro F1 với 22 lớp ≈ 0,045.
 2. **Augmentation không giúp CNN tự thiết kế** (E02 thấp hơn E01): mô hình nhỏ huấn luyện từ đầu chưa học được đặc trưng ổn định.
 3. **Kết quả theo lớp rất chênh lệch** (E03f): tốt ở `rov` (F1 0,76), `animal_eel` (0,67), `animal_starfish` (0,52); bằng 0 ở nhiều lớp ít mẫu như `trash_bottle`, `trash_tarp`, `trash_rope`, `trash_snack_wrapper`, `trash_cup`.
 4. **Mô hình học thuộc nhanh:** E03 đạt `val_loss` tốt nhất ngay ở epoch 2 trong khi loss trên Train vẫn giảm mạnh — mô hình học bối cảnh của từng video hơn là hình dạng vật thể.
+5. **Làm lại dữ liệu (E04) cải thiện có giới hạn.** So với E03, Macro F1 tăng từ 0,203 lên 0,219 và Accuracy từ 0,405 lên 0,427; Macro F1 nhóm nhựa gần như không đổi (0,123 → 0,119). Augmentation giúp mô hình học lâu hơn (pha 2 vẫn cải thiện Macro F1 đến epoch 15) nhưng `val_loss` gần như đứng yên quanh 1,9–2,1 trong khi loss Train giảm còn 0,44: khoảng cách giữa các video vẫn là trở ngại chính. Lớp tốt nhất: `rov` (F1 0,77), `animal_fish` (0,60), `trash_container` (0,55); vẫn bằng 0 ở `animal_shells`, `trash_snack_wrapper`, `trash_cup`, `trash_wreckage`, `trash_rope`.
 
 **Nguyên nhân chính nằm ở dữ liệu** và là cơ sở cho E04: ảnh 128×128 nhỏ hơn kích thước MobileNetV2 được tiền huấn luyện (224×224); phân bố lớp giữa các tập lệch mạnh do chia theo video; nhiều bbox rất nhỏ; hai lớp lớn chiếm một nửa dữ liệu.
 
@@ -243,15 +248,16 @@ ocean-plastic-ml-starter/
 │   ├── 01_trashcan_eda.ipynb · 02_preprocessing.ipynb
 │   └── 03_cnn_training.ipynb · 04_evaluation.ipynb
 ├── src/                             # Code dùng chung, notebook chỉ gọi lại
-│   ├── common.py · download.py · eda.py · preprocessing.py
-│   ├── train_keras.py (E01–E02) · train.py (E03–E04)
-│   ├── evaluate.py · evaluation_runner.py · eval_torch.py
-│   └── predict.py
+│   ├── eda.py                       # Thống kê và vẽ biểu đồ dữ liệu (notebook 01)
+│   ├── preprocessing.py             # Đọc data contract, tải dữ liệu, crop, chia tập (notebook 02)
+│   ├── train.py                     # Huấn luyện E01–E02 (Keras) và E03–E04 (PyTorch) (notebook 03)
+│   ├── evaluate.py                  # Chỉ số, confusion matrix, đánh giá checkpoint (notebook 04)
+│   └── predict.py                   # Dự đoán ảnh mới (main.py)
 ├── tests/                           # pytest cho từng module
-├── models/                          # KHÔNG commit trọng số (lưu Drive)
+├── models/                          # Chỉ README: danh sách checkpoint E01–E04 trên Drive
 ├── results/
 │   ├── figures/                     # Hình cho báo cáo
-│   └── metrics/                     # <EXP_ID>_<split>.json/.csv, bảng so sánh
+│   └── metrics/                     # <EXP_ID>_<split>.json/.csv; metrics_summary.csv so sánh E01–E04
 ├── scripts/                         # collect_runs.py, summarize_runs.py, github/
 ├── main.py                          # CLI demo
 ├── requirements.txt

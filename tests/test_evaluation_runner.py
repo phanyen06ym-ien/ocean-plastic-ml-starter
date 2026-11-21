@@ -3,7 +3,7 @@ import json
 
 import numpy as np
 
-from src.evaluation_runner import comparison_table, group_metrics, summarize
+from src.evaluate import comparison_table, group_metrics, summarize
 
 MAPPING = [
     {"class_index": 0, "category_id": 1, "class_name": "rov", "plastic_related": False},

@@ -4,7 +4,7 @@
 # E03:      MobileNetV2 (PyTorch), dữ liệu cũ v1_crop128.
 # E04:      MobileNetV2 giữ nguyên mô hình và cách huấn luyện của E03; CHỈ đổi dữ liệu:
 #             - tiền xử lý mới: crop vuông 224x224, lề 15%, bỏ box < 16 px (configs/data_contract_v2.yaml)
-#             - chia lại theo video bằng StratifiedGroupKFold 70/15/15, seed 42
+#             - chia lại theo video, giữ tỉ lệ 70/15/15 cho từng lớp, seed 42
 #             - augmentation chỉ trên tập Train
 #
 # Các khoá không ghi ở đây lấy nguyên từ E03 (base_config): mô hình, 2 pha huấn luyện, class weights,
@@ -29,7 +29,7 @@ known_extra_differences:        # must be stated in the PR
   - "crop: bbox + 10% padding, stretched -> square window around the bbox + 15% padding"
   - "input size 128x128 -> 224x224 (MobileNetV2 pretraining size)"
   - "minimum box side 8 px -> 16 px"
-  - "split: random video-group search -> StratifiedGroupKFold by video (Val/Test differ from E01-E03)"
+  - "split: random video-group search -> per-class stratified video search (Val/Test differ from E01-E03)"
   - "train-only augmentation (E03 had none)"
   - "E01-E03 are not directly comparable with E04 on Validation: different split"
 
@@ -47,7 +47,7 @@ data:
   processed_zip: /content/drive/MyDrive/ocean-plastic-ml/data/processed/v2_crop224.zip
   split_info:                                         # read-only: written by src/preprocessing.py
     strategy: grouped_by_video
-    method: stratified_group_kfold
+    method: stratified_video_search
     video_id_regex: 'vid_(\d+)'
     ratios: {train: 0.70, val: 0.15, test: 0.15}
     seed: 42

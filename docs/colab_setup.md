@@ -3,7 +3,7 @@
 ## 1. Chuẩn bị (một lần)
 
 1. **Drive:** tạo thư mục `MyDrive/ocean-plastic-ml/` (notebook tự tạo `data/raw`, `data/processed`, `runs`). Nếu làm chung, Yến chia sẻ thư mục này cho cả nhóm và mỗi người *Add shortcut to Drive* vào `MyDrive/`.
-2. **Dataset:** không cần tải tay. Nếu `MyDrive/ocean-plastic-ml/data/raw/` chưa có file `.zip`, notebook (bước 2) tự tải `dataset.zip` từ [UMN Data Repository](https://conservancy.umn.edu/items/6dd6a960-c44a-4510-a679-efb8c82ebfb7) vào thư mục này (`src/download.py`).
+2. **Dataset:** không cần tải tay. Nếu `MyDrive/ocean-plastic-ml/data/raw/` chưa có file `.zip`, notebook (bước 2) tự tải `dataset.zip` từ [UMN Data Repository](https://conservancy.umn.edu/items/6dd6a960-c44a-4510-a679-efb8c82ebfb7) vào thư mục này (`download_trashcan` trong `src/preprocessing.py`).
 3. **Token GitHub (tuỳ chọn):** không có token thì kết quả vẫn được lưu ở Drive `exports/s2_results_<thời gian>/` để đưa vào PR. GitHub → Settings → Developer settings → Fine-grained token, quyền *Contents: Read and write* cho repo này. Trong Colab: biểu tượng 🔑 *Secrets* → thêm `GH_TOKEN`, bật *Notebook access*. Không dán token vào cell.
 
 ## 2. Chạy pipeline Sprint 2
@@ -17,7 +17,7 @@
 |---|---|
 | Dữ liệu đã xử lý | Drive `data/processed/v1_crop128.zip` (lần sau dùng lại, không xử lý lại) |
 | Checkpoint, history, config | Drive `runs/<EXP_ID>_<YYYYMMDD-HHMM>/` |
-| Chỉ số, hình, báo cáo | Drive `exports/s2_results_<thời gian>/`, sau đó vào repo qua PR: `results/metrics/`, `results/figures/`, `results/sprint2_results.md` |
+| Chỉ số, hình, báo cáo | Drive `exports/s2_results_<thời gian>/`, sau đó vào repo qua PR: `results/metrics/`, `results/figures/`, `results/pipeline_results.md` |
 
 ## 3. Khi Colab ngắt kết nối
 

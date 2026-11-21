@@ -1,6 +1,6 @@
 import pytest
 
-from src.download import pick_bitstream
+from src.preprocessing import pick_bitstream
 
 
 def test_pick_bitstream_by_name():

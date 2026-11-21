@@ -13,7 +13,10 @@ Hai phiên bản dữ liệu (chọn bằng --contract):
     v1_crop128 (E01–E03): crop theo bbox + 10% lề, resize thẳng 128x128, bỏ box < 8 px,
                           chia theo video bằng cách thử ngẫu nhiên nhiều hoán vị.
     v2_crop224 (E04):     mở bbox thành hình vuông + 15% lề, 224x224, bỏ box < 16 px,
-                          chia theo video bằng StratifiedGroupKFold (giữ phân bố lớp giữa các tập).
+                          chia theo video, tìm phân công giữ tỉ lệ 70/15/15 cho từng lớp.
+
+Module này cũng chứa các tiện ích dùng chung cho cả dự án (đọc data contract, class mapping)
+và hàm tải TrashCan 1.0 từ UMN Data Repository (download_trashcan).
 
 Chạy từ dòng lệnh:
     python -m src.preprocessing --raw-root /path/to/trashcan --out-dir /path/to/processed/v1_crop128
@@ -26,18 +29,109 @@ import argparse
 import json
 import os
 import re
+import shutil
+import urllib.request
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pandas as pd
+import yaml
 from PIL import Image
 
-try:  # cho phép chạy cả `python -m src.preprocessing` lẫn import từ notebook
-    from src.common import DEFAULT_CONTRACT, load_contract
-except ImportError:  # pragma: no cover
-    from common import DEFAULT_CONTRACT, load_contract
+
+# --------------------------------------------------------------------------- 0. Tiện ích dùng chung
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_CONTRACT = PROJECT_ROOT / "configs" / "data_contract.yaml"
+DEFAULT_MAPPING = PROJECT_ROOT / "configs" / "class_mapping.json"
+
+
+def load_yaml(path: str | Path) -> dict[str, Any]:
+    with open(path, encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
+def load_contract(path: str | Path = DEFAULT_CONTRACT) -> dict[str, Any]:
+    """Đọc configs/data_contract.yaml."""
+    return load_yaml(path)
+
+
+def load_class_mapping(path: str | Path = DEFAULT_MAPPING) -> list[dict[str, Any]]:
+    """Đọc class mapping, trả danh sách sắp xếp theo class_index.
+
+    Mỗi phần tử: {class_index, category_id, class_name, plastic_related}.
+    """
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    classes = data["classes"] if isinstance(data, dict) else data
+    classes = sorted(classes, key=lambda c: c["class_index"])
+    for expected, c in enumerate(classes):
+        if c["class_index"] != expected:
+            raise ValueError(f"class_index không liên tục tại {c}")
+    return classes
+
+
+def class_names(mapping: list[dict[str, Any]]) -> list[str]:
+    return [c["class_name"] for c in mapping]
+
+
+def plastic_indices(mapping: list[dict[str, Any]]) -> list[int]:
+    return [c["class_index"] for c in mapping if c.get("plastic_related")]
+
+
+# --------------------------------------------------------------------------- 0b. Tải dữ liệu gốc
+# Tải TrashCan 1.0 (dataset.zip) trực tiếp từ UMN Data Repository (DSpace 7 REST API).
+# Dùng trên Colab khi Drive `data/raw/` chưa có file .zip.
+UMN_API = "https://conservancy.umn.edu/server/api/core"
+TRASHCAN_ITEM_UUID = "6dd6a960-c44a-4510-a679-efb8c82ebfb7"
+
+
+def _get_json(url: str) -> dict[str, Any]:
+    req = urllib.request.Request(url, headers={"Accept": "application/json"})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return json.loads(r.read().decode("utf-8"))
+
+
+def pick_bitstream(bitstreams: list[dict[str, Any]], name: str = "dataset.zip") -> dict[str, Any]:
+    """Chọn bitstream theo tên (không phân biệt hoa thường); nếu không có thì lấy file .zip lớn nhất."""
+    exact = [b for b in bitstreams if b.get("name", "").lower() == name.lower()]
+    if exact:
+        return exact[0]
+    zips = [b for b in bitstreams if b.get("name", "").lower().endswith(".zip")]
+    if not zips:
+        raise FileNotFoundError(f"Không thấy file .zip trong item; có: {[b.get('name') for b in bitstreams]}")
+    return max(zips, key=lambda b: b.get("sizeBytes", 0))
+
+
+def list_bitstreams(item_uuid: str = TRASHCAN_ITEM_UUID, api: str = UMN_API) -> list[dict[str, Any]]:
+    bundles = _get_json(f"{api}/items/{item_uuid}/bundles")["_embedded"]["bundles"]
+    out: list[dict[str, Any]] = []
+    for b in bundles:
+        if b.get("name") != "ORIGINAL":
+            continue
+        data = _get_json(b["_links"]["bitstreams"]["href"])
+        out.extend(data["_embedded"]["bitstreams"])
+    return out
+
+
+def download_trashcan(dest_dir: str | Path, name: str = "dataset.zip") -> Path:
+    """Tải dataset.zip vào dest_dir (bỏ qua nếu đã có file cùng tên, đúng dung lượng)."""
+    dest_dir = Path(dest_dir)
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    bs = pick_bitstream(list_bitstreams(), name)
+    target = dest_dir / bs["name"]
+    size = bs.get("sizeBytes")
+    if target.exists() and (size is None or target.stat().st_size == size):
+        print("Đã có", target)
+        return target
+    url = bs["_links"]["content"]["href"]
+    print(f"Tải {bs['name']} ({(size or 0) / 1e9:.2f} GB) từ {url}")
+    tmp = target.with_suffix(target.suffix + ".part")
+    with urllib.request.urlopen(url, timeout=120) as r, open(tmp, "wb") as f:
+        shutil.copyfileobj(r, f, length=16 << 20)
+    tmp.rename(target)
+    return target
 
 SPLITS = ("train", "val", "test")
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp"}
@@ -228,53 +322,90 @@ def _split_key(df: pd.DataFrame, split: pd.Series, ratios: dict[str, float], cla
     return (covered, min(min_eval, 5), -round(dev, 4)), info
 
 
-def stratified_grouped_split(df: pd.DataFrame, ratios: dict[str, float], seed: int = 42,
-                             n_seeds: int = 20) -> tuple[pd.DataFrame, dict[str, Any]]:
-    """Chia theo video bằng StratifiedGroupKFold (v2, E04).
+def _split_loss(M: np.ndarray, I: np.ndarray, T: np.ndarray, r: np.ndarray) -> float:
+    """Độ lệch của một phương án chia so với tỉ lệ mục tiêu.
 
-    Mọi annotation của một video nằm trong cùng một tập (group = video_id), đồng thời các fold
-    giữ phân bố lớp gần với toàn bộ dữ liệu (stratify = class_index). Làm hai bước:
-      1. Tách Test: StratifiedGroupKFold với k = round(1 / ratio_test), lấy một fold.
-      2. Tách Val từ phần còn lại: k = round((1 - ratio_test) / ratio_val), lấy một fold.
-    Thử mọi fold với n_seeds hạt giống suy ra từ seed và chọn phương án có
-    (1) nhiều lớp có mặt ở cả val và test nhất, (2) lớp hiếm có nhiều mẫu nhất ở val/test (tối đa 5),
-    (3) tỉ lệ ảnh gần mục tiêu nhất. Kết quả xác định hoàn toàn bởi seed.
+    M: số mẫu (3 tập x C lớp), I: số ảnh nguồn mỗi tập, T: tổng mẫu mỗi lớp, r: tỉ lệ mục tiêu.
+    Mỗi lớp có trọng số như nhau (phù hợp Macro F1); phạt thêm khi một lớp trống ở một tập.
     """
-    from sklearn.model_selection import StratifiedGroupKFold
+    share = M / np.maximum(T, 1)[None, :]
+    loss = float((((share - r[:, None]) ** 2) / r[:, None]).sum())
+    loss += 0.5 * M.shape[1] * float((((I / max(I.sum(), 1)) - r) ** 2 / r).sum())
+    loss += 2.0 * float((M == 0).sum())
+    return loss
 
+
+def stratified_grouped_split(df: pd.DataFrame, ratios: dict[str, float], seed: int = 42, n_restarts: int = 30,
+                             min_box_side: float = 0.0, max_passes: int = 40) -> tuple[pd.DataFrame, dict[str, Any]]:
+    """Chia theo video, giữ tỉ lệ 70/15/15 cho TỪNG lớp (v2, E04).
+
+    Mọi annotation của một video nằm trong cùng một tập (không rò rỉ). Mục tiêu: với mỗi lớp,
+    tỉ lệ mẫu ở Train/Val/Test gần ratios nhất, đồng thời tỉ lệ ảnh nguồn gần ratios.
+    Cách làm: bắt đầu từ một phân công ngẫu nhiên các video, lần lượt thử chuyển từng video sang
+    tập khác nếu làm giảm độ lệch (_split_loss), lặp đến khi không cải thiện được; làm lại với
+    n_restarts khởi tạo và giữ phương án tốt nhất. Kết quả xác định hoàn toàn bởi seed.
+    Chỉ các box đủ lớn (cạnh >= min_box_side, sẽ được crop) được tính vào số mẫu.
+    """
     if abs(sum(ratios[s] for s in SPLITS) - 1.0) > 1e-6:
         raise ValueError("Tổng tỉ lệ chia phải bằng 1")
     df = df.reset_index(drop=True)
-    y, groups = df["class_index"].to_numpy(), df["video_id"].to_numpy()
     classes = sorted(df["class_index"].unique())
-    k_test = max(2, int(round(1 / ratios["test"])))
-    k_val = max(2, int(round((1 - ratios["test"]) / ratios["val"])))
+    eligible = df
+    if min_box_side and {"bbox_w", "bbox_h"} <= set(df.columns):
+        eligible = df[(df["bbox_w"] >= min_box_side) & (df["bbox_h"] >= min_box_side)]
+    videos = sorted(df["video_id"].unique())
+    counts = (eligible.pivot_table(index="video_id", columns="class_index", values="image_id", aggfunc="count", fill_value=0)
+              .reindex(index=videos, columns=classes, fill_value=0))
+    A = counts.to_numpy(dtype=float)
+    img = df.groupby("video_id")["image_id"].nunique().reindex(videos).to_numpy(dtype=float)
+    T, r = A.sum(0), np.array([ratios[s] for s in SPLITS], dtype=float)
+    V = len(videos)
+
     rng = np.random.default_rng(seed)
-    best, best_key, best_info = None, None, None
-    for trial in range(n_seeds):
-        s1, s2 = (int(v) for v in rng.integers(0, 2**31 - 1, size=2))
-        outer = StratifiedGroupKFold(n_splits=k_test, shuffle=True, random_state=s1)
-        for rest_idx, test_idx in outer.split(df, y, groups):
-            inner = StratifiedGroupKFold(n_splits=k_val, shuffle=True, random_state=s2)
-            for tr, va in inner.split(rest_idx, y[rest_idx], groups[rest_idx]):
-                split = np.empty(len(df), dtype=object)
-                split[test_idx], split[rest_idx[va]], split[rest_idx[tr]] = "test", "val", "train"
-                key, info = _split_key(df, pd.Series(split), ratios, classes)
-                if best_key is None or key > best_key:
-                    best, best_key, best_info = split, key, {**info, "trial": trial}
+    best_loss, best_assign = None, None
+    for _ in range(n_restarts):
+        a = rng.choice(3, size=V, p=r)
+        M = np.stack([A[a == k].sum(0) for k in range(3)])
+        I = np.array([img[a == k].sum() for k in range(3)])
+        cur = _split_loss(M, I, T, r)
+        for _ in range(max_passes):
+            improved = False
+            for v in rng.permutation(V):
+                k0 = a[v]
+                for k1 in range(3):
+                    if k1 == k0:
+                        continue
+                    M[k0] -= A[v]; M[k1] += A[v]; I[k0] -= img[v]; I[k1] += img[v]
+                    new = _split_loss(M, I, T, r)
+                    if new < cur - 1e-12:
+                        cur, a[v], k0, improved = new, k1, k1, True
+                    else:
+                        M[k1] -= A[v]; M[k0] += A[v]; I[k1] -= img[v]; I[k0] += img[v]
+            if not improved:
+                break
+        if best_loss is None or cur < best_loss:
+            best_loss, best_assign = cur, a.copy()
+
+    assign = {vid: SPLITS[k] for vid, k in zip(videos, best_assign)}
     out = df.copy()
-    out["split"] = best
-    best_info.update({"method": "stratified_group_kfold", "seed": seed, "k_test": k_test, "k_val": k_val,
-                      "num_videos": int(df["video_id"].nunique())})
-    return out, best_info
+    out["split"] = out["video_id"].map(assign)
+    M = np.stack([A[best_assign == k].sum(0) for k in range(3)])
+    img_frac = out.groupby("split")["image_id"].nunique() / out["image_id"].nunique()
+    info = {"method": "stratified_video_search", "seed": seed, "n_restarts": n_restarts, "loss": round(best_loss, 4),
+            "classes_in_val_and_test": int(sum(1 for j in range(len(classes)) if M[1, j] > 0 and M[2, j] > 0)),
+            "num_classes": len(classes), "min_class_count_val_test": int(M[1:].min()),
+            "max_class_share_deviation": round(float(np.abs(M / np.maximum(T, 1) - r[:, None]).max()), 4),
+            "image_fraction": {s: round(float(img_frac.get(s, 0)), 4) for s in SPLITS},
+            "num_videos": int(V)}
+    return out, info
 
 
-def split_by_contract(df: pd.DataFrame, split_cfg: dict[str, Any]) -> tuple[pd.DataFrame, dict[str, Any]]:
-    """Chọn cách chia theo data contract: split.method = random_group_search (v1) | stratified_group_kfold (v2)."""
+def split_by_contract(df: pd.DataFrame, split_cfg: dict[str, Any], min_box_side: float = 0.0) -> tuple[pd.DataFrame, dict[str, Any]]:
+    """Chọn cách chia theo data contract: split.method = random_group_search (v1) | stratified_video_search (v2)."""
     method = split_cfg.get("method", "random_group_search")
     ratios, seed = split_cfg["ratios"], int(split_cfg["seed"])
-    if method == "stratified_group_kfold":
-        return stratified_grouped_split(df, ratios, seed)
+    if method == "stratified_video_search":
+        return stratified_grouped_split(df, ratios, seed, min_box_side=min_box_side)
     if method == "random_group_search":
         out, info = grouped_split(df, ratios, seed)
         info["method"] = method
@@ -391,7 +522,7 @@ def run_preprocessing(raw_root: str | Path, out_dir: str | Path, contract_path: 
     if expected and len(mapping) != expected:
         raise ValueError(f"Data contract yêu cầu {expected} lớp nhưng dataset có {len(mapping)}")
 
-    df, split_info = split_by_contract(df, contract["split"])
+    df, split_info = split_by_contract(df, contract["split"], float(contract["crop"]["min_box_side_px"]))
     check_no_leakage(df)
     names = [m["class_name"] for m in mapping]
     df = export_crops(df, out_dir, names, contract, verbose=verbose)

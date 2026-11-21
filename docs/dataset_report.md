@@ -122,7 +122,7 @@ E03 (MobileNetV2 trên `v1_crop128`) chỉ đạt Macro F1 Validation 0,203. Ph�
 | Cách cắt | Lề 10% theo từng chiều, resize thẳng | Cửa sổ vuông quanh tâm bbox, cạnh = cạnh dài bbox × 1,3; dời vào trong ảnh khi chạm mép | Resize thẳng làm méo vật dài (ống, dây, chai); cửa sổ vuông giữ đúng tỉ lệ |
 | Lề | 10% | 15% | Thêm một ít bối cảnh cho vật nhỏ nhưng không quá nhiều để mô hình học nền video |
 | Bbox tối thiểu | 8 px | 16 px | Box nhỏ hơn 16 px phóng lên 224 gần như chỉ còn nhiễu; số crop bị loại ghi ở `dropped_fraction` trong `preprocessing_summary.json` (cảnh báo khi > 5%) |
-| Chia tập | Theo video, thử ngẫu nhiên nhiều hoán vị | Theo video bằng `StratifiedGroupKFold` (group = video, stratify = lớp), 70/15/15, seed 42 | v1 để vài lớp chỉ có 1–4 mẫu ở Val/Test; v2 giữ phân bố lớp gần nhau giữa các tập mà vẫn không rò rỉ video |
+| Chia tập | Theo video, thử ngẫu nhiên nhiều hoán vị | Theo video, tìm phân công video sao cho **từng lớp** có tỉ lệ Train/Val/Test gần 70/15/15 (khởi tạo ngẫu nhiên, lần lượt chuyển video sang tập khác nếu giảm độ lệch, 30 lần khởi tạo, seed 42) | v1 để vài lớp chỉ có 1–4 mẫu ở Val/Test. Đã thử `StratifiedGroupKFold` trên dữ liệu thật nhưng vẫn lệch mạnh (ví dụ `trash_bottle` chỉ 14 mẫu Train, `trash_clothing` 1 mẫu Val) vì nhiều lớp chỉ có trong vài video |
 | Augmentation | Không | Chỉ Train: cắt ngẫu nhiên 80–100%, lật ngang, xoay ±10°, độ sáng / tương phản / bão hoà ±20%, sắc độ ±5% | E03 đạt tốt nhất ở epoch 1–2 rồi học thuộc bối cảnh video; augmentation mô phỏng khác biệt ánh sáng và màu nước giữa các video |
 | Chuẩn hoá | mean/std ImageNet | Giữ nguyên | Bắt buộc với MobileNetV2 tiền huấn luyện |
 | Mất cân bằng | Class weights `balanced` | Giữ nguyên | Không đổi thêm yếu tố |
@@ -135,5 +135,18 @@ E03 (MobileNetV2 trên `v1_crop128`) chỉ đạt Macro F1 Validation 0,203. Ph�
 python -m src.preprocessing --raw-root <thư-mục-TrashCan> --out-dir data/processed/v2_crop224 --contract configs/data_contract_v2.yaml
 ```
 
-Số crop từng tập và số lớp có mặt ở Val/Test sẽ được cập nhật vào mục này sau lần chạy trên dữ liệu thật.
+**Kết quả trên dữ liệu thật** (Colab, 21/11/2026; nguồn `results/metrics/preprocessing_summary_v2.json`, `dataset_split_counts_v2.csv`, hình `results/figures/eda_v2_split_counts.png`):
+
+| Chỉ số | v1_crop128 | v2_crop224 |
+|---|---:|---:|
+| Annotation / ảnh nguồn / video | 12.128 / 7.083 / 310 | 12.128 / 7.083 / 310 |
+| Crop hợp lệ / bị loại (box nhỏ) | 12.074 / 54 | 11.270 / 858 (7,1%) |
+| Crop Train / Val / Test | 8.283 / 1.782 / 2.009 | 7.866 / 1.687 / 1.717 |
+| Tỉ lệ ảnh nguồn Train / Val / Test | 69,9 / 14,9 / 15,2% | 69,8 / 15,0 / 15,2% |
+| Số mẫu ít nhất của một lớp ở Val/Test | 1 (`animal_shells` Val) | 8 (`trash_cup` Val) |
+| Kiểm tra rò rỉ video | Đạt | Đạt |
+
+Một số lớp trong nhóm nhựa ở v2 (Train / Val / Test): `trash_bottle` 70 / 14 / 40, `trash_tarp` 82 / 17 / 22, `trash_rope` 85 / 17 / 12, `trash_snack_wrapper` 42 / 10 / 20.
+
+Tỉ lệ bị loại 7,1% vượt ngưỡng cảnh báo 5% của pipeline: các box nhỏ hơn 16 px bị bỏ. Giữ nguyên ngưỡng 16 px cho E04 vì box nhỏ hơn khi phóng lên 224×224 gần như không còn chi tiết; có thể thử 12 px nếu cần giữ thêm vật nhỏ.
 
