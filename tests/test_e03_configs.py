@@ -35,7 +35,7 @@ def test_e04_is_the_documented_improved_model():
     assert e04["input"]["image_size"] == [224, 224] and e04["augmentation"]["enabled"] is True
     assert e04["input"]["normalize"] == e03["input"]["normalize"]               # ImageNet mean/std
     t = e04["training"]
-    assert t["loss"] == "focal" and t["sampler"]["mode"] == "sqrt_inverse" and t["class_weights"]["mode"] is None
+    assert t["loss"] == "focal" and t["sampler"]["mode"] == "inverse" and t["class_weights"]["mode"] is None
     assert t["checkpoint_monitor"] == "val_macro_f1"
     for ph in ("phase1", "phase2"):
         assert t[ph]["early_stopping"]["monitor"] == "val_macro_f1" and t[ph]["early_stopping"]["mode"] == "max"

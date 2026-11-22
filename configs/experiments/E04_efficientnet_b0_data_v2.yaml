@@ -6,7 +6,8 @@
 #   1. Dữ liệu v2_crop224 (configs/data_contract_v2.yaml): gộp 22 → 18 lớp (trash_other, animal_other),
 #      crop vuông 224x224, lề 15%, bỏ box < 16 px, chia lại theo video giữ 70/15/15 cho từng lớp.
 #   2. Backbone EfficientNet-B0 ImageNet (thay MobileNetV2), mở khoá features[4:] ở pha 2.
-#   3. Bù lớp hiếm: lấy mẫu theo sqrt(1/số mẫu) + focal loss (gamma 2), bỏ class weights.
+#   3. Bù lớp hiếm: lấy mẫu theo 1/số mẫu (mọi lớp xuất hiện đều nhau) + focal loss (gamma 2), bỏ class weights.
+#      (22/11/2026: đổi từ sqrt(1/số mẫu) sang 1/số mẫu vì recall nhóm nhựa của bản trước chỉ 0,10.)
 #   4. Chọn checkpoint và dừng sớm theo Macro F1 Validation (chỉ số chính) thay vì val_loss.
 #   + augmentation chỉ trên Train.
 # Các khoá không ghi ở đây lấy từ E03 (base_config): optimizer Adam, lịch giảm lr, batch 64, cách đánh giá.
@@ -23,7 +24,7 @@ exp_id: E04
 name: efficientnet_b0_data_v2
 description: >
   EfficientNet-B0 (ImageNet pretrained), 2-phase training, on re-processed, class-merged (18 classes) and
-  re-split data v2_crop224, with train-only augmentation, sqrt-inverse class sampling, focal loss and
+  re-split data v2_crop224, with train-only augmentation, inverse-frequency class sampling, focal loss and
   checkpoint selection by validation Macro F1.
 baseline_exp_id: E03            # runs/E03_20261108-1459
 changed_factor: data + backbone + imbalance handling + checkpoint rule
@@ -32,7 +33,7 @@ known_extra_differences:        # must be stated in the PR and the report
   - "crop: bbox + 10% padding, stretched -> square window + 15% padding; 128x128 -> 224x224; min box 8 px -> 16 px"
   - "split: random video-group search -> per-class stratified video search (Val/Test differ from E01-E03)"
   - "backbone: MobileNetV2 -> EfficientNet-B0; phase 2 unfreezes features[4:] instead of features[14:]"
-  - "imbalance: balanced class weights -> sqrt-inverse WeightedRandomSampler + focal loss (gamma 2)"
+  - "imbalance: balanced class weights -> inverse-frequency WeightedRandomSampler + focal loss (gamma 2)"
   - "checkpoint / early stopping: min val_loss -> max val Macro F1"
   - "train-only augmentation (E03 had none)"
   - "E04 is not directly comparable with E01-E03: different classes and different Validation/Test sets"
@@ -97,7 +98,7 @@ training:
   class_weights:
     mode: null                 # the sampler already rebalances classes; weights on top would over-correct
   sampler:
-    mode: sqrt_inverse         # P(class) ∝ sqrt(count): rare classes seen more often, not as often as common ones
+    mode: inverse              # P(class) ∝ 1/count: every class is drawn equally often (v1 used sqrt_inverse; plastic recall was 0.10)
   checkpoint_monitor: val_macro_f1
   phase1:
     epochs: 10

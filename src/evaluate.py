@@ -17,6 +17,7 @@ Module này cung cấp toàn bộ công cụ cần thiết cho quy trình đánh
     * Keras (E01–E02): evaluate_run(run_dir, processed_dir, split)
     * PyTorch MobileNetV2 (E03–E04): evaluate_torch_checkpoint(run_dir, ckpt, processed_dir, split)
   Tập "test" chỉ được chạy MỘT lần cho mô hình cuối.
+- Phân tích lỗi theo video và theo kích thước bbox: error_analysis(predictions_csv, manifest_csv, plastic, out_dir, stem)
 
 Dòng lệnh (PyTorch):
     python -m src.evaluate --run runs/E04_<thời gian> --ckpt best.pt --processed-dir <...>/v2_crop224 --split val
@@ -1204,6 +1205,88 @@ def evaluate_torch_checkpoint(run_dir: str | Path, checkpoint: str, processed_di
     print(f"{cfg['exp_id']} / {checkpoint} / {split}: macro_f1 {o['macro_f1']:.4f}  "
           f"plastic6 {metrics['plastic_related']['macro_f1']:.4f}  acc {o['accuracy']:.4f}")
     return metrics
+
+
+SIZE_BINS = (0, 32, 64, 128, 10_000)  # cạnh ngắn của bbox gốc (pixel)
+
+
+def join_predictions_manifest(predictions_csv: str | Path, manifest_csv: str | Path) -> pd.DataFrame:
+    """Ghép <EXP>_<split>_predictions.csv (path, y_true, y_pred) với split_manifest.csv theo đường dẫn crop.
+
+    Kết quả có thêm video_id, bbox_w, bbox_h, short_side và cột correct.
+    """
+    pred = pd.read_csv(predictions_csv)
+    man = pd.read_csv(manifest_csv)
+    man = man[man["crop_status"] == "ok"].copy()
+    man["path"] = man["crop_path"].astype(str).str.replace("\\", "/", regex=False)
+    pred["path"] = pred["path"].astype(str).str.replace("\\", "/", regex=False)
+    df = pred.merge(man[["path", "video_id", "bbox_w", "bbox_h"]], on="path", how="left", validate="one_to_one")
+    missing = int(df["video_id"].isna().sum())
+    if missing:
+        raise ValueError(f"{missing} dự đoán không tìm thấy trong manifest (sai processed_dir?)")
+    df["video_id"] = df["video_id"].astype(str)
+    df["short_side"] = np.minimum(df["bbox_w"], df["bbox_h"])
+    df["correct"] = df["y_true"] == df["y_pred"]
+    return df
+
+
+def scores_by_video(df: pd.DataFrame, plastic: list[int]) -> pd.DataFrame:
+    """Accuracy theo từng video, kèm số mẫu nhựa và recall nhựa (đo domain shift giữa các video)."""
+    df = df.assign(is_plastic=df["y_true"].isin(plastic))
+    g = df.groupby("video_id")
+    out = pd.DataFrame({
+        "num_samples": g.size(),
+        "accuracy": g["correct"].mean(),
+        "num_plastic": g["is_plastic"].sum(),
+    })
+    pl = df[df["is_plastic"]].groupby("video_id")["correct"].mean()
+    out["plastic_recall"] = pl.reindex(out.index)
+    return out.round(4).sort_values("num_samples", ascending=False)
+
+
+def scores_by_size(df: pd.DataFrame, plastic: list[int], bins: tuple[int, ...] = SIZE_BINS) -> pd.DataFrame:
+    """Recall theo nhóm kích thước bbox (cạnh ngắn), cho mọi lớp và riêng nhóm nhựa (đo ảnh hưởng của vật nhỏ)."""
+    labels = [f"{a}-{b}px" if b < bins[-1] else f">={a}px" for a, b in zip(bins[:-1], bins[1:])]
+    df = df.assign(size_bin=pd.cut(df["short_side"], bins=list(bins), labels=labels, right=False))
+    rows = []
+    for name, part in (("all", df), ("plastic6", df[df["y_true"].isin(plastic)])):
+        g = part.groupby("size_bin", observed=False)["correct"]
+        for b, n, r in zip(labels, g.size().reindex(labels, fill_value=0), g.mean().reindex(labels)):
+            rows.append({"group": name, "size_bin": b, "num_samples": int(n),
+                         "recall": None if pd.isna(r) else round(float(r), 4)})
+    return pd.DataFrame(rows)
+
+
+def video_summary(by_video: pd.DataFrame, min_samples: int = 10) -> dict[str, Any]:
+    """Độ phân tán accuracy giữa các video có ít nhất `min_samples` mẫu."""
+    v = by_video[by_video["num_samples"] >= min_samples]["accuracy"]
+    pv = by_video[by_video["num_plastic"] >= 3]["plastic_recall"].dropna()
+    return {
+        "min_samples": min_samples,
+        "num_videos": int(len(v)),
+        "accuracy_mean": float(v.mean()) if len(v) else None,
+        "accuracy_std": float(v.std(ddof=0)) if len(v) else None,
+        "accuracy_min": float(v.min()) if len(v) else None,
+        "accuracy_max": float(v.max()) if len(v) else None,
+        "plastic_videos": int(len(pv)),
+        "plastic_recall_by_video": {str(k): round(float(x), 4) for k, x in pv.items()},
+    }
+
+
+def error_analysis(predictions_csv: str | Path, manifest_csv: str | Path, plastic: list[int],
+                   out_dir: str | Path, stem: str) -> dict[str, Any]:
+    """Ghi <stem>_by_video.csv, <stem>_by_size.csv, <stem>_error_analysis.json vào out_dir."""
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    df = join_predictions_manifest(predictions_csv, manifest_csv)
+    by_video = scores_by_video(df, plastic)
+    by_size = scores_by_size(df, plastic)
+    by_video.to_csv(out / f"{stem}_by_video.csv")
+    by_size.to_csv(out / f"{stem}_by_size.csv", index=False)
+    summary = {"stem": stem, "num_samples": int(len(df)), "video": video_summary(by_video),
+               "size": by_size.to_dict(orient="records")}
+    (out / f"{stem}_error_analysis.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
+    return summary
 
 
 def main(argv: list[str] | None = None) -> None:
