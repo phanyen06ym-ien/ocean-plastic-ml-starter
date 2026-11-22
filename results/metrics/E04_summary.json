@@ -1,45 +1,45 @@
 {
   "exp_id": "E04",
-  "run_dir": "/content/drive/MyDrive/ocean-plastic-ml/runs/E04_20261121-1102",
+  "run_dir": "/content/drive/MyDrive/ocean-plastic-ml/runs/E04_20261122-0853",
   "phase1": {
     "phase": "frozen_backbone",
     "monitor": "val_macro_f1",
-    "best_score": 0.3067415183474254,
-    "best_val_loss": 1.5895919374456988,
-    "best_epoch": 2,
+    "best_score": 0.3222364865145114,
+    "best_val_loss": 1.6605693090689575,
+    "best_epoch": 10,
     "checkpoint": "best_phase1.pt",
-    "best_macro_f1": 0.3067415183474254,
-    "best_macro_f1_epoch": 2,
-    "best_macro_f1_val_loss": 1.5895919374456988,
+    "best_macro_f1": 0.3222364865145114,
+    "best_macro_f1_epoch": 10,
+    "best_macro_f1_val_loss": 1.6605693090689575,
     "best_macro_f1_checkpoint": "bestf1_phase1.pt"
   },
   "phase2": {
     "phase": "finetune_last_blocks",
     "monitor": "val_macro_f1",
-    "best_score": 0.33876022324256927,
-    "best_val_loss": 1.557803108658589,
-    "best_epoch": 11,
+    "best_score": 0.34832299747940243,
+    "best_val_loss": 1.5567579336569344,
+    "best_epoch": 4,
     "checkpoint": "best_phase2.pt",
-    "best_macro_f1": 0.33876022324256927,
-    "best_macro_f1_epoch": 11,
-    "best_macro_f1_val_loss": 1.557803108658589,
+    "best_macro_f1": 0.34832299747940243,
+    "best_macro_f1_epoch": 4,
+    "best_macro_f1_val_loss": 1.5567579336569344,
     "best_macro_f1_checkpoint": "bestf1_phase2.pt"
   },
   "selected": {
     "phase": "finetune_last_blocks",
     "monitor": "val_macro_f1",
-    "best_score": 0.33876022324256927,
-    "best_val_loss": 1.557803108658589,
-    "best_epoch": 11,
+    "best_score": 0.34832299747940243,
+    "best_val_loss": 1.5567579336569344,
+    "best_epoch": 4,
     "checkpoint": "best_phase2.pt",
-    "best_macro_f1": 0.33876022324256927,
-    "best_macro_f1_epoch": 11,
-    "best_macro_f1_val_loss": 1.557803108658589,
+    "best_macro_f1": 0.34832299747940243,
+    "best_macro_f1_epoch": 4,
+    "best_macro_f1_val_loss": 1.5567579336569344,
     "best_macro_f1_checkpoint": "bestf1_phase2.pt"
   },
-  "macro_f1_val": 0.33876022324256927,
-  "accuracy_val": 0.5786384976525821,
-  "macro_f1_plastic6_val": 0.1527157725593514,
+  "macro_f1_val": 0.34832299747940243,
+  "accuracy_val": 0.5686619718309859,
+  "macro_f1_plastic6_val": 0.16355573986820604,
   "efficiency": {
     "params": {
       "total": 4030606,
@@ -51,8 +51,8 @@
       224
     ],
     "torch_threads": 1,
-    "inference_ms_cpu_bs1": 40.106,
-    "inference_ms_cuda_bs1": 10.076
+    "inference_ms_cpu_bs1": 59.188,
+    "inference_ms_cuda_bs1": 8.194
   },
   "baseline_reference": {
     "macro_f1_val": 0.203,

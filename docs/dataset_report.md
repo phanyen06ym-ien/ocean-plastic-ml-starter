@@ -125,7 +125,7 @@ E03 (MobileNetV2 trên `v1_crop128`) chỉ đạt Macro F1 Validation 0,203. Ph�
 | Chia tập | Theo video, thử ngẫu nhiên nhiều hoán vị | Theo video, tìm phân công video sao cho **từng lớp** có tỉ lệ Train/Val/Test gần 70/15/15 (khởi tạo ngẫu nhiên, lần lượt chuyển video sang tập khác nếu giảm độ lệch, 30 lần khởi tạo, seed 42) | v1 để vài lớp chỉ có 1–4 mẫu ở Val/Test. Đã thử `StratifiedGroupKFold` trên dữ liệu thật nhưng vẫn lệch mạnh (ví dụ `trash_bottle` chỉ 14 mẫu Train) vì nhiều lớp chỉ có trong vài video |
 | Augmentation | Không | Chỉ Train: cắt ngẫu nhiên 80–100%, lật ngang, xoay ±10°, độ sáng / tương phản / bão hoà ±20%, sắc độ ±5% | E03 đạt tốt nhất ở epoch 1–2 rồi học thuộc bối cảnh video; augmentation mô phỏng khác biệt ánh sáng và màu nước giữa các video |
 | Chuẩn hoá | mean/std ImageNet | Giữ nguyên | Bắt buộc với backbone tiền huấn luyện ImageNet |
-| Mất cân bằng | Class weights `balanced` | Lấy mẫu theo √(1/số mẫu) + focal loss (γ = 2) | Lớp hiếm được thấy thường hơn khi train mà không lặp quá nhiều; focal loss tập trung vào mẫu khó |
+| Mất cân bằng | Class weights `balanced` | Lấy mẫu theo 1/số mẫu (mọi lớp xuất hiện đều nhau) + focal loss (γ = 2) | Bản đầu của E04 (21/11) lấy mẫu theo √(1/số mẫu) nhưng recall nhóm nhựa chỉ 0,15 (Val); đổi sang 1/số mẫu ngày 22/11 (mục 9). Focal loss tập trung vào mẫu khó |
 
 **Kết quả trên dữ liệu thật** (Colab, 21/11/2026; nguồn `results/metrics/preprocessing_summary_v2.json`, `dataset_split_counts_v2.csv`, hình `results/figures/eda_v2_split_counts.png`):
 
@@ -150,3 +150,65 @@ Tỉ lệ bị loại 7,1% vượt ngưỡng cảnh báo 5% của pipeline: các
 python -m src.preprocessing --raw-root <thư-mục-TrashCan> --out-dir data/processed/v2_crop224 \
     --contract configs/data_contract_v2.yaml --mapping-out configs/class_mapping_v2.json
 ```
+
+## 9. Phân tích lỗi nhóm nhựa: kích thước vật thể và video (22/11/2026)
+
+Câu hỏi: vì sao Macro F1 nhóm nhựa của E04 thấp (bản đầu: 0,153 Val, 0,119 Test), trong khi Macro F1 chung 0,33? Bốn giả thuyết ban đầu: (1) lớp nhựa ít mẫu, (2) lớp gộp `trash_other` hút nhầm, (3) khác biệt giữa các video (domain shift), (4) vật thể nhỏ / nước đục. Mục này kiểm tra (3) và (4) bằng số liệu; (1) và (2) đọc từ ma trận nhầm lẫn.
+
+Công cụ: `src/eda.py: bbox_stats` (kích thước bbox theo lớp, trên toàn bộ annotation) và `src/evaluate.py: error_analysis` (ghép dự đoán với `split_manifest.csv`, tính accuracy theo video và recall theo nhóm kích thước). Nguồn: `results/metrics/bbox_stats_by_class_v2.csv`, `E04v1_{val,test}_by_{video,size}.csv` (E04 bản đầu), `E04_val_by_{video,size}.csv` (E04 hiện tại).
+
+### 9.1. Vật thể nhỏ: không phải nguyên nhân chính
+
+Cạnh ngắn của bbox (pixel, trung vị) và tỉ lệ box < 32 px:
+
+| Lớp | Trung vị | < 32 px | F1 Test (E04 bản đầu) |
+|---|---:|---:|---:|
+| `trash_pipe` | 127 | 4% | 0,24 |
+| `trash_tarp` | 107 | 9% | 0,07 |
+| `trash_rope` | 91 | 13% | 0,09 |
+| `trash_net` | 73 | 6% | 0,32 |
+| `trash_bottle` | 63 | 25% | 0,00 |
+| `trash_bag` | 52 | 29% | 0,23 |
+| `trash_snack_wrapper` | 45 | 31% | 0,00 |
+| `trash_other` | 45 | 32% | 0,41 |
+| `animal_starfish` | 27 | 72% | 0,85 |
+| `animal_eel` | 23 | 71% | 0,38 |
+
+- Các lớp nhựa **không nhỏ hơn** các lớp khác; `animal_starfish` nhỏ nhất (72% box < 32 px) nhưng F1 cao nhất.
+- Recall nhóm nhựa theo kích thước (E04 bản đầu, Test): 0,20 (< 32 px), 0,06 (32–64), 0,22 (64–128), 0,00 (≥ 128 px, 13 mẫu). Không tăng theo kích thước. Với mọi lớp, recall có tăng theo kích thước (0,44 → 0,66) nhưng đó là xu hướng chung, không giải thích riêng nhóm nhựa.
+- Độ đục của nước chưa đo được (TrashCan không có nhãn độ đục); để ở mức giả thuyết.
+
+### 9.2. Video: mẫu nhựa tập trung trong rất ít video
+
+| | Val | Test |
+|---|---|---|
+| Số video có mẫu nhựa | 15 | 16 |
+| Video nhiều mẫu nhựa nhất | `vid_000144`: 51/228 (22%) | `vid_000255`: **88/217 (41%)** |
+| Recall nhựa trong video đó (E04 bản đầu) | 0,06 | 0,15 |
+| Accuracy theo video (video ≥ 10 mẫu): trung bình ± độ lệch chuẩn | 0,53 ± 0,32 (44 video) | 0,55 ± 0,31 (35 video) |
+
+- Một video quyết định gần một nửa điểm nhựa trên Test: kết quả nhóm nhựa chủ yếu đo khả năng tổng quát sang **vài video cụ thể**, không phải sang "rác nhựa" nói chung. Đây là bằng chứng cho domain shift giữa các video, và là lý do F1 nhựa trên Val và Test chênh nhau.
+- Accuracy dao động từ 0 đến 1 giữa các video; khoảng tin cậy của Macro F1 nhóm nhựa vì vậy rất rộng.
+
+### 9.3. Ít mẫu và lớp `trash_other`
+
+- Train có 43 (`trash_snack_wrapper`) đến 88 (`trash_net`) crop cho 5/6 lớp nhựa, so với 1.948 crop `trash_other`; `trash_bottle` và `trash_snack_wrapper` chỉ xuất hiện trong 7 video.
+- E04 bản đầu đoán 59% mẫu nhựa Test (129/217) và 57% mẫu nhựa Val (131/228) thành `trash_other`, và không bao giờ dự đoán `trash_bottle`, `trash_snack_wrapper`.
+
+### 9.4. Thay đổi: lấy mẫu theo 1/số mẫu (E04 hiện tại)
+
+Chỉ đổi `training.sampler.mode` từ `sqrt_inverse` sang `inverse`; dữ liệu, split, backbone và mọi siêu tham số khác giữ nguyên. Kết quả Validation (run `E04_20261122-0853`):
+
+| Validation | E04 bản đầu (√) | E04 hiện tại (1/n) |
+|---|---:|---:|
+| Macro F1 | 0,339 | **0,348** |
+| Accuracy | 0,579 | 0,569 |
+| Macro F1 nhóm nhựa | 0,153 | **0,164** |
+| Recall / Precision nhóm nhựa | 0,150 / 0,176 | **0,237** / 0,142 |
+| Mẫu nhựa bị đoán thành `trash_other` | 131/228 | **81/228** |
+
+Theo lớp (F1 Val): `trash_bag` 0,16 → 0,26, `trash_tarp` 0,11 → 0,27 (recall 0,17 → 0,67); `trash_rope` 0,31 → 0,19, `trash_net` 0,34 → 0,26; `trash_bottle`, `trash_snack_wrapper`, `trash_pipe` vẫn 0. Mô hình đoán nhựa nhiều hơn (recall tăng) nhưng kém chính xác hơn (precision giảm). Mức tăng Macro F1 (+0,009) nhỏ so với dao động giữa các epoch (0,29–0,35), nên chỉ coi là cải thiện nhẹ.
+
+### 9.5. Kết luận và hướng tiếp theo
+
+Thứ tự nguyên nhân theo bằng chứng: **(2) `trash_other` hút nhầm** và **(1) ít mẫu / ít video** rõ nhất; **(3) khác biệt giữa video** được xác nhận và làm số đo nhóm nhựa rất không ổn định; **(4) vật thể nhỏ không phải nguyên nhân chính**. Đổi cách lấy mẫu chỉ giải quyết một phần (1). Hướng tiếp theo: bỏ `trash_unknown_instance` khỏi huấn luyện hoặc phân loại hai tầng (nhựa / không nhựa → loại nhựa); thêm dữ liệu nhựa từ video khác; báo cáo kết quả kèm khoảng tin cậy theo video (bootstrap theo video).
