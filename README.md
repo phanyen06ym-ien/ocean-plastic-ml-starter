@@ -40,7 +40,7 @@ Cập nhật 21/11/2026 · Sprint 3 — hoàn thiện bản nộp giữa kỳ.
 | Phân tích lỗi nhóm nhựa                | Kích thước bbox theo lớp, kết quả theo video; đổi lấy mẫu sang 1/số mẫu ([`docs/dataset_report.md`](docs/dataset_report.md) mục 9) | ✅ Xong      |
 | Demo                                   | CLI `main.py` chạy với checkpoint Keras (E01–E02) và PyTorch (E03–E04)                  | ✅ Xong      |
 | Notebook kèm output                    | `01_trashcan_eda`, `04_evaluation` lưu kết quả lần chạy Colab 22/11/2026                 | ✅ Xong      |
-| Release `v1.0-final`                   | Tag trên GitHub tại commit `ede61ab` (mô hình cuối và kết quả)                           | ⏳ Chờ gắn tag |
+| Release `v1.0-final`                   | Tag trên GitHub tại commit `ede61ab` (mô hình cuối và kết quả), 22/11/2026               | ✅ Xong      |
 | Báo cáo, slide                         |                                                                                        | ⏳           |
 
 ## 2. Bài toán
