@@ -1,0 +1,204 @@
+{
+  "overall": {
+    "accuracy": 0.5065676756139349,
+    "macro_precision": 0.3415137852755976,
+    "macro_recall": 0.34403306301090175,
+    "macro_f1": 0.328588342470254,
+    "weighted_precision": 0.4824072420836413,
+    "weighted_recall": 0.5065676756139349,
+    "weighted_f1": 0.485867114855876,
+    "per_class": {
+      "rov": {
+        "label": 0,
+        "precision": 0.7787769784172662,
+        "recall": 0.9058577405857741,
+        "f1_score": 0.8375241779497099,
+        "support": 478
+      },
+      "plant": {
+        "label": 1,
+        "precision": 0.09375,
+        "recall": 0.08333333333333333,
+        "f1_score": 0.08823529411764706,
+        "support": 72
+      },
+      "animal_fish": {
+        "label": 2,
+        "precision": 0.6296296296296297,
+        "recall": 0.7870370370370371,
+        "f1_score": 0.6995884773662552,
+        "support": 108
+      },
+      "animal_starfish": {
+        "label": 3,
+        "precision": 0.8378378378378378,
+        "recall": 0.9538461538461539,
+        "f1_score": 0.8920863309352518,
+        "support": 65
+      },
+      "animal_other": {
+        "label": 4,
+        "precision": 0.05263157894736842,
+        "recall": 0.06,
+        "f1_score": 0.056074766355140186,
+        "support": 50
+      },
+      "animal_crab": {
+        "label": 5,
+        "precision": 0.8421052631578947,
+        "recall": 0.43243243243243246,
+        "f1_score": 0.5714285714285714,
+        "support": 37
+      },
+      "animal_eel": {
+        "label": 6,
+        "precision": 0.34328358208955223,
+        "recall": 0.6052631578947368,
+        "f1_score": 0.4380952380952381,
+        "support": 38
+      },
+      "trash_other": {
+        "label": 7,
+        "precision": 0.3713527851458886,
+        "recall": 0.30501089324618735,
+        "f1_score": 0.3349282296650718,
+        "support": 459
+      },
+      "trash_pipe": {
+        "label": 8,
+        "precision": 0.7,
+        "recall": 0.4,
+        "f1_score": 0.509090909090909,
+        "support": 35
+      },
+      "trash_bottle": {
+        "label": 9,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1_score": 0.0,
+        "support": 17
+      },
+      "trash_bag": {
+        "label": 10,
+        "precision": 0.3333333333333333,
+        "recall": 0.34558823529411764,
+        "f1_score": 0.33935018050541516,
+        "support": 136
+      },
+      "trash_snack_wrapper": {
+        "label": 11,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1_score": 0.0,
+        "support": 10
+      },
+      "trash_can": {
+        "label": 12,
+        "precision": 0.41935483870967744,
+        "recall": 0.5909090909090909,
+        "f1_score": 0.49056603773584906,
+        "support": 66
+      },
+      "trash_container": {
+        "label": 13,
+        "precision": 0.16666666666666666,
+        "recall": 0.038461538461538464,
+        "f1_score": 0.0625,
+        "support": 78
+      },
+      "trash_branch": {
+        "label": 14,
+        "precision": 0.16666666666666666,
+        "recall": 0.125,
+        "f1_score": 0.14285714285714285,
+        "support": 48
+      },
+      "trash_tarp": {
+        "label": 15,
+        "precision": 0.057692307692307696,
+        "recall": 0.16666666666666666,
+        "f1_score": 0.08571428571428572,
+        "support": 18
+      },
+      "trash_rope": {
+        "label": 16,
+        "precision": 0.16666666666666666,
+        "recall": 0.23529411764705882,
+        "f1_score": 0.1951219512195122,
+        "support": 17
+      },
+      "trash_net": {
+        "label": 17,
+        "precision": 0.1875,
+        "recall": 0.15789473684210525,
+        "f1_score": 0.17142857142857143,
+        "support": 19
+      }
+    },
+    "total_samples": 1751,
+    "target_names": [
+      "rov",
+      "plant",
+      "animal_fish",
+      "animal_starfish",
+      "animal_other",
+      "animal_crab",
+      "animal_eel",
+      "trash_other",
+      "trash_pipe",
+      "trash_bottle",
+      "trash_bag",
+      "trash_snack_wrapper",
+      "trash_can",
+      "trash_container",
+      "trash_branch",
+      "trash_tarp",
+      "trash_rope",
+      "trash_net"
+    ]
+  },
+  "plastic_related": {
+    "classes": [
+      9,
+      10,
+      11,
+      15,
+      16,
+      17
+    ],
+    "classes_evaluated": [
+      9,
+      10,
+      11,
+      15,
+      16,
+      17
+    ],
+    "macro_precision": 0.12419871794871795,
+    "macro_recall": 0.15090729274165807,
+    "macro_f1": 0.1319358314779641,
+    "support": 217
+  },
+  "exp_id": "E04",
+  "checkpoint": "best.pt",
+  "split": "test",
+  "num_samples": 1751,
+  "num_classes": 18,
+  "loss_unweighted": 1.626476454503328,
+  "data_version": "v2_crop224",
+  "run_dir": "/content/drive/MyDrive/ocean-plastic-ml/runs/E04_20261122-0853",
+  "efficiency": {
+    "params": {
+      "total": 4030606,
+      "trainable_phase2": 4030606
+    },
+    "file_size_mb": 16.4,
+    "input_size": [
+      224,
+      224
+    ],
+    "torch_threads": 1,
+    "inference_ms_cpu_bs1": 43.715,
+    "inference_ms_cuda_bs1": 9.363
+  }
+}

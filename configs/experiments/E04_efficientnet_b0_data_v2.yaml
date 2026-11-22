@@ -7,7 +7,7 @@
 #      crop vuông 224x224, lề 15%, bỏ box < 16 px, chia lại theo video giữ 70/15/15 cho từng lớp.
 #   2. Backbone EfficientNet-B0 ImageNet (thay MobileNetV2), mở khoá features[4:] ở pha 2.
 #   3. Bù lớp hiếm: lấy mẫu theo 1/số mẫu (mọi lớp xuất hiện đều nhau) + focal loss (gamma 2), bỏ class weights.
-#      (22/11/2026: đổi từ sqrt(1/số mẫu) sang 1/số mẫu vì recall nhóm nhựa của bản trước chỉ 0,10.)
+#      (22/11/2026: đổi từ sqrt(1/số mẫu) sang 1/số mẫu vì recall nhóm nhựa của bản trước chỉ 0,15 trên Val, 0,10 trên Test.)
 #   4. Chọn checkpoint và dừng sớm theo Macro F1 Validation (chỉ số chính) thay vì val_loss.
 #   + augmentation chỉ trên Train.
 # Các khoá không ghi ở đây lấy từ E03 (base_config): optimizer Adam, lịch giảm lr, batch 64, cách đánh giá.
@@ -98,7 +98,7 @@ training:
   class_weights:
     mode: null                 # the sampler already rebalances classes; weights on top would over-correct
   sampler:
-    mode: inverse              # P(class) ∝ 1/count: every class is drawn equally often (v1 used sqrt_inverse; plastic recall was 0.10)
+    mode: inverse              # P(class) ∝ 1/count: every class is drawn equally often (first E04 used sqrt_inverse; plastic recall 0.15 val)
   checkpoint_monitor: val_macro_f1
   phase1:
     epochs: 10

@@ -209,6 +209,8 @@ Chỉ đổi `training.sampler.mode` từ `sqrt_inverse` sang `inverse`; dữ li
 
 Theo lớp (F1 Val): `trash_bag` 0,16 → 0,26, `trash_tarp` 0,11 → 0,27 (recall 0,17 → 0,67); `trash_rope` 0,31 → 0,19, `trash_net` 0,34 → 0,26; `trash_bottle`, `trash_snack_wrapper`, `trash_pipe` vẫn 0. Mô hình đoán nhựa nhiều hơn (recall tăng) nhưng kém chính xác hơn (precision giảm). Mức tăng Macro F1 (+0,009) nhỏ so với dao động giữa các epoch (0,29–0,35), nên chỉ coi là cải thiện nhẹ.
 
+Trên Test (lần chạy Test thứ hai của dự án, 22/11; xem lưu ý trong README): Macro F1 0,327 → 0,329, Accuracy 0,535 → 0,507, Macro F1 nhóm nhựa 0,119 → 0,132, recall nhóm nhựa 0,099 → 0,151; mẫu nhựa bị đoán thành `trash_other` 129 → 71 (trên 217); recall nhựa trong `vid_000255` 0,15 → 0,39. Recall nhựa theo kích thước (Test): 0,29 / 0,28 / 0,23 / 0,15 cho < 32 / 32–64 / 64–128 / ≥ 128 px — vẫn không tăng theo kích thước. Nguồn: `results/metrics/E04_test.json`, `E04_test_by_{video,size}.csv`.
+
 ### 9.5. Kết luận và hướng tiếp theo
 
 Thứ tự nguyên nhân theo bằng chứng: **(2) `trash_other` hút nhầm** và **(1) ít mẫu / ít video** rõ nhất; **(3) khác biệt giữa video** được xác nhận và làm số đo nhóm nhựa rất không ổn định; **(4) vật thể nhỏ không phải nguyên nhân chính**. Đổi cách lấy mẫu chỉ giải quyết một phần (1). Hướng tiếp theo: bỏ `trash_unknown_instance` khỏi huấn luyện hoặc phân loại hai tầng (nhựa / không nhựa → loại nhựa); thêm dữ liệu nhựa từ video khác; báo cáo kết quả kèm khoảng tin cậy theo video (bootstrap theo video).
