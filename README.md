@@ -35,11 +35,13 @@ Cập nhật 21/11/2026 · Sprint 3 — hoàn thiện bản nộp giữa kỳ.
 | MobileNetV2                            | E03 (2 pha) + tinh chỉnh E03a–E03f                                                     | ✅ Xong      |
 | Đánh giá Validation                    | Macro F1, nhóm nhựa, confusion matrix, phân tích lỗi E01–E03                           | ✅ Xong      |
 | Dữ liệu `v2_crop224` + E04             | Gộp 22 → 18 lớp, crop vuông 224×224, chia lại theo video giữ 70/15/15 cho từng lớp; EfficientNet-B0, bù lớp hiếm, chọn checkpoint theo Macro F1 | ✅ Xong      |
-| Chốt mô hình cuối                      | E04 (EfficientNet-B0, 18 lớp) — Macro F1 Validation cao nhất                            | ✅ Xong      |
+| Chốt mô hình cuối                      | E04 (EfficientNet-B0, 18 lớp) — Macro F1 Validation cao nhất; quyết định ADR-002 (22/11/2026) | ✅ Xong      |
 | Đánh giá Test                          | E04 bản đầu (21/11): Macro F1 0,327 · E04 hiện tại (22/11, lần Test thứ hai): Macro F1 0,329, nhóm nhựa 0,132 | ✅ Xong      |
 | Phân tích lỗi nhóm nhựa                | Kích thước bbox theo lớp, kết quả theo video; đổi lấy mẫu sang 1/số mẫu ([`docs/dataset_report.md`](docs/dataset_report.md) mục 9) | ✅ Xong      |
 | Demo                                   | CLI `main.py` chạy với checkpoint Keras (E01–E02) và PyTorch (E03–E04)                  | ✅ Xong      |
-| Báo cáo, slide, release `v0.1-midterm` |                                                                                        | ⏳           |
+| Notebook kèm output                    | `01_trashcan_eda`, `04_evaluation` lưu kết quả lần chạy Colab 22/11/2026                 | ✅ Xong      |
+| Release `v1.0-final`                   | Tag trên GitHub tại commit chứa mô hình cuối và kết quả                                  | ✅ Xong      |
+| Báo cáo, slide                         |                                                                                        | ⏳           |
 
 ## 2. Bài toán
 
