@@ -1,0 +1,7 @@
+# E03e — tuning run (S3-CNN, step B). Differs from E03 ONLY in: training.phase2.learning_rate features/classifier 1e-5/1e-4 -> 3e-5/3e-4
+exp_id: E03e
+base_config: E03_transfer_mobilenetv2.yaml
+baseline_exp_id: E03
+changed_factor: "training.phase2.learning_rate features/classifier 1e-5/1e-4 -> 3e-5/3e-4"
+description: E03 with phase-2 learning rates 3e-5 / 3e-4
+training: {phase2: {learning_rate: {features: 3.0e-5, classifier: 3.0e-4}}}
