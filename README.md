@@ -224,7 +224,7 @@ Trên Test, đổi cách lấy mẫu gần như không đổi Macro F1 (0,327 �
 | Huấn luyện | `E01_learning_curves.png`, `E02_learning_curves.png`, `E03_learning_curves.png`, `E04_learning_curves.png` |
 | Confusion matrix | `E01_val_…`, `E02_val_…`, `E03_val_…`, `E04_val_…`, `E04_test_…`, `E04v1_test_confusion_matrix.png` |
 | So sánh | `comparison_e01_e04.png` (Macro F1 và nhóm nhựa E01–E04), `E04_plastic_f1_per_class.png` |
-| Phân tích lỗi | `error_bbox_size_by_class.png`, `error_recall_by_size.png`, `error_plastic_by_video.png` |
+| Phân tích lỗi | `error_bbox_size_by_class.png`, `error_recall_by_size.png`, `error_plastic_by_video.png`, `E04_test_misclassified_plastic.jpg` (16 ảnh nhựa bị đoán sai, kèm độ tin cậy) |
 | Demo | `demo_val_predictions.png` |
 
 Kết quả theo lớp với support nhỏ (dưới khoảng 10 mẫu) không đủ để kết luận. Số liệu theo lớp: `results/metrics/<EXP_ID>_val.json` · Hình: `results/figures/` · Cách đánh giá: [`docs/evaluation_plan.md`](docs/evaluation_plan.md).

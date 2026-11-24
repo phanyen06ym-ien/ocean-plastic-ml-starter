@@ -211,6 +211,15 @@ Theo lớp (F1 Val): `trash_bag` 0,16 → 0,26, `trash_tarp` 0,11 → 0,27 (reca
 
 Trên Test (lần chạy Test thứ hai của dự án, 22/11; xem lưu ý trong README): Macro F1 0,327 → 0,329, Accuracy 0,535 → 0,507, Macro F1 nhóm nhựa 0,119 → 0,132, recall nhóm nhựa 0,099 → 0,151; mẫu nhựa bị đoán thành `trash_other` 129 → 71 (trên 217); recall nhựa trong `vid_000255` 0,15 → 0,39. Recall nhựa theo kích thước (Test): 0,29 / 0,28 / 0,23 / 0,15 cho < 32 / 32–64 / 64–128 / ≥ 128 px — vẫn không tăng theo kích thước. Nguồn: `results/metrics/E04_test.json`, `E04_test_by_{video,size}.csv`.
 
-### 9.5. Kết luận và hướng tiếp theo
+### 9.5. Xem ảnh bị đoán sai
+
+`results/figures/E04_test_misclassified_plastic.jpg` (danh sách: `results/predictions/E04_test_misclassified_plastic.csv`) ghép 16 mẫu nhựa Test bị E04 đoán sai với độ tin cậy cao nhất, tối đa 3 mẫu mỗi lớp (`scripts/make_misclassified_grid.py`). Nhận xét bằng mắt của người phân tích, chưa đo định lượng:
+
+- **Crop chứa nhiều vật thể:** các crop `trash_bottle`, `trash_rope` lấy từ cảnh có bạt, dây và thực vật chồng lên nhau; cửa sổ vuông lề 15% đưa vật thể bên cạnh vào ảnh, nên nhãn của crop không còn rõ (mô hình đoán `trash_tarp`, `trash_other`).
+- **Khung hình gần trùng nhau:** nhiều cặp ảnh gần như giống hệt (cùng vật thể, khung liên tiếp), nên một lỗi đếm thành nhiều mẫu — thêm một lý do số đo nhóm nhựa không ổn định (mục 9.2).
+- **`trash_snack_wrapper` và `trash_bag` trông giống nhau:** mảnh nhựa trắng phẳng, mờ; cả 10 mẫu snack wrapper trên Test bị đoán thành `trash_bag`.
+- **Lưới, dây mảnh:** `trash_net`, `trash_rope` dạng sợi rối bị đoán thành `plant` hoặc `rov`.
+
+### 9.6. Kết luận và hướng tiếp theo
 
 Thứ tự nguyên nhân theo bằng chứng: **(2) `trash_other` hút nhầm** và **(1) ít mẫu / ít video** rõ nhất; **(3) khác biệt giữa video** được xác nhận và làm số đo nhóm nhựa rất không ổn định; **(4) vật thể nhỏ không phải nguyên nhân chính**. Đổi cách lấy mẫu chỉ giải quyết một phần (1). Hướng tiếp theo: bỏ `trash_unknown_instance` khỏi huấn luyện hoặc phân loại hai tầng (nhựa / không nhựa → loại nhựa); thêm dữ liệu nhựa từ video khác; báo cáo kết quả kèm khoảng tin cậy theo video (bootstrap theo video).

@@ -1,0 +1,17 @@
+path,true_name,pred_name,confidence
+test/trash_bag/val_12116.jpg,trash_bag,trash_other,0.8568735718727112
+test/trash_bag/val_9988.jpg,trash_bag,animal_other,0.8467385768890381
+test/trash_bag/val_10835.jpg,trash_bag,animal_other,0.839809000492096
+test/trash_bottle/train_8152.jpg,trash_bottle,trash_tarp,0.5954205989837646
+test/trash_bottle/train_4653.jpg,trash_bottle,trash_other,0.5537547469139099
+test/trash_bottle/train_1248.jpg,trash_bottle,trash_other,0.5233927965164185
+test/trash_net/train_9448.jpg,trash_net,plant,0.6072496771812439
+test/trash_net/val_11380.jpg,trash_net,rov,0.5926828384399414
+test/trash_net/train_1767.jpg,trash_net,plant,0.5807570219039917
+test/trash_rope/train_588.jpg,trash_rope,trash_other,0.8794627785682678
+test/trash_rope/train_8153.jpg,trash_rope,trash_tarp,0.7369920015335083
+test/trash_rope/val_10174.jpg,trash_rope,rov,0.7014822959899902
+test/trash_snack_wrapper/val_11838.jpg,trash_snack_wrapper,trash_bag,0.869427502155304
+test/trash_snack_wrapper/val_9865.jpg,trash_snack_wrapper,trash_bag,0.863318681716919
+test/trash_snack_wrapper/val_9875.jpg,trash_snack_wrapper,trash_bag,0.8512863516807556
+test/trash_tarp/val_11093.jpg,trash_tarp,trash_other,0.9109639525413513
