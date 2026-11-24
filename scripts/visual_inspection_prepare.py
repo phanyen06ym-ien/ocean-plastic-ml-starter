@@ -92,7 +92,13 @@ def find_source(raw_root: Path, file_name: str, source_split: str, index: dict[s
 
 
 def _font(size: int):
-    for f in ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "DejaVuSans.ttf"):
+    cands = ["/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"]
+    try:
+        from matplotlib import font_manager
+        cands.insert(0, font_manager.findfont("DejaVu Sans", fallback_to_default=True))
+    except Exception:  # pragma: no cover
+        pass
+    for f in cands + ["DejaVuSans.ttf"]:
         try:
             return ImageFont.truetype(f, size)
         except OSError:
@@ -100,7 +106,7 @@ def _font(size: int):
     return ImageFont.load_default()
 
 
-def sample_panel(row, processed_dir: Path, source: Path | None, h: int = 224) -> Image.Image:
+def sample_panel(row, processed_dir: Path, source: Path | None, h: int = 300) -> Image.Image:
     crop = Image.open(processed_dir / row["crop_path"]).convert("RGB").resize((h, h))
     if source is not None and source.exists():
         src = Image.open(source).convert("RGB")
@@ -111,31 +117,34 @@ def sample_panel(row, processed_dir: Path, source: Path | None, h: int = 224) ->
     else:
         ctx = Image.new("RGB", (int(h * 1.33), h), (230, 230, 230))
         ImageDraw.Draw(ctx).text((10, h // 2), "không tìm thấy ảnh gốc", fill=(80, 80, 80), font=_font(14))
-    label_w = 150
+    label_w = 190
     panel = Image.new("RGB", (label_w + h + 8 + ctx.width, h + 8), "white")
     d = ImageDraw.Draw(panel)
-    d.text((6, 8), row["sample_no"], fill=(0, 0, 0), font=_font(26))
-    d.text((6, 44), row["class_name"].replace("trash_", ""), fill=(30, 64, 175), font=_font(16))
-    d.text((6, 66), row["split"], fill=(90, 90, 90), font=_font(14))
+    d.text((8, 10), row["sample_no"], fill=(0, 0, 0), font=_font(40))
+    d.text((8, 64), "Nhãn:", fill=(90, 90, 90), font=_font(18))
+    d.text((8, 88), row["class_name"].replace("trash_", ""), fill=(30, 64, 175), font=_font(24))
+    d.text((8, 124), row["split"], fill=(90, 90, 90), font=_font(18))
     panel.paste(crop, (label_w, 4))
     panel.paste(ctx, (label_w + h + 8, 4))
     return panel
 
 
 def contact_pages(samples: pd.DataFrame, processed_dir: Path, sources: dict[str, Path | None],
-                  per_page: int = 5, width: int = 1240) -> list[Image.Image]:
+                  per_page: int = 4, width: int = 1240) -> list[Image.Image]:
     pages = []
-    for (kind, cls), g in samples.groupby(["set", "class_name"], sort=False):
+    group = samples["class_name"].where(samples["set"] == "main", "pilot")      # chấm thử: một nhóm chung
+    for (kind, cls), g in samples.groupby([samples["set"], group], sort=False):
         title = "CHẤM THỬ (không tính kết quả)" if kind == "pilot" else f"Lớp: {cls}"
         rows = list(g.iterrows())
         for i in range(0, len(rows), per_page):
             chunk = rows[i:i + per_page]
             panels = [sample_panel(r, processed_dir, sources.get(r["annotation_id"])) for _, r in chunk]
-            page = Image.new("RGB", (width, 60 + sum(p.height + 10 for p in panels)), "white")
+            page = Image.new("RGB", (width, 75 + sum(p.height + 10 for p in panels)), "white")
             d = ImageDraw.Draw(page)
-            d.text((20, 15), f"{title} · trang {i // per_page + 1} · trái: ảnh crop mô hình thấy · phải: ảnh gốc, khung đỏ = bbox",
-                   fill=(0, 0, 0), font=_font(18))
-            y = 55
+            d.text((20, 12), f"{title} · trang {i // per_page + 1}", fill=(0, 0, 0), font=_font(24))
+            d.text((20, 40), "Trái: ảnh crop mô hình thấy · Phải: ảnh gốc, khung đỏ = vật thể được gán nhãn",
+                   fill=(90, 90, 90), font=_font(16))
+            y = 70
             for p in panels:
                 if p.width > width - 20:
                     p = p.resize((width - 20, int(p.height * (width - 20) / p.width)))
