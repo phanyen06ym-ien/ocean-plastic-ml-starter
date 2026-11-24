@@ -356,7 +356,7 @@ Quy ước làm việc: [`CONTRIBUTING.md`](CONTRIBUTING.md).
 | [`dataset_report.md`](docs/dataset_report.md)                                                   | Thống kê dữ liệu đầy đủ        |
 | [`evaluation_plan.md`](docs/evaluation_plan.md)                                                 | Cách đánh giá, chỉ số          |
 | [`class_scope_analysis.md`](docs/class_scope_analysis.md)                                       | Lý do chọn phạm vi 22 lớp      |
-| [`visual_inspection_protocol.md`](docs/visual_inspection_protocol.md)                           | Kiểm tra ảnh crop và nhãn      |
+| [`visual_inspection_protocol.md`](docs/visual_inspection_protocol.md)                           | Quy trình kiểm tra ảnh (chưa thực hiện) |
 | [`colab_setup.md`](docs/colab_setup.md)                                                         | Hướng dẫn chạy trên Colab      |
 
 ## 12. Trích dẫn

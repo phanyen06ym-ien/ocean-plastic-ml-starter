@@ -1,10 +1,7 @@
 # Visual Inspection Protocol — TrashCan 1.0
 
-> **Trạng thái (25/11/2026): đang chấm.** Áp dụng trên dữ liệu `v2_crop224` (không phải bộ chia gốc nêu ở mục 2): 6 lớp × (15 Train + 5 Val) = 120 mẫu chính thức + 10 mẫu chấm thử, seed 42, không dùng Test.
-> - Chọn mẫu: `scripts/visual_inspection_prepare.py` · danh sách: `results/visual_inspection/visual_inspection_sample_manifest.csv` (SHA-256 `87f58990…` khớp `visual_inspection_provenance.json` trên Drive).
-> - Ảnh để chấm và hai bảng chấm: Drive `MyDrive/ocean-plastic-ml/audits/visual_inspection_v2/`.
-> - **Thay đổi (25/11): một người chấm (Yến)** thay cho hai người (Yến, Hùng). Không tính được đồng thuận giữa hai người; thay bằng **chấm lại** 20 mẫu ngẫu nhiên (seed 42, mỗi lớp 3–4 mẫu) sau ít nhất vài giờ (lý tưởng là sang buổi khác), theo thứ tự xáo trộn và không xem lần chấm đầu, để báo cáo độ ổn định của chính người chấm (tỷ lệ trùng khớp). Kết quả được ghi là đánh giá của một người, và đây là hạn chế của nghiên cứu. Các mục nói về hai reviewer, agreement và hoà giải bên dưới không áp dụng cho lượt này.
-> - Bảng mục 2 và 4.2 là kế hoạch ban đầu theo bộ chia gốc (ví dụ `trash_rope` 0 mẫu Val); với v2, mọi lớp đủ 5 mẫu Val.
+> **Trạng thái (25/11/2026): không thực hiện.** Nhóm dừng bước chấm ảnh vì không đủ thời gian trước hạn nộp. Báo cáo **không** đưa ra kết luận nào dựa trên kiểm tra bằng mắt; mọi nhận xét về chất lượng nhãn lớp nhựa dựa trên thống kê và phân tích lỗi (`docs/dataset_report.md` mục 9). Ghi vào báo cáo cuối kỳ như một hạn chế / hướng phát triển.
+> - Đã chuẩn bị sẵn để làm sau: script chọn mẫu `scripts/visual_inspection_prepare.py` (6 lớp × 20 mẫu + 10 chấm thử, v2, seed 42, không dùng Test), danh sách `results/visual_inspection/visual_inspection_sample_manifest.csv` (SHA-256 `87f58990…`), ảnh PDF và bảng chấm trên Drive `audits/visual_inspection_v2/`.
 
 
 **Project:** Ocean Plastic Waste Classification and Monitoring  
