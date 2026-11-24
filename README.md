@@ -319,7 +319,7 @@ ocean-plastic-ml-starter/
 │   ├── figures/                     # Hình cho báo cáo
 │   ├── metrics/                     # <EXP_ID>_<split>.json/.csv; metrics_summary.csv so sánh E01–E04
 │   └── predictions/                 # Dự đoán từng ảnh (path, y_true, y_pred): E01–E02 Val, E04/E04v1 Val và Test
-├── scripts/                         # make_report_figures.py, collect_runs.py, summarize_runs.py, github/
+├── scripts/                         # make_report_figures.py, make_misclassified_grid.py, collect_runs.py, summarize_runs.py, github/
 ├── main.py                          # CLI demo
 ├── requirements.txt
 ├── CONTRIBUTING.md                  # Quy ước nhánh, commit, PR
