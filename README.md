@@ -6,7 +6,7 @@
 
 Dự án xây dựng mô hình mạng nơ-ron tích chập (CNN) phân loại **ảnh thực tế dưới nước** theo **loại đối tượng** của bộ dữ liệu **TrashCan 1.0 — phiên bản Instance** (22 lớp), trong đó trọng tâm phân tích là **nhóm 6 lớp rác liên quan đến nhựa** (túi, chai, vỏ bao bì, lưới, dây, bạt). Nhóm không phân loại theo chất liệu nhựa.
 
-> **Trạng thái:** Sprint 1–2 (03–04/11/2026). Phạm vi đã chốt tại [ADR-001](docs/decisions/ADR-001-class-scope.md). Chưa có kết quả huấn luyện chính thức. Mọi số liệu trong README chỉ lấy từ Dataset Audit nội bộ và sẽ được cập nhật khi các PR liên quan được merge.
+> **Trạng thái:** Đã có kết quả Validation cho Sprint 2 và các thực nghiệm transfer learning Sprint 3. E03G là biến thể kéo dài thời gian huấn luyện của E03; kết quả E03G đang chờ chạy và chưa được dùng để kết luận hiệu suất. Phạm vi lớp đã chốt tại [ADR-001](docs/decisions/ADR-001-class-scope.md).
 
 ---
 
@@ -91,6 +91,8 @@ ocean-plastic-ml-starter/
 │   ├── class_scope_analysis.md
 │   ├── dataset_report.md
 │   ├── evaluation_plan.md
+│   ├── experiment_plan.md            # Kế hoạch và so sánh các thực nghiệm E01–E04, E03G
+│   ├── experiment_log.md             # Nhật ký từng lần chạy và trạng thái kết quả
 │   ├── colab_setup.md
 │   ├── demo_spec.md
 │   ├── sprint_plan.md               # Phân công + timeline
@@ -169,14 +171,24 @@ Chi tiết phân công và các mốc: [`docs/sprint_plan.md`](docs/sprint_plan.
 
 ## 8. Kết quả
 
-Sprint 2 (05/11/2026, Colab T4, dữ liệu `v1_crop128`, Validation 1.782 crop). Nguồn: `results/metrics/`, phân tích: [`docs/evaluation_report.md`](docs/evaluation_report.md).
+Các chỉ số dưới đây là kết quả trên **Validation** với `v1_crop128` (1.782 ảnh, 22 lớp); không sử dụng tập Test để chọn mô hình. Nguồn chi tiết: `results/metrics/`, [`docs/experiment_plan.md`](docs/experiment_plan.md), [`docs/experiment_log.md`](docs/experiment_log.md) và phân tích tại [`docs/evaluation_report.md`](docs/evaluation_report.md).
 
 | EXP_ID | Mô tả | Macro F1 (val) | Accuracy (val) | Macro F1 nhóm nhựa (val) | Macro F1 (test) |
 |---|---|---:|---:|---:|---:|
-| E01 | CNN baseline + class weights | **0,076** | 0,219 | 0,000 | — |
-| E02 | E01 + Data Augmentation | 0,065 | 0,161 | 0,017 | — |
+| E01 | CNN baseline + class weights | 0,0757 | 0,219 | 0,0000 | — |
+| E02 | E01 + Data Augmentation | 0,0648 | 0,161 | 0,0165 | — |
+| E03 | MobileNetV2 pretrained ImageNet, transfer learning 2 pha | 0,2034 | 0,4052 | 0,1228 | — |
+| E03a | E03 + dropout 0,6 | 0,2099 | 0,4141 | 0,1377 | — |
+| E03c | E03 + learning rate pha 1 = 3e-4 | 0,1955 | 0,4366 | 0,1083 | — |
+| E03d | E03 + learning rate backbone pha 2 = 3e-5 | 0,2034 | 0,4052 | 0,1228 | — |
+| E03f | E03 với seed 43 | 0,2122 | 0,4119 | 0,1168 | — |
+| E03d-F1 | E03d, checkpoint chọn theo Macro F1 | 0,2398 | 0,4994 | 0,1076 | — |
+| E03f-F1 | E03f, checkpoint chọn theo Macro F1 | 0,2372 | 0,4826 | 0,1357 | — |
+| E03G | E03 với thời gian huấn luyện và patience mở rộng | Chờ chạy | — | — | — |
 
-Cả hai mô hình mới cao hơn mức ngẫu nhiên (≈ 0,045) một chút: mô hình học bối cảnh của từng video và phân bố lớp giữa Train và Validation lệch mạnh do chia theo video. Sprint 3 thử học chuyển giao (E03) và phiên bản chia dữ liệu mới. Tập Test chưa được dùng.
+E03 cho thấy transfer learning cải thiện Macro F1 Validation so với E01 (0,2034 so với 0,0757). Các cấu hình tinh chỉnh có dao động; E03 và E03f khác nhau 0,009 Macro F1 dù cùng thiết lập chính nhưng khác seed. Hai checkpoint chọn theo Macro F1 (E03d-F1 và E03f-F1) đạt 0,2398 và 0,2372; quy tắc chọn checkpoint cuối cùng cần được thống nhất theo kế hoạch đánh giá. E03G chỉ thay đổi số epoch tối đa và patience so với E03 để kiểm tra khả năng dừng sớm; chưa có kết quả nên không thể kết luận E03G tốt hơn.
+
+**Kiểm thử phần mềm:** lần chạy `pytest -q` được báo cáo có **48 passed, 0 failed, 50 warnings** trong 88,05 giây. Đây là kết quả kiểm thử tự động, không phải chỉ số chất lượng mô hình. Tập Test chưa được dùng.
 
 ## 9. Trích dẫn
 

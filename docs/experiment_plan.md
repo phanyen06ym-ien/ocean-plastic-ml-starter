@@ -18,15 +18,16 @@ Giả thuyết H2: E02 có Macro F1 Validation cao hơn E01, rõ nhất ở các
 | E02 | E01 + augmentation | Lật ngang, xoay ±10%, zoom ±10%, độ tương phản ±20% (chỉ Train) | như E01 | 2 |
 | E03 | Transfer learning (MobileNetV2, ImageNet) | Backbone (chuẩn hoá mean/std ImageNet, giữ 128×128), framework PyTorch | dữ liệu, split, seed 42 | 3 |
 | E04 | Mô hình tốt nhất + dữ liệu cải tiến | `DATA_VERSION` | mô hình, seed | 3 |
+| E03G | E03 với thời gian huấn luyện mở rộng | Tăng epoch tối đa và patience ở cả hai pha; các thiết lập cốt lõi giữ như E03 | dữ liệu, split, seed, kiến trúc và learning rate như E03 | 3 |
 
-Cấu hình: `configs/experiments/<EXP_ID>_*.yaml` (E03: `configs/experiments/E03.yaml`).
+Cấu hình: `configs/experiments/<EXP_ID>_*.yaml` (E03: `configs/experiments/E03_transfer_mobilenetv2.yaml`; E03G: `configs/experiments/E03G.yaml`).
 
 ### 2.1. Tinh chỉnh E03 (S3-CNN)
 
 Mỗi run chỉ đổi một yếu tố so với E03, bằng tuỳ chọn `--set` của `src/train.py` (không tạo file YAML riêng):
 
 ```
-python -m src.train --config configs/experiments/E03.yaml --processed-dir <DATA> --runs-root runs --exp-id <ID> --set <KEY=VALUE>
+python -m src.train --config configs/experiments/E03_transfer_mobilenetv2.yaml --processed-dir <DATA> --runs-root runs --exp-id <ID> --set <KEY=VALUE>
 ```
 
 | EXP_ID | Thay đổi so với E03 | `--set` | Trạng thái |
@@ -37,6 +38,9 @@ python -m src.train --config configs/experiments/E03.yaml --processed-dir <DATA>
 | E03d | Learning rate backbone pha 2 = 3e-5 (E03: 1e-5) | `training.phase2.learning_rate.features=3e-5` | đã chạy |
 | E03e | Tổ hợp cấu hình tốt nhất | — | không chạy (chưa cấu hình nào tốt hơn rõ rệt) |
 | E03f | Seed 43 (E03: 42), cùng cấu hình; ước lượng nhiễu giữa các seed | `seed=43` | đã chạy |
+| E03G | Kéo dài huấn luyện: Phase 1 tối đa 30 epoch, Phase 2 tối đa 40 epoch; patience 12 cho cả hai pha (E03: 15/20 epoch, patience 6) | Cấu hình riêng `configs/experiments/E03G.yaml` | đã tạo cấu hình; chờ chạy và ghi metrics |
+
+E03G là phép thử thời lượng huấn luyện, không phải bằng chứng rằng mô hình tốt hơn. Hai pha vẫn theo dõi `val_loss` với `mode: min` và `restore_best_weights: true`; tổng số epoch tối đa là 70, nhưng Early Stopping có thể kết thúc sớm hơn.
 
 ## 3. Kiến trúc E01
 
@@ -82,10 +86,11 @@ Khác E01 ngoài yếu tố mô hình: framework TensorFlow/Keras → PyTorch; c
 | E03c | 10/11/2026 | Bách (CPU, PyTorch) | `runs/E03c_<điền thời gian>` | 0,1955 | 0,1083 |
 | E03d | 10/11/2026 | Bách (CPU, PyTorch) | `runs/E03d_20261110-1445` | 0,2034 | 0,1228 |
 | E03f | 10/11/2026 | Bách (CPU, PyTorch) | `runs/E03f_20261110-1744` | 0,2122 | 0,1168 |
+| E03G | Chưa chạy | Bách | Chưa có | Chưa có | Chưa có |
 
 Kết luận Sprint 2: H2 không được xác nhận (E02 < E01). Hai mô hình chỉ cao hơn mức ngẫu nhiên (≈ 0,045) một chút; nguyên nhân và đề xuất: `docs/evaluation_report.md` mục 3–4. Mốc so sánh cho Sprint 3 là E01.
 
-Kết luận Sprint 3 (Validation, một seed mỗi cấu hình): transfer learning cải thiện rõ so với E01 (Macro F1 0,2034 so với 0,0757; nhóm nhựa 0,1228 so với 0,0000). Tinh chỉnh dropout và learning rate không cho khác biệt rõ rệt: hai seed của cùng cấu hình (E03 và E03f) đã chênh nhau 0,009. E03d trùng kết quả E03 vì checkpoint được chọn theo `val_loss` luôn rơi vào pha 1 nên learning rate pha 2 không có tác dụng.
+Kết luận Sprint 3 (Validation, một seed mỗi cấu hình; chưa bao gồm E03G vì chưa chạy): transfer learning cải thiện rõ so với E01 (Macro F1 0,2034 so với 0,0757; nhóm nhựa 0,1228 so với 0,0000). Tinh chỉnh dropout và learning rate không cho khác biệt rõ rệt: hai seed của cùng cấu hình (E03 và E03f) đã chênh nhau 0,009. E03d trùng kết quả E03 vì checkpoint được chọn theo `val_loss` luôn rơi vào pha 1 nên learning rate pha 2 không có tác dụng.
 
 ## 6. Ứng viên mô hình cuối (S3-CNN)
 
@@ -100,8 +105,8 @@ Thời gian suy luận: CPU 4 luồng, batch 1, ảnh 128×128, đo trên máy c
 | E03c | E03 + lr pha 1 = 3e-4 | `best.pt` (val_loss; pha 1, epoch 6) | 2.252.054 | 9,23 MB | 30,2 | 0,1955 | 0,1083 |
 | E03d | E03 + lr backbone pha 2 = 3e-5 | `best.pt` (val_loss; pha 1, epoch 2, trùng E03) | 2.252.054 | 9,23 MB | 29,9 | 0,2034 | 0,1228 |
 | E03f | E03 với seed 43 | `best.pt` (val_loss; pha 1, epoch 1) | 2.252.054 | 9,23 MB | 29,5 | 0,2122 | 0,1168 |
-| E03d-F1 | E03d, chọn theo Macro F1 | `bestf1_phase2.pt` (Macro F1; pha 2, epoch 6) | 2.252.054 | 9,23 MB | 29,9 | 0,2398 | 0,1076 |
-| E03f-F1 | E03f, chọn theo Macro F1 | `bestf1_phase2.pt` (Macro F1; pha 2, epoch 9) | 2.252.054 | 9,23 MB | 29,5 | 0,2372 | 0,1357 |
+| E03d-F1 | E03d, chọn theo Macro F1 | `bestf1_phase2.pt` (Macro F1; pha 2, epoch 6) | 2.252.054 | 9,23 MB | 34,0 | 0,2398 | 0,1076 |
+| E03f-F1 | E03f, chọn theo Macro F1 | `bestf1_phase2.pt` (Macro F1; pha 2, epoch 9) | 2.252.054 | 9,23 MB | 42,8 | 0,2372 | 0,1357 |
 
 (*) Tính từ kiến trúc trong code (4 khối Conv-BN, GAP, Dense 128, softmax 22), gồm cả trọng số không huấn luyện của BatchNorm (424.630 trọng số huấn luyện được). Kích thước file và thời gian suy luận của E01 cần đo cùng điều kiện (CPU, batch 1) hoặc lấy từ file của Ân.
 
@@ -113,4 +118,5 @@ Số liệu của E03d-F1 và E03f-F1 lấy từ `bestf1_phase2_val.json` (chạ
 - Macro F1 nhóm nhựa của hai ứng viên F1 không cùng chiều: E03d-F1 thấp hơn E03d (0,1076 so với 0,1228), E03f-F1 cao hơn E03f (0,1357 so với 0,1168). Nhóm nhựa chỉ có 192 mẫu nên dao động mạnh.
 - Mô hình E03 có nhiều tham số hơn E01 khoảng 5,3 lần; cần cân nhắc với định hướng chạy trên robot.
 - Quy tắc chọn checkpoint cho ứng viên cuối (mục 4: `val_loss`; `docs/evaluation_plan.md` mục 3.2 và 4.3: Macro F1) cần Yến xác nhận trong buổi họp chốt mô hình.
+- E03G đã có cấu hình nhưng chưa chạy; không đưa vào so sánh hiệu suất cho đến khi có run và metrics Validation.
 - E04 (dữ liệu cải tiến) chưa chạy, chờ `DATA_VERSION` mới từ #16. Việc chọn siêu tham số dùng tập Validation, nên tập Test chỉ chạy một lần cho mô hình cuối.
