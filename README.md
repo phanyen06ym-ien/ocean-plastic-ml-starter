@@ -262,9 +262,19 @@ python -m src.train --config configs/experiments/E03_transfer_mobilenetv2.yaml -
 python -m src.preprocessing --raw-root <thư mục TrashCan> --out-dir data/processed/v2_crop224 --contract configs/data_contract_v2.yaml --mapping-out configs/class_mapping_v2.json
 python -m src.train --config configs/experiments/E04_efficientnet_b0_data_v2.yaml --processed-dir data/processed/v2_crop224
 
-# Dự đoán (checkpoint Keras)
-python main.py --image path/to/crop.jpg --model runs/E01_<thời gian>/best.keras
+# Dự đoán bằng mô hình cuối E04 (tải thư mục runs/E04_20261122-0853/ từ Drive về runs/ trong repo)
+python main.py --image path/to/crop.jpg --model runs/E04_20261122-0853/best.pt
 ```
+
+**PyCharm (Windows):**
+
+1. *File → Project from Version Control*, URL `https://github.com/phanyen06ym-ien/ocean-plastic-ml-starter.git`, chọn thư mục (ví dụ `D:\DEV\Projects\ocean-plastic-ml-starter`) → *Clone*.
+2. *Settings → Project → Python Interpreter → Add Interpreter → Virtualenv* (Python 3.10–3.12), thư mục `.venv` trong repo. PyCharm sẽ gợi ý cài `requirements.txt`; nếu không, mở *Terminal* và chạy `pip install -r requirements.txt`.
+3. Chuột phải thư mục gốc → *Mark Directory as → Sources Root* (để `from src...` chạy được). Trong *Settings → Tools → Python Integrated Tools* chọn *Default test runner: pytest*.
+4. Kiểm tra: chuột phải `tests/` → *Run 'pytest in tests'* (60 passed, 4 skipped — các test cần GPU/dữ liệu sẽ tự bỏ qua). Nếu ổ C: đầy, chạy `pytest -q --basetemp=D:\tmp\pytest` trong Terminal.
+5. Vẽ lại hình báo cáo không cần dữ liệu: chạy `scripts/make_report_figures.py`. Chạy demo: tải `runs/E04_20261122-0853/` từ Drive về `runs/` rồi tạo *Run Configuration* cho `main.py` với tham số `--image <ảnh> --model runs/E04_20261122-0853/best.pt`.
+
+Dữ liệu (`data/`), checkpoint (`runs/`, `*.pt`) và `.venv/`, `.idea/` đã nằm trong `.gitignore`, không bị commit nhầm. Huấn luyện lại nên dùng Colab (cần GPU).
 
 Thư mục Drive của nhóm:
 
@@ -279,8 +289,11 @@ MyDrive/ocean-plastic-ml/
 │   ├── E04_20261121-1102/           # E04 bản đầu (√(1/n))
 │   ├── E04_20261122-0853/           # E04 — mô hình cuối (tag v1.0-final)
 │   └── data_audit_v1_crop128/       # Kết quả audit của PR #35
-├── exports/                         # Nơi notebook 00 ghi kết quả tạm; chép vào repo rồi xoá
-├── audits/ · reports/               # Audit dữ liệu v1 và gói báo cáo giữa kỳ (13/11)
+├── exports/misclassified/           # Ảnh crop mẫu nhựa E04 đoán sai trên Test
+├── audits/
+│   ├── v1_crop128/                  # Audit dữ liệu v1 (12/11)
+│   └── visual_inspection_v2/        # PDF 130 mẫu + bảng chấm — chưa thực hiện
+└── reports/final_20261113/          # Gói kết quả giữa kỳ
 ```
 Checkpoint E03 (`runs/E03_20261108-1459/`) chỉ có trên máy của Bách (xem [`models/README.md`](models/README.md)).
 
@@ -302,7 +315,7 @@ ocean-plastic-ml-starter/
 │   ├── evaluation_plan.md           # Cách đánh giá
 │   ├── colab_setup.md               # Hướng dẫn chạy trên Colab
 │   ├── class_scope_analysis.md      # Lý do chọn phạm vi lớp
-│   └── visual_inspection_protocol.md # Kiểm tra ảnh crop và nhãn
+│   └── visual_inspection_protocol.md # Quy trình kiểm tra ảnh (chưa thực hiện)
 ├── notebooks/
 │   ├── 00_pipeline_colab.ipynb      # Chạy toàn bộ quy trình
 │   ├── 01_trashcan_eda.ipynb · 02_preprocessing.ipynb
@@ -318,8 +331,9 @@ ocean-plastic-ml-starter/
 ├── results/
 │   ├── figures/                     # Hình cho báo cáo
 │   ├── metrics/                     # <EXP_ID>_<split>.json/.csv; metrics_summary.csv so sánh E01–E04
-│   └── predictions/                 # Dự đoán từng ảnh (path, y_true, y_pred): E01–E02 Val, E04/E04v1 Val và Test
-├── scripts/                         # make_report_figures.py, make_misclassified_grid.py, collect_runs.py, summarize_runs.py, github/
+│   ├── predictions/                 # Dự đoán từng ảnh (path, y_true, y_pred): E01–E02 Val, E04/E04v1 Val và Test
+│   └── visual_inspection/           # Danh sách 130 mẫu đã chọn (chưa chấm)
+├── scripts/                         # make_report_figures.py, make_misclassified_grid.py, visual_inspection_prepare.py, collect_runs.py, summarize_runs.py, github/
 ├── main.py                          # CLI demo
 ├── requirements.txt
 ├── CONTRIBUTING.md                  # Quy ước nhánh, commit, PR

@@ -1,17 +1,17 @@
-"""CLI demo: phân loại ảnh một đối tượng dưới nước (TrashCan-Instance, 22 lớp).
+"""CLI demo: phân loại ảnh một đối tượng dưới nước (TrashCan-Instance; 22 lớp v1 / 18 lớp v2).
 
-Hỗ trợ checkpoint Keras (E01–E02, CNN tự thiết kế) và PyTorch (E03–E04, MobileNetV2).
+Hỗ trợ checkpoint Keras (E01–E02, CNN tự thiết kế) và PyTorch (E03 MobileNetV2, E04 EfficientNet-B0 — mô hình cuối).
 Ảnh đầu vào là ảnh đã cắt quanh một đối tượng (crop), giống dữ liệu lúc huấn luyện.
 
 Ví dụ:
-    # Một ảnh, mô hình MobileNetV2 (config.json nằm cùng thư mục run)
-    python main.py --image path/to/crop.jpg --model runs/E03_20261108-1459/best.pt
+    # Một ảnh, mô hình cuối E04 (config.json nằm cùng thư mục run; tải từ Drive runs/)
+    python main.py --image path/to/crop.jpg --model runs/E04_20261122-0853/best.pt
 
     # Một ảnh, mô hình Keras
     python main.py --image path/to/crop.jpg --model runs/E01_20261105-1513/best.keras
 
     # Cả thư mục ảnh, ghi kết quả ra CSV
-    python main.py --folder path/to/crops --model runs/E03_20261108-1459/best.pt --out predictions.csv
+    python main.py --folder path/to/crops --model runs/E04_20261122-0853/best.pt --out predictions.csv
 """
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ PLASTIC_TAG = " [liên quan nhựa]"
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(
         prog="python main.py",
-        description="Phân loại ảnh một đối tượng dưới nước (TrashCan-Instance, 22 lớp) bằng CNN / MobileNetV2.",
+        description="Phân loại ảnh một đối tượng dưới nước (TrashCan-Instance) bằng CNN / MobileNetV2 / EfficientNet-B0.",
     )
     src = ap.add_mutually_exclusive_group(required=True)
     src.add_argument("--image", help="Đường dẫn một ảnh JPG/PNG/BMP")

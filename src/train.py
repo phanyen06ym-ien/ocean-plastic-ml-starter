@@ -109,7 +109,7 @@ def load_experiment_config(path: str | Path) -> dict[str, Any]:
 
 
 def is_keras_config(cfg: dict[str, Any]) -> bool:
-    """E01–E02 (CNN tự thiết kế, Keras) dùng cấu hình phẳng; E03–E04 (MobileNetV2) có khoá model.backbone."""
+    """E01–E02 (CNN tự thiết kế, Keras) dùng cấu hình phẳng; E03–E04 (MobileNetV2 / EfficientNet-B0) có khoá model.backbone."""
     return not (isinstance(cfg.get("model"), dict) and "backbone" in cfg["model"])
 
 
@@ -646,11 +646,11 @@ def run_training_keras(cfg: dict[str, Any], processed_dir: str | Path, runs_root
     return model, history, run_dir
 
 
-# =========================================================================== E03–E04: MobileNetV2 (PyTorch)
+# =========================================================================== E03–E04: MobileNetV2 / EfficientNet-B0 (PyTorch)
 # --------------------------------------------------------------------------- main entry
 def run_training_torch(cfg: dict[str, Any], processed_dir: str | Path, runs_root: str | Path,
                        pretrained: bool = True, smoke: bool = False, device: str | None = None):
-    """E03–E04: MobileNetV2, 2 pha. Trả (model, history, run_dir)."""
+    """E03 MobileNetV2 / E04 EfficientNet-B0, 2 pha. Trả (model, history, run_dir)."""
     _require_torch()
     set_seed(int(cfg["seed"]), cfg.get("reproducibility"))
     device = device or ("cuda" if torch.cuda.is_available() else "cpu")

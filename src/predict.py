@@ -5,7 +5,7 @@ Luồng: load_image → preprocess (RGB, resize về kích thước đầu vào 
 
 Hỗ trợ hai loại checkpoint:
 - Keras ``.keras`` / ``.h5`` (E01–E02): chuẩn hoá /255 nằm trong mô hình.
-- PyTorch ``.pt`` / ``.pth`` (E03–E04, MobileNetV2): state_dict do src/train.py lưu; cần ``config.json``
+- PyTorch ``.pt`` / ``.pth`` (E03 MobileNetV2, E04 EfficientNet-B0): state_dict do src/train.py lưu; cần ``config.json``
   của run (mặc định nằm cùng thư mục với checkpoint). Chuẩn hoá mean/std ImageNet làm trong ``TorchModel``.
 
 Logic tách khỏi giao diện: main.py (CLI) và notebook demo chỉ gọi các hàm ở đây.
@@ -63,7 +63,7 @@ def preprocess(img: Image.Image, input_size: int = 128) -> np.ndarray:
 
 
 class TorchModel:
-    """Bọc checkpoint PyTorch MobileNetV2 để có cùng giao diện với Keras model.
+    """Bọc checkpoint PyTorch (MobileNetV2 hoặc EfficientNet-B0) để có cùng giao diện với Keras model.
 
     ``predict(x)`` nhận mảng (N, H, W, 3) giá trị 0..255 (đầu ra của ``preprocess``) và trả xác suất softmax
     (N, num_classes) — giống ToTensor + Normalize(ImageNet) lúc huấn luyện trong src/train.py.

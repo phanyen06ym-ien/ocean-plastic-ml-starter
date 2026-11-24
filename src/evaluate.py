@@ -15,7 +15,7 @@ Module này cung cấp toàn bộ công cụ cần thiết cho quy trình đánh
 - Xuất kết quả đánh giá ra các định dạng chuẩn (JSON, CSV, Markdown).
 - Chạy đánh giá một checkpoint trên một tập:
     * Keras (E01–E02): evaluate_run(run_dir, processed_dir, split)
-    * PyTorch MobileNetV2 (E03–E04): evaluate_torch_checkpoint(run_dir, ckpt, processed_dir, split)
+    * PyTorch MobileNetV2 / EfficientNet-B0 (E03–E04): evaluate_torch_checkpoint(run_dir, ckpt, processed_dir, split)
   Tập "test" chỉ được chạy MỘT lần cho mô hình cuối.
 - Phân tích lỗi theo video và theo kích thước bbox: error_analysis(predictions_csv, manifest_csv, plastic, out_dir, stem)
 
@@ -1037,10 +1037,10 @@ def smoke_test() -> bool:
 #     results/metrics/<EXP_ID>_<split>.json, <EXP_ID>_<split>_predictions.csv
 #     results/figures/<EXP_ID>_<split>_confusion_matrix.png, <EXP_ID>_learning_curves.png,
 #                     <EXP_ID>_<split>_misclassified.png
-# Báo cáo hai cấp: tổng thể 22 lớp và nhóm lớp liên quan nhựa.
+# Báo cáo hai cấp: tổng thể (22 lớp v1 / 18 lớp v2) và nhóm lớp liên quan nhựa.
 # =============================================================================
 def group_metrics(y_true, y_pred, indices: list[int]) -> dict[str, Any]:
-    """Macro P/R/F1 chỉ trên các lớp trong `indices` (mô hình vẫn dự đoán 22 lớp).
+    """Macro P/R/F1 chỉ trên các lớp trong `indices` (mô hình vẫn dự đoán toàn bộ các lớp).
 
     Lớp không có mẫu thật trong tập đánh giá bị loại khỏi trung bình và được liệt kê.
     """
@@ -1150,7 +1150,7 @@ def comparison_table(metric_files: list[str | Path]) -> pd.DataFrame:
 
 
 # =============================================================================
-# CHẠY ĐÁNH GIÁ MỘT CHECKPOINT (PyTorch MobileNetV2, E03–E04)
+# CHẠY ĐÁNH GIÁ MỘT CHECKPOINT (PyTorch, E03–E04)
 # =============================================================================
 def evaluate_torch_checkpoint(run_dir: str | Path, checkpoint: str, processed_dir: str | Path, split: str = "val",
                               out_dir: str | Path | None = None, device: str | None = None) -> dict[str, Any]:
