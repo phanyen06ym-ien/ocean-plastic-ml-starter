@@ -1,6 +1,6 @@
 # Data Contract — thông số dùng chung cho DATA → CNN → EVAL → DEMO.
 # Chủ sở hữu: Yến (S1-ARCH). Mọi thay đổi phải qua PR được Yến approve và có ADR.
-# Phiên bản v1 — chốt 03/11/2026 theo docs/decisions/ADR-001-class-scope.md
+# Phiên bản v1 — chốt 03/11/2026 (phạm vi lớp: docs/class_scope_analysis.md)
 
 version: v1
 

@@ -1,0 +1,9 @@
+group,size_bin,num_samples,recall
+all,0-32px,314,0.4363
+all,32-64px,500,0.482
+all,64-128px,540,0.5463
+all,>=128px,397,0.6625
+plastic6,0-32px,55,0.2
+plastic6,32-64px,85,0.0588
+plastic6,64-128px,64,0.2188
+plastic6,>=128px,13,0.0

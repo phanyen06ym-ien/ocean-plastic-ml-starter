@@ -89,3 +89,70 @@ def test_cli_reports_errors(tmp_path, mapping_file, capsys):
     code = cli.main(["--image", str(tmp_path / "nope.jpg"), "--model", str(tmp_path / "none.keras"), "--mapping", str(mapping_file)])
     assert code == 1
     assert "Lỗi" in capsys.readouterr().err
+
+
+# --------------------------------------------------------------------------- S3: checkpoint PyTorch, CLI final
+def test_unsupported_checkpoint_extension(mapping_file, tmp_path):
+    ckpt = tmp_path / "model.onnx"
+    ckpt.write_bytes(b"x")
+    with pytest.raises(InferenceError, match="Đuôi checkpoint"):
+        Predictor(ckpt, mapping_file)
+
+
+def test_torch_checkpoint_needs_run_config(mapping_file, tmp_path):
+    ckpt = tmp_path / "best.pt"
+    ckpt.write_bytes(b"x")
+    with pytest.raises(InferenceError, match="config.json"):
+        Predictor(ckpt, mapping_file)
+
+
+def test_class_order_mismatch_is_reported(mapping_file):
+    m = MockModel()
+    m.class_names = ["trash_net", "trash_bag", "rov"]
+    with pytest.raises(InferenceError, match="Thứ tự lớp"):
+        Predictor(None, mapping_file, model=m)
+
+
+def test_cli_folder_writes_csv(tmp_path, mapping_file, monkeypatch, capsys):
+    import pandas as pd
+    import src.predict as sp
+
+    monkeypatch.setattr(sp, "load_model", lambda *a, **k: MockModel())
+    folder = tmp_path / "crops"
+    folder.mkdir()
+    _img(folder, "dark.png", value=10)
+    _img(folder, "bright.png", value=250)
+    out = tmp_path / "out" / "pred.csv"
+    code = cli.main(["--folder", str(folder), "--model", "fake.keras", "--mapping", str(mapping_file),
+                     "--top-k", "2", "--out", str(out)])
+    assert code == 0
+    df = pd.read_csv(out)
+    assert len(df) == 2 and {"top1_class_name", "top2_class_name", "top1_plastic_related"} <= set(df.columns)
+    assert set(df["top1_class_name"]) == {"rov", "trash_net"}
+    assert "Tổng: 2 ảnh" in capsys.readouterr().out
+
+
+def test_cli_rejects_bad_options(tmp_path, mapping_file, capsys):
+    img = _img(tmp_path)
+    assert cli.main(["--image", str(img), "--model", "m.keras", "--mapping", str(mapping_file), "--top-k", "0"]) == 1
+    assert cli.main(["--image", str(img), "--model", "m.keras", "--mapping", str(mapping_file), "--out", "x.csv"]) == 1
+    assert "--out chỉ dùng" in capsys.readouterr().err
+
+
+def test_torch_model_end_to_end(tmp_path, mapping_file):
+    torch = pytest.importorskip("torch")
+    pytest.importorskip("torchvision")
+    from src.train import build_model
+
+    cfg = {"data": {"num_classes": 3, "class_names": NAMES},
+           "model": {"backbone": "mobilenet_v2", "pretrained_weights": None, "width_mult": 1.0,
+                     "head": {"dropout": 0.0, "in_features": 1280}},
+           "input": {"image_size": [64, 64], "normalize": {"mean": [0.485, 0.456, 0.406], "std": [0.229, 0.224, 0.225]}}}
+    run = tmp_path / "run"
+    run.mkdir()
+    (run / "config.json").write_text(json.dumps(cfg))
+    torch.save(build_model(cfg, pretrained=False).state_dict(), run / "best.pt")
+    pr = Predictor(run / "best.pt", mapping_file, device="cpu")
+    assert pr.input_size == 64
+    r = pr.predict_path(_img(tmp_path), k=3)
+    assert abs(sum(p["confidence"] for p in r["top_k"]) - 1.0) < 1e-5

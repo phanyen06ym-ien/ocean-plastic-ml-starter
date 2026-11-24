@@ -1,0 +1,128 @@
+# E04 — Mô hình cải tiến cuối cùng: dữ liệu v2 (gộp lớp, crop 224, chia lại) + EfficientNet-B0 + bù lớp hiếm.
+#
+# E01, E02: CNN tự thiết kế (TensorFlow/Keras), dữ liệu v1_crop128, 22 lớp.
+# E03:      MobileNetV2 (PyTorch), dữ liệu cũ v1_crop128, 22 lớp.
+# E04:      bốn cải tiến so với E03 (quyết định 21/11/2026):
+#   1. Dữ liệu v2_crop224 (configs/data_contract_v2.yaml): gộp 22 → 18 lớp (trash_other, animal_other),
+#      crop vuông 224x224, lề 15%, bỏ box < 16 px, chia lại theo video giữ 70/15/15 cho từng lớp.
+#   2. Backbone EfficientNet-B0 ImageNet (thay MobileNetV2), mở khoá features[4:] ở pha 2.
+#   3. Bù lớp hiếm: lấy mẫu theo 1/số mẫu (mọi lớp xuất hiện đều nhau) + focal loss (gamma 2), bỏ class weights.
+#      (22/11/2026: đổi từ sqrt(1/số mẫu) sang 1/số mẫu vì recall nhóm nhựa của bản trước chỉ 0,15 trên Val, 0,10 trên Test.)
+#   4. Chọn checkpoint và dừng sớm theo Macro F1 Validation (chỉ số chính) thay vì val_loss.
+#   + augmentation chỉ trên Train.
+# Các khoá không ghi ở đây lấy từ E03 (base_config): optimizer Adam, lịch giảm lr, batch 64, cách đánh giá.
+#
+# Chạy (Colab):
+#   python -m src.preprocessing --raw-root /content/trashcan --out-dir /content/processed/v2_crop224 \
+#       --contract configs/data_contract_v2.yaml --mapping-out configs/class_mapping_v2.json
+#   python -m src.train --config configs/experiments/E04_efficientnet_b0_data_v2.yaml \
+#       --processed-dir /content/processed/v2_crop224 --runs-root /content/drive/MyDrive/ocean-plastic-ml/runs
+
+base_config: E03_transfer_mobilenetv2.yaml
+
+exp_id: E04
+name: efficientnet_b0_data_v2
+description: >
+  EfficientNet-B0 (ImageNet pretrained), 2-phase training, on re-processed, class-merged (18 classes) and
+  re-split data v2_crop224, with train-only augmentation, inverse-frequency class sampling, focal loss and
+  checkpoint selection by validation Macro F1.
+baseline_exp_id: E03            # runs/E03_20261108-1459
+changed_factor: data + backbone + imbalance handling + checkpoint rule
+known_extra_differences:        # must be stated in the PR and the report
+  - "classes: 22 -> 18 (trash_unknown_instance, trash_cup, trash_clothing, trash_wreckage -> trash_other; animal_shells, animal_etc -> animal_other)"
+  - "crop: bbox + 10% padding, stretched -> square window + 15% padding; 128x128 -> 224x224; min box 8 px -> 16 px"
+  - "split: random video-group search -> per-class stratified video search (Val/Test differ from E01-E03)"
+  - "backbone: MobileNetV2 -> EfficientNet-B0; phase 2 unfreezes features[4:] instead of features[14:]"
+  - "imbalance: balanced class weights -> inverse-frequency WeightedRandomSampler + focal loss (gamma 2)"
+  - "checkpoint / early stopping: min val_loss -> max val Macro F1"
+  - "train-only augmentation (E03 had none)"
+  - "E04 is not directly comparable with E01-E03: different classes and different Validation/Test sets"
+
+baseline_reference:             # E03 on v1_crop128 Validation, 22 classes (results/metrics/E03_val.json)
+  macro_f1_val: 0.203
+  accuracy_val: 0.405
+  macro_f1_plastic6_val: 0.123
+  best_val_loss: 2.205
+  random_chance_macro_f1: 0.056 # 1 / 18 classes
+
+data:
+  data_version: v2_crop224
+  contract: configs/data_contract_v2.yaml
+  processed_dir: /content/processed/v2_crop224        # Colab local copy, unzipped from the Drive zip below
+  processed_zip: /content/drive/MyDrive/ocean-plastic-ml/data/processed/v2_crop224.zip
+  split_info:                                         # read-only: written by src/preprocessing.py
+    strategy: grouped_by_video
+    method: stratified_video_search
+    video_id_regex: 'vid_(\d+)'
+    ratios: {train: 0.70, val: 0.15, test: 0.15}
+    seed: 42
+  num_classes: 18
+  class_names: [rov, plant, animal_fish, animal_starfish, animal_other, animal_crab, animal_eel, trash_other,
+                trash_pipe, trash_bottle, trash_bag, trash_snack_wrapper, trash_can, trash_container,
+                trash_branch, trash_tarp, trash_rope, trash_net]
+  plastic6_indices: [9, 10, 11, 15, 16, 17]
+  train_samples: null          # filled from preprocessing_summary.json after the v2 run
+  val_samples: null
+  use_test_set: false          # Test set must NOT be used for training or model selection
+
+input:
+  image_size: [224, 224]       # crops are saved at 224x224 by the v2 preprocessing
+  val_transform: [ToTensor, Normalize]   # Val/Test: no augmentation
+
+augmentation:                  # Train only (src/train.py build_transform(train=True))
+  enabled: true
+  random_resized_crop_scale: [0.8, 1.0]  # zoom vào 80–100% ảnh crop rồi đưa về 224x224
+  horizontal_flip_p: 0.5
+  rotation_degrees: 10
+  color_jitter:                # mô phỏng màu nước và ánh sáng khác nhau giữa các video
+    brightness: 0.2
+    contrast: 0.2
+    saturation: 0.2
+    hue: 0.05
+  note: >
+    Augmentation is applied on the fly to Train crops only; Validation and Test use
+    ToTensor + ImageNet Normalize.
+
+model:
+  backbone: efficientnet_b0    # torchvision.models.efficientnet_b0; features has 9 blocks (0-8)
+  pretrained_weights: IMAGENET1K_V1
+  width_mult: 1.0
+  replace_classifier: true     # classifier = Sequential(Dropout(p), Linear(1280, 18))
+  head:
+    dropout: 0.3
+    in_features: 1280
+
+training:
+  loss: focal
+  focal_gamma: 2.0
+  class_weights:
+    mode: null                 # the sampler already rebalances classes; weights on top would over-correct
+  sampler:
+    mode: inverse              # P(class) ∝ 1/count: every class is drawn equally often (first E04 used sqrt_inverse; plastic recall 0.15 val)
+  checkpoint_monitor: val_macro_f1
+  phase1:
+    epochs: 10
+    learning_rate: 1.0e-3
+    early_stopping:
+      monitor: val_macro_f1
+      mode: max
+      patience: 5
+      restore_best_weights: true
+  phase2:
+    unfreeze_from_block: 4     # model.features[4:] (5 of 9 blocks)
+    epochs: 25
+    learning_rate:
+      features: 5.0e-5
+      classifier: 5.0e-4
+    min_lr: [1.0e-6, 1.0e-5]
+    early_stopping:
+      monitor: val_macro_f1
+      mode: max
+      patience: 6
+      restore_best_weights: true
+
+evaluation:
+  plastic6_classes: [trash_bottle, trash_bag, trash_snack_wrapper, trash_tarp, trash_rope, trash_net]
+
+paths:
+  output_dir: runs/E04_efficientnet_b0_data_v2    # Drive: runs/E04_*

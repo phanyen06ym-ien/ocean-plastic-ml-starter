@@ -1,0 +1,37 @@
+{
+  "data_version": "v2_crop224",
+  "num_annotations": 12128,
+  "num_source_images": 7083,
+  "num_videos": 310,
+  "crop_status": {
+    "ok": 11270,
+    "too_small": 858
+  },
+  "split": {
+    "method": "stratified_video_search",
+    "seed": 42,
+    "n_restarts": 30,
+    "loss": 0.187,
+    "classes_in_val_and_test": 18,
+    "num_classes": 18,
+    "min_class_count_val_test": 10,
+    "max_class_share_deviation": 0.1139,
+    "image_fraction": {
+      "train": 0.6997,
+      "val": 0.1505,
+      "test": 0.1498
+    },
+    "num_videos": 310
+  },
+  "crops_per_split": {
+    "train": 7815,
+    "val": 1704,
+    "test": 1751
+  },
+  "classes_missing_in": {
+    "train": [],
+    "val": [],
+    "test": []
+  },
+  "dropped_fraction": 0.0707
+}

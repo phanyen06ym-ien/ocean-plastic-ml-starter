@@ -1,0 +1,70 @@
+# Data Contract v2 — dữ liệu cho E04 (tiền xử lý, gộp lớp và chia lại).
+# Phiên bản v1 (configs/data_contract.yaml) giữ nguyên cho E01–E03.
+# Khác v1: gộp 22 → 18 lớp, crop vuông 224x224, lề 15%, bỏ box < 16 px, chia theo video giữ 70/15/15 cho từng lớp.
+# Thông số và lý do: docs/dataset_report.md (mục "Phiên bản v2_crop224").
+#
+# Tạo dữ liệu:
+#   python -m src.preprocessing --raw-root <TrashCan> --out-dir <...>/processed/v2_crop224 \
+#       --contract configs/data_contract_v2.yaml
+
+version: v2
+
+dataset:
+  name: TrashCan 1.0
+  version: instance              # giữ nguyên v1
+  annotation_files:
+    train: instances_train_trashcan.json
+    val: instances_val_trashcan.json
+  data_version: v2_crop224       # thư mục Drive: data/processed/v2_crop224
+
+classes:                         # v1: 22 lớp. v2: gộp lớp mơ hồ / quá hiếm → 18 lớp, giữ nguyên 6 lớp nhựa
+  mapping_file: configs/class_mapping_v2.json
+  num_classes: 18
+  scope: all_instance_categories_merged
+  index_order: min_category_id_of_group
+  merge:                         # tên gốc → tên lớp mới
+    trash_unknown_instance: trash_other   # lớp "không rõ loại", dễ nhầm với mọi lớp rác
+    trash_cup: trash_other                # 44 crop, 4 video
+    trash_clothing: trash_other           # 73 crop
+    trash_wreckage: trash_other           # 165 crop, F1 = 0 ở E03/E04 cũ
+    animal_shells: animal_other           # 121 crop, 7 video
+    animal_etc: animal_other              # "động vật khác", mơ hồ
+  plastic_related_candidates:
+    - trash_bag
+    - trash_bottle
+    - trash_snack_wrapper
+    - trash_net
+    - trash_rope
+    - trash_tarp
+
+split:
+  strategy: grouped_by_video     # vẫn chia theo video: không video nào nằm ở hai tập
+  method: stratified_video_search  # v1: random_group_search — giữ tỉ lệ 70/15/15 cho từng lớp
+  video_id_regex: "vid_(\\d+)"
+  ratios: {train: 0.70, val: 0.15, test: 0.15}
+  seed: 42
+  manifest: split_manifest.csv
+
+crop:
+  source: bbox
+  square: true                   # v1: false — cửa sổ vuông quanh tâm bbox, không làm méo đối tượng
+  padding_ratio: 0.15            # v1: 0.10
+  min_box_side_px: 16            # v1: 8
+
+image:
+  input_size: 224                # v1: 128 — đúng kích thước MobileNetV2 được tiền huấn luyện
+  channels: 3
+  color_mode: RGB
+  resize_method: square_crop_bilinear
+  file_format: jpg
+  normalization: imagenet_mean_std   # thực hiện trong src/train.py (transforms.Normalize)
+
+labels:
+  encoding: int
+
+training:
+  class_weight: balanced         # giữ nguyên v1
+
+model_io:
+  checkpoint_format: .pt
+  output: softmax

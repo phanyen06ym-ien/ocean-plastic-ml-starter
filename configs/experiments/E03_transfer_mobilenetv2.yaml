@@ -13,7 +13,7 @@ description: >
   E01 (custom CNN, class weights, no augmentation) on the same data, split and seed.
 baseline_exp_id: E01           # runs/E01_20261105-1513
 changed_factor: model          # custom CNN -> MobileNetV2 transfer learning
-known_extra_differences:       # must be stated in the PR and experiment_log.md
+known_extra_differences:       # must be stated in the PR
   - framework TensorFlow/Keras -> PyTorch
   - input normalization required by the backbone (ImageNet mean/std instead of Rescaling 1/255)
   - head: E01 GAP->Dropout->Dense(128)->Dropout->softmax; E03 Dropout->Linear(1280,22)
@@ -156,7 +156,6 @@ paths:
   output_dir: runs/E03_transfer_mobilenetv2   # Drive: runs/E03_*
   checkpoint_phase1: best_phase1.pt
   checkpoint_phase2: best_phase2.pt           # state_dict only
-  log_file: docs/experiment_log.md
 
 logging:
   record_fields: [exp_id, baseline_exp_id, data_version, seed, backbone, image_size, phase1_lr,

@@ -4,9 +4,9 @@
 
 **Phân loại và giám sát rác thải nhựa đại dương** — đồ án môn Học máy và Khai phá dữ liệu.
 
-Dự án xây dựng mô hình mạng nơ-ron tích chập (CNN) phân loại **ảnh thực tế dưới nước** theo **loại đối tượng** của bộ dữ liệu **TrashCan 1.0 — phiên bản Instance** (22 lớp), trong đó trọng tâm phân tích là **nhóm 6 lớp rác liên quan đến nhựa** (túi, chai, vỏ bao bì, lưới, dây, bạt). Nhóm không phân loại theo chất liệu nhựa.
+Dự án xây dựng mô hình CNN phân loại **ảnh thực tế dưới nước** theo **loại đối tượng** của bộ dữ liệu **TrashCan 1.0 — phiên bản Instance** (22 lớp), trong đó trọng tâm phân tích là **nhóm 6 lớp rác liên quan đến nhựa** (túi, chai, vỏ bao bì, lưới, dây, bạt). Nhóm không phân loại theo chất liệu nhựa.
 
-> **Trạng thái:** Đã có kết quả Validation cho Sprint 2 và các thực nghiệm transfer learning Sprint 3. E03G là biến thể kéo dài thời gian huấn luyện của E03; kết quả E03G đang chờ chạy và chưa được dùng để kết luận hiệu suất. Phạm vi lớp đã chốt tại [ADR-001](docs/decisions/ADR-001-class-scope.md).
+> **Trạng thái:** Đã có kết quả Sprint 2 và Sprint 3 cho CNN baseline và MobileNetV2 transfer learning. E03G (extended training) đã chạy; kết quả không cho thấy cải thiện so với E03. Tiêu chí chọn checkpoint cuối (`val_loss` hay Macro F1 Validation) vẫn cần reviewer xác nhận. Tập Test chưa được dùng để chọn mô hình.
 
 ---
 
@@ -15,11 +15,11 @@ Dự án xây dựng mô hình mạng nơ-ron tích chập (CNN) phân loại **
 | Mục | Nội dung |
 |---|---|
 | Loại bài toán | Supervised multi-class image classification |
-| Đầu vào | Ảnh RGB **một đối tượng** 128×128 đã được cắt (crop) từ ảnh dưới nước theo annotation của TrashCan-Instance |
+| Đầu vào | Ảnh RGB **một đối tượng** 128×128 đã được crop từ ảnh dưới nước theo annotation TrashCan-Instance |
 | Đầu ra | Một trong **22 lớp** TrashCan-Instance: tên lớp, `class_index` và vector điểm softmax |
-| Mô hình | CNN baseline tự xây dựng (TensorFlow/Keras), sau đó so sánh với phương án cải tiến |
-| Chỉ số chính | Macro F1-score trên 22 lớp + Macro F1 nhóm 6 lớp liên quan nhựa; kèm Accuracy, Precision, Recall, Confusion Matrix |
-| Ngoài phạm vi giữa kỳ | Object Detection, GAN phục hồi ảnh, video thời gian thực, điều khiển robot |
+| Mô hình | CNN baseline tự xây dựng (TensorFlow/Keras), sau đó transfer learning MobileNetV2 (PyTorch) |
+| Chỉ số chính | Macro F1-score trên 22 lớp và Macro F1 nhóm 6 lớp liên quan nhựa; kèm Accuracy, Precision, Recall, Confusion Matrix |
+| Ngoài phạm vi | Object Detection, GAN phục hồi ảnh, video thời gian thực, điều khiển robot |
 
 Chi tiết: [`docs/problem_statement.md`](docs/problem_statement.md).
 
@@ -27,12 +27,12 @@ Chi tiết: [`docs/problem_statement.md`](docs/problem_statement.md).
 
 - **7.212 ảnh** thu thập từ môi trường dưới nước (khung hình video), có annotation dạng COCO cho instance segmentation và bounding box.
 - Hai phiên bản nhãn: **Instance** (theo loại đối tượng — nhóm sử dụng) và **Material** (theo chất liệu — chỉ dùng để đối chiếu khi cần).
-- Nguồn: [UMN Data Repository](https://conservancy.umn.edu/items/6dd6a960-c44a-4510-a679-efb8c82ebfb7) · Bài báo: Hong, Fulton & Sattar, *TrashCan: A Semantically-Segmented Dataset towards Visual Detection of Marine Debris*, [arXiv:2007.08097](https://arxiv.org/abs/2007.08097).
-- Dữ liệu **không được commit** lên GitHub; lưu trên Google Drive của nhóm (xem mục 5).
+- Nguồn: [UMN Data Repository](https://conservancy.umn.edu/items/6dd6a960-c44a-4510-a679-efb8c82ebfb7) · Hong, Fulton & Sattar, *TrashCan: A Semantically-Segmented Dataset towards Visual Detection of Marine Debris*, [arXiv:2007.08097](https://arxiv.org/abs/2007.08097).
+- Dữ liệu **không được commit** lên GitHub; lưu trên Google Drive của nhóm.
 
 ### 2.1. Phạm vi lớp (ADR-001 — Option D)
 
-CNN phân loại **đủ 22 lớp** của TrashCan-Instance để tận dụng toàn bộ dữ liệu và không ép đối tượng ngoài phạm vi (ROV, sinh vật, thực vật) vào lớp rác. Kết quả được báo cáo ở hai cấp:
+CNN phân loại đủ 22 lớp TrashCan-Instance để tận dụng toàn bộ dữ liệu và không ép đối tượng ngoài phạm vi (ROV, sinh vật, thực vật) vào lớp rác. Kết quả được báo cáo ở hai cấp:
 
 1. **Tổng thể 22 lớp** — Macro F1 là chỉ số chính.
 2. **Nhóm rác liên quan nhựa** — phân tích riêng 6 lớp dưới đây. Tên nhãn là loại đối tượng, *không* phải bằng chứng chất liệu.
@@ -48,8 +48,8 @@ CNN phân loại **đủ 22 lớp** của TrashCan-Instance để tận dụng t
 
 | Thông số | Giá trị |
 |---|---|
-| Kích thước ảnh | 128 × 128 RGB, pixel / 255 |
-| Chia dữ liệu | Gộp train + val gốc, chia lại **theo video** 70 / 15 / 15, seed 42 |
+| Kích thước ảnh | 128 × 128 RGB |
+| Chia dữ liệu | Gộp train + val gốc, chia lại theo video 70 / 15 / 15, seed 42 |
 | Crop | bbox + 10% lề, bỏ box cạnh < 8 px |
 | Mất cân bằng | Giữ nguyên các lớp lớn (`rov`, `trash_unknown_instance`), dùng class weights |
 
@@ -57,7 +57,7 @@ Số liệu annotation lấy từ Dataset Audit nội bộ; số crop thực t�
 
 ## 3. Quy trình học máy
 
-```
+```text
 TrashCan-Instance (COCO JSON + ảnh)
   → Dataset Audit & EDA            notebooks/01 · src/eda.py
   → Chọn lớp + crop đối tượng       notebooks/02 · src/preprocessing.py
@@ -72,44 +72,43 @@ Mọi thông số trao đổi giữa các module (kích thước ảnh, chuẩn 
 
 ## 4. Cấu trúc thư mục
 
-```
+```text
 ocean-plastic-ml-starter/
 ├── .github/
-│   ├── ISSUE_TEMPLATE/task.md       # Mẫu issue duy nhất cho mọi task
-│   ├── pull_request_template.md     # Mẫu PR bắt buộc
-│   └── CODEOWNERS                   # Yến là reviewer bắt buộc
+│   ├── ISSUE_TEMPLATE/task.md
+│   ├── pull_request_template.md
+│   └── CODEOWNERS
 ├── configs/
-│   ├── data_contract.yaml           # Hợp đồng dữ liệu giữa các module
-│   ├── class_mapping.json           # category_id → class_name → class_index (DATA tạo)
-│   └── experiments/                 # E01_baseline.yaml, E02_augment.yaml, ...
-├── data/                            # KHÔNG commit (chỉ .gitkeep)
-│   ├── raw/                         # TrashCan gốc
-│   ├── interim/                     # crop, manifest tạm
-│   └── processed/                   # dữ liệu đã chia train/val/test
+│   ├── data_contract.yaml
+│   ├── class_mapping.json
+│   └── experiments/
+├── data/                            # KHÔNG commit dữ liệu
+│   ├── raw/
+│   ├── interim/
+│   └── processed/
 ├── docs/
 │   ├── problem_statement.md
 │   ├── class_scope_analysis.md
 │   ├── dataset_report.md
 │   ├── evaluation_plan.md
-│   ├── experiment_plan.md            # Kế hoạch và so sánh các thực nghiệm E01–E04, E03G
-│   ├── experiment_log.md             # Nhật ký từng lần chạy và trạng thái kết quả
+│   ├── experiment_plan.md
+│   ├── experiment_log.md
 │   ├── colab_setup.md
 │   ├── demo_spec.md
-│   ├── sprint_plan.md               # Phân công + timeline
-│   ├── decisions/                   # ADR-xxx: quyết định đã chốt
-│   └── reports/                     # Báo cáo sprint, báo cáo giữa kỳ
-├── notebooks/                       # NN_<khu-vực>_<mô-tả>.ipynb, chạy trên Colab
-├── src/                             # Code dùng chung, notebook chỉ gọi lại
-│   ├── eda.py · preprocessing.py · train.py · evaluate.py · predict.py
-├── tests/                           # test_<module>.py (pytest)
-├── models/                          # KHÔNG commit trọng số (lưu Drive)
+│   ├── sprint_plan.md
+│   ├── decisions/
+│   └── reports/
+├── notebooks/
+├── src/
+├── tests/
+├── models/                          # KHÔNG commit trọng số
 ├── results/
-│   ├── figures/                     # hình < 1 MB dùng cho báo cáo
-│   └── metrics/                     # <EXP_ID>_<split>.json / .csv
-├── scripts/github/                  # Script quản lý issue, label, milestone
-├── main.py                          # CLI demo dự đoán
+│   ├── figures/
+│   └── metrics/
+├── scripts/github/
+├── main.py
 ├── requirements.txt
-├── CONTRIBUTING.md                  # Quy ước làm việc (bắt buộc đọc)
+├── CONTRIBUTING.md
 └── README.md
 ```
 
@@ -126,21 +125,29 @@ Quy tắc đặt tên file, nhánh, commit, PR: xem [`CONTRIBUTING.md`](CONTRIBU
 
 Thư mục Drive chuẩn của nhóm:
 
-```
+```text
 MyDrive/ocean-plastic-ml/
-├── data/raw/trashcan/               # dataset gốc
-├── data/processed/<DATA_VERSION>/   # ví dụ v1_crop224
-└── runs/<EXP_ID>_<YYYYMMDD-HHMM>/   # config.json, history.csv, best.keras, metrics_val.json
+├── data/raw/trashcan/
+├── data/processed/<DATA_VERSION>/
+└── runs/<EXP_ID>_<YYYYMMDD-HHMM>/
+    ├── config.json
+    ├── history.csv
+    ├── checkpoint (.keras hoặc .pt)
+    └── metrics_val.json
 ```
 
-Hướng dẫn chi tiết (mount Drive, clone repo bằng token trong Colab Secrets, push từ Colab): [`docs/colab_setup.md`](docs/colab_setup.md).
+Hướng dẫn chi tiết: [`docs/colab_setup.md`](docs/colab_setup.md).
 
 Chạy nhanh trên máy cá nhân:
 
 ```bash
 git clone https://github.com/phanyen06ym-ien/ocean-plastic-ml-starter.git
 cd ocean-plastic-ml-starter
-python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+python -m venv .venv
+# Windows PowerShell:
+.\.venv\Scripts\Activate.ps1
+# macOS/Linux:
+source .venv/bin/activate
 pip install -r requirements.txt
 pytest -q
 ```
@@ -149,13 +156,13 @@ pytest -q
 
 | Thành viên | GitHub | Vai trò | Khu vực |
 |---|---|---|---|
-| Phan Hải Yến | [@phanyen06ym-ien](https://github.com/phanyen06ym-ien) | Trưởng nhóm · Kiến trúc · Quản lý dự án · **Reviewer duy nhất** | `area:arch` |
+| Phan Hải Yến | [@phanyen06ym-ien](https://github.com/phanyen06ym-ien) | Trưởng nhóm · Kiến trúc · Quản lý dự án · Reviewer duy nhất | `area:arch` |
 | Hùng | [@tranngochung126hqv-stack](https://github.com/tranngochung126hqv-stack) | Dataset Audit · EDA · Tiền xử lý | `area:data` |
 | Hoàng Bách | [@phannguyenhoangbach2](https://github.com/phannguyenhoangbach2) | Kiến trúc CNN · Huấn luyện | `area:cnn` |
 | Nguyễn Hoàng Ân | *(cập nhật)* | Đánh giá · So sánh thực nghiệm · Phân tích lỗi | `area:eval` |
 | Ngọc Nguyên | [@hiang0910](https://github.com/hiang0910) | Inference · Kiểm thử · Demo | `area:demo` |
 
-Yến là **người phụ trách phụ** của mọi issue và là người review, phê duyệt, merge mọi Pull Request.
+Yến là người phụ trách review, phê duyệt và merge Pull Request theo quy ước nhóm.
 
 ## 7. Lộ trình
 
@@ -163,32 +170,43 @@ Yến là **người phụ trách phụ** của mọi issue và là người rev
 |---|---|---|---|
 | Sprint 1 — Foundation | 23/10 – 03/11/2026 | Bài toán, kiến trúc, ADR-001, khung code DATA/CNN/EVAL/DEMO | `Sprint 1 — Foundation` |
 | Sprint 2 — Data & Baseline | 04/11/2026 | Dữ liệu đã xử lý, huấn luyện E01/E02, đánh giá Validation, demo với checkpoint thật | `Sprint 2 — Data & Baseline` |
-| Sprint 3 — Improvement & Midterm | 05/11 – 18/11/2026 | Cải tiến mô hình, đánh giá Test, demo, báo cáo giữa kỳ | `Sprint 3 — Improvement & Midterm` |
+| Sprint 3 — Improvement & Midterm | 05/11 – 18/11/2026 | Cải tiến mô hình, đánh giá, demo, báo cáo giữa kỳ | `Sprint 3 — Improvement & Midterm` |
 
-Chi tiết phân công và các mốc: [`docs/sprint_plan.md`](docs/sprint_plan.md).
+Chi tiết: [`docs/sprint_plan.md`](docs/sprint_plan.md).
 
-**Định hướng sau giữa kỳ:** phát hiện và định vị rác (Object Detection), cải thiện ảnh dưới nước, mô hình nhẹ cho robot thu gom.
+**Định hướng tiếp theo:** xác nhận checkpoint cuối; hoàn thiện đánh giá Test sau khi chốt mô hình; cải thiện dữ liệu và nghiên cứu Object Detection, phục hồi ảnh dưới nước, mô hình nhẹ cho robot thu gom.
 
-## 8. Kết quả
+## 8. Kết quả thực nghiệm
 
-Các chỉ số dưới đây là kết quả trên **Validation** với `v1_crop128` (1.782 ảnh, 22 lớp); không sử dụng tập Test để chọn mô hình. Nguồn chi tiết: `results/metrics/`, [`docs/experiment_plan.md`](docs/experiment_plan.md), [`docs/experiment_log.md`](docs/experiment_log.md) và phân tích tại [`docs/evaluation_report.md`](docs/evaluation_report.md).
+Các số liệu dưới đây là trên **Validation** với `v1_crop128` (1.782 ảnh, 22 lớp). Macro F1 nhóm nhựa là kết quả trên 6 lớp liên quan nhựa. Dấu `—` nghĩa là số liệu chưa có trong bảng kết quả đang dùng. **Tập Test chưa được dùng để chọn mô hình.**
 
-| EXP_ID | Mô tả | Macro F1 (val) | Accuracy (val) | Macro F1 nhóm nhựa (val) | Macro F1 (test) |
-|---|---|---:|---:|---:|---:|
-| E01 | CNN baseline + class weights | 0,0757 | 0,219 | 0,0000 | — |
-| E02 | E01 + Data Augmentation | 0,0648 | 0,161 | 0,0165 | — |
-| E03 | MobileNetV2 pretrained ImageNet, transfer learning 2 pha | 0,2034 | 0,4052 | 0,1228 | — |
-| E03a | E03 + dropout 0,6 | 0,2099 | 0,4141 | 0,1377 | — |
-| E03c | E03 + learning rate pha 1 = 3e-4 | 0,1955 | 0,4366 | 0,1083 | — |
-| E03d | E03 + learning rate backbone pha 2 = 3e-5 | 0,2034 | 0,4052 | 0,1228 | — |
-| E03f | E03 với seed 43 | 0,2122 | 0,4119 | 0,1168 | — |
-| E03d-F1 | E03d, checkpoint chọn theo Macro F1 | 0,2398 | 0,4994 | 0,1076 | — |
-| E03f-F1 | E03f, checkpoint chọn theo Macro F1 | 0,2372 | 0,4826 | 0,1357 | — |
-| E03G | E03 với thời gian huấn luyện và patience mở rộng | Chờ chạy | — | — | — |
+| EXP_ID | Mô tả | Macro F1 (val) | Accuracy (val) | Macro F1 nhóm nhựa (val) |
+|---|---|---:|---:|---:|
+| E01 | CNN baseline + class weights | 0,0757 | 0,2190 | 0,0000 |
+| E02 | E01 + Data Augmentation | 0,0648 | 0,1610 | 0,0165 |
+| E03 | MobileNetV2, 2 pha | 0,2034 | 0,4052 | 0,1228 |
+| E03a | E03 + dropout 0,6 | 0,2099 | — | 0,1377 |
+| E03c | E03 + learning rate pha 1 = 3e-4 | 0,1955 | — | 0,1083 |
+| E03d | E03 + learning rate backbone pha 2 = 3e-5 | 0,2034 | — | 0,1228 |
+| E03f | E03 với seed 43 | 0,2122 | — | 0,1168 |
+| E03d-F1 | E03d, checkpoint chọn theo Macro F1 | 0,2398 | 0,4994 | 0,1076 |
+| E03f-F1 | E03f, checkpoint chọn theo Macro F1 | 0,2372 | 0,4826 | 0,1357 |
+| E03G | E03 với lịch huấn luyện mở rộng | 0,2034 | 0,4052 | 0,1228 |
 
-E03 cho thấy transfer learning cải thiện Macro F1 Validation so với E01 (0,2034 so với 0,0757). Các cấu hình tinh chỉnh có dao động; E03 và E03f khác nhau 0,009 Macro F1 dù cùng thiết lập chính nhưng khác seed. Hai checkpoint chọn theo Macro F1 (E03d-F1 và E03f-F1) đạt 0,2398 và 0,2372; quy tắc chọn checkpoint cuối cùng cần được thống nhất theo kế hoạch đánh giá. E03G chỉ thay đổi số epoch tối đa và patience so với E03 để kiểm tra khả năng dừng sớm; chưa có kết quả nên không thể kết luận E03G tốt hơn.
+### 8.1. Nhận xét
 
-**Kiểm thử phần mềm:** lần chạy `pytest -q` được báo cáo có **48 passed, 0 failed, 50 warnings** trong 88,05 giây. Đây là kết quả kiểm thử tự động, không phải chỉ số chất lượng mô hình. Tập Test chưa được dùng.
+- E02 không cải thiện so với E01; giả thuyết H2 không được xác nhận trong các run hiện có.
+- E03 cải thiện Macro F1 Validation so với E01 (0,2034 so với 0,0757), cho thấy transfer learning có lợi trong thí nghiệm này.
+- Các thay đổi dropout và learning rate chưa cho thấy cải thiện ổn định. Hai run E03 và E03f khác seed chênh 0,009 Macro F1, vì vậy cần thận trọng với khác biệt nhỏ.
+- E03d-F1 và E03f-F1 có Macro F1 cao hơn checkpoint chọn theo `val_loss`, nhưng đó là kết quả theo **tiêu chí checkpoint khác**. Reviewer cần xác nhận tiêu chí chính thức trước khi chốt mô hình.
+- E03G kéo dài thời gian huấn luyện nhưng checkpoint cuối theo `val_loss` có kết quả tương đương E03. Trong fine-tuning, training loss giảm trong khi validation loss nhìn chung tăng; log pha 2 có Macro F1 tối đa 0,236 tại epoch 9, nhưng epoch này không phải epoch có `val_loss` tốt nhất.
+- Không diễn giải các kết quả Validation thành kết quả Test. Không dùng Test để chọn checkpoint.
+
+Chi tiết cấu hình, lịch sử và giới hạn của từng run: [`docs/experiment_plan.md`](docs/experiment_plan.md) và [`docs/experiment_log.md`](docs/experiment_log.md).
+
+### 8.2. Kiểm thử phần mềm
+
+Lần chạy test được báo cáo: `48 passed, 50 warnings in 88.05s`. Đây là kết quả kiểm thử phần mềm (`pytest`), **không phải** chỉ số đánh giá mô hình. Các warning không làm test thất bại; cần xem log nếu muốn xử lý riêng.
 
 ## 9. Trích dẫn
 

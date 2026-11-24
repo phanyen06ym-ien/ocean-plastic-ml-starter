@@ -3,8 +3,8 @@
 Usage:
     python scripts/collect_runs.py --runs-root runs --csv results/metrics/e03_candidates.csv
 
-Prints a Markdown table (decimal comma, like docs/experiment_plan.md) sorted by Macro F1 val.
-Paste it into the candidate section of docs/experiment_plan.md. Reads only files written by src/train.py.
+Prints a Markdown table (decimal comma) sorted by Macro F1 val.
+Reads only files written by src/train.py.
 """
 from __future__ import annotations
 

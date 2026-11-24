@@ -1,0 +1,232 @@
+{
+  "dataset": "TrashCan 1.0 — Instance",
+  "num_classes": 18,
+  "index_order": "min_category_id_of_group",
+  "source_annotations": "instances_train/val_trashcan.json",
+  "classes": [
+    {
+      "class_index": 0,
+      "category_id": 1,
+      "class_name": "rov",
+      "plastic_related": false,
+      "category_ids": [
+        1
+      ],
+      "source_names": [
+        "rov"
+      ]
+    },
+    {
+      "class_index": 1,
+      "category_id": 2,
+      "class_name": "plant",
+      "plastic_related": false,
+      "category_ids": [
+        2
+      ],
+      "source_names": [
+        "plant"
+      ]
+    },
+    {
+      "class_index": 2,
+      "category_id": 3,
+      "class_name": "animal_fish",
+      "plastic_related": false,
+      "category_ids": [
+        3
+      ],
+      "source_names": [
+        "animal_fish"
+      ]
+    },
+    {
+      "class_index": 3,
+      "category_id": 4,
+      "class_name": "animal_starfish",
+      "plastic_related": false,
+      "category_ids": [
+        4
+      ],
+      "source_names": [
+        "animal_starfish"
+      ]
+    },
+    {
+      "class_index": 4,
+      "category_id": 5,
+      "class_name": "animal_other",
+      "plastic_related": false,
+      "category_ids": [
+        5,
+        8
+      ],
+      "source_names": [
+        "animal_shells",
+        "animal_etc"
+      ]
+    },
+    {
+      "class_index": 5,
+      "category_id": 6,
+      "class_name": "animal_crab",
+      "plastic_related": false,
+      "category_ids": [
+        6
+      ],
+      "source_names": [
+        "animal_crab"
+      ]
+    },
+    {
+      "class_index": 6,
+      "category_id": 7,
+      "class_name": "animal_eel",
+      "plastic_related": false,
+      "category_ids": [
+        7
+      ],
+      "source_names": [
+        "animal_eel"
+      ]
+    },
+    {
+      "class_index": 7,
+      "category_id": 9,
+      "class_name": "trash_other",
+      "plastic_related": false,
+      "category_ids": [
+        9,
+        15,
+        17,
+        19
+      ],
+      "source_names": [
+        "trash_clothing",
+        "trash_cup",
+        "trash_unknown_instance",
+        "trash_wreckage"
+      ]
+    },
+    {
+      "class_index": 8,
+      "category_id": 10,
+      "class_name": "trash_pipe",
+      "plastic_related": false,
+      "category_ids": [
+        10
+      ],
+      "source_names": [
+        "trash_pipe"
+      ]
+    },
+    {
+      "class_index": 9,
+      "category_id": 11,
+      "class_name": "trash_bottle",
+      "plastic_related": true,
+      "category_ids": [
+        11
+      ],
+      "source_names": [
+        "trash_bottle"
+      ]
+    },
+    {
+      "class_index": 10,
+      "category_id": 12,
+      "class_name": "trash_bag",
+      "plastic_related": true,
+      "category_ids": [
+        12
+      ],
+      "source_names": [
+        "trash_bag"
+      ]
+    },
+    {
+      "class_index": 11,
+      "category_id": 13,
+      "class_name": "trash_snack_wrapper",
+      "plastic_related": true,
+      "category_ids": [
+        13
+      ],
+      "source_names": [
+        "trash_snack_wrapper"
+      ]
+    },
+    {
+      "class_index": 12,
+      "category_id": 14,
+      "class_name": "trash_can",
+      "plastic_related": false,
+      "category_ids": [
+        14
+      ],
+      "source_names": [
+        "trash_can"
+      ]
+    },
+    {
+      "class_index": 13,
+      "category_id": 16,
+      "class_name": "trash_container",
+      "plastic_related": false,
+      "category_ids": [
+        16
+      ],
+      "source_names": [
+        "trash_container"
+      ]
+    },
+    {
+      "class_index": 14,
+      "category_id": 18,
+      "class_name": "trash_branch",
+      "plastic_related": false,
+      "category_ids": [
+        18
+      ],
+      "source_names": [
+        "trash_branch"
+      ]
+    },
+    {
+      "class_index": 15,
+      "category_id": 20,
+      "class_name": "trash_tarp",
+      "plastic_related": true,
+      "category_ids": [
+        20
+      ],
+      "source_names": [
+        "trash_tarp"
+      ]
+    },
+    {
+      "class_index": 16,
+      "category_id": 21,
+      "class_name": "trash_rope",
+      "plastic_related": true,
+      "category_ids": [
+        21
+      ],
+      "source_names": [
+        "trash_rope"
+      ]
+    },
+    {
+      "class_index": 17,
+      "category_id": 22,
+      "class_name": "trash_net",
+      "plastic_related": true,
+      "category_ids": [
+        22
+      ],
+      "source_names": [
+        "trash_net"
+      ]
+    }
+  ]
+}
