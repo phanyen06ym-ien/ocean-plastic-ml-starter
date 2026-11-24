@@ -31,6 +31,6 @@ def test_summarize_and_comparison(tmp_path):
     assert np.isclose(r["overall"]["accuracy"], 4 / 6)
     assert r["macro_f1_present_classes"] > r["overall"]["macro_f1"]   # lớp rope 0 mẫu kéo macro tổng xuống
     p = tmp_path / "E01_val.json"
-    p.write_text(json.dumps(r, default=float))
+    p.write_text(json.dumps(r, default=float), encoding="utf-8")
     t = comparison_table([p])
     assert list(t["exp_id"]) == ["E01"] and "plastic_macro_f1" in t.columns

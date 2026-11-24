@@ -45,7 +45,7 @@ def make_fake_trashcan(root: Path, n_videos: int = 40, frames: int = 3, seed: in
                 coco[split]["annotations"].append({"id": ann_id, "image_id": img_id, "category_id": cat,
                                                    "bbox": [10 + k * 40, 20, w, h], "area": w * h, "iscrowd": 0})
     for s in ("train", "val"):
-        with open(base / f"instances_{s}_trashcan.json", "w") as fh:
+        with open(base / f"instances_{s}_trashcan.json", "w", encoding="utf-8") as fh:
             json.dump(coco[s], fh)
     return root / "dataset"
 

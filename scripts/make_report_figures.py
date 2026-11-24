@@ -73,9 +73,9 @@ def comparison(metrics: Path, path: Path) -> Path:
     rows = []
     for label, f in [("E01", "E01_val"), ("E02", "E02_val"), ("E03", "E03_val"),
                      ("E04 bản đầu", "E04v1_val"), ("E04", "E04_val")]:
-        d = json.loads((metrics / f"{f}.json").read_text())
+        d = json.loads((metrics / f"{f}.json").read_text(encoding="utf-8"))
         rows.append((label, d["overall"]["macro_f1"], d["plastic_related"]["macro_f1"]))
-    t = json.loads((metrics / "E04_test.json").read_text())
+    t = json.loads((metrics / "E04_test.json").read_text(encoding="utf-8"))
     x = np.arange(len(rows))
     fig, ax = plt.subplots(figsize=(9, 4.5))
     b1 = ax.bar(x - 0.18, [r[1] for r in rows], 0.36, color=C_MAIN, label="Macro F1 (Validation)")
@@ -97,8 +97,8 @@ def comparison(metrics: Path, path: Path) -> Path:
 
 
 def plastic_per_class(metrics: Path, path: Path) -> Path:
-    old = json.loads((metrics / "E04v1_test.json").read_text())["overall"]["per_class"]
-    new = json.loads((metrics / "E04_test.json").read_text())["overall"]["per_class"]
+    old = json.loads((metrics / "E04v1_test.json").read_text(encoding="utf-8"))["overall"]["per_class"]
+    new = json.loads((metrics / "E04_test.json").read_text(encoding="utf-8"))["overall"]["per_class"]
     x = np.arange(len(PLASTIC))
     fig, ax = plt.subplots(figsize=(9, 4))
     ax.bar(x - 0.18, [old[c]["f1_score"] for c in PLASTIC], 0.36, color=C_MUTED, label="E04 bản đầu (√(1/n))")

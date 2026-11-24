@@ -85,7 +85,7 @@ def test_run_preprocessing_end_to_end(fake_trashcan, tmp_path):
     assert all((out_dir / p).exists() for p in ok["crop_path"])
     assert Image.open(out_dir / ok.iloc[0]["crop_path"]).size == (128, 128)
     assert summary["crops_per_split"]["train"] > summary["crops_per_split"]["val"]
-    assert json.loads((out_dir / "preprocessing_summary.json").read_text())["num_videos"] == 40
+    assert json.loads((out_dir / "preprocessing_summary.json").read_text(encoding="utf-8"))["num_videos"] == 40
 
 
 def test_eda_tables(fake_trashcan):

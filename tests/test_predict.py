@@ -45,11 +45,11 @@ def test_load_image_errors(tmp_path):
     with pytest.raises(InferenceError, match="Không tìm thấy"):
         load_image(tmp_path / "missing.jpg")
     bad = tmp_path / "x.jpg"
-    bad.write_text("not an image")
+    bad.write_text("not an image", encoding="utf-8")
     with pytest.raises(InferenceError, match="không phải ảnh"):
         load_image(bad)
     txt = tmp_path / "x.txt"
-    txt.write_text("hi")
+    txt.write_text("hi", encoding="utf-8")
     with pytest.raises(InferenceError, match="Định dạng"):
         load_image(txt)
 
@@ -150,7 +150,7 @@ def test_torch_model_end_to_end(tmp_path, mapping_file):
            "input": {"image_size": [64, 64], "normalize": {"mean": [0.485, 0.456, 0.406], "std": [0.229, 0.224, 0.225]}}}
     run = tmp_path / "run"
     run.mkdir()
-    (run / "config.json").write_text(json.dumps(cfg))
+    (run / "config.json").write_text(json.dumps(cfg), encoding="utf-8")
     torch.save(build_model(cfg, pretrained=False).state_dict(), run / "best.pt")
     pr = Predictor(run / "best.pt", mapping_file, device="cpu")
     assert pr.input_size == 64
