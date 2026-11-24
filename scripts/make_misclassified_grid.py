@@ -43,7 +43,7 @@ def select_errors(pred: pd.DataFrame, mapping: list[dict], per_class: int, limit
 
 def draw(err: pd.DataFrame, processed_dir: Path, out: Path, cols: int = 4) -> Path:
     rows = max(1, -(-len(err) // cols))
-    fig, axes = plt.subplots(rows, cols, figsize=(3 * cols, 3.3 * rows))
+    fig, axes = plt.subplots(rows, cols, figsize=(3 * cols, 3.5 * rows), layout="constrained")
     for ax in getattr(axes, "flat", [axes]):
         ax.axis("off")
     for ax, r in zip(getattr(axes, "flat", [axes]), err.itertuples()):
@@ -51,7 +51,6 @@ def draw(err: pd.DataFrame, processed_dir: Path, out: Path, cols: int = 4) -> Pa
         ax.set_title(f"Thật: {r.true_name.replace('trash_', '')}\nĐoán: {r.pred_name} ({r.confidence:.0%})",
                      fontsize=8, color="#b91c1c")
     fig.suptitle("E04 — mẫu nhựa bị đoán sai trên Test (độ tin cậy cao nhất mỗi lớp)", fontsize=11)
-    fig.tight_layout(rect=(0, 0, 1, 1 - 0.35 / (3.3 * rows)))
     out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out, dpi=110)
     plt.close(fig)
