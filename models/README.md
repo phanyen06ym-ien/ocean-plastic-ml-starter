@@ -15,7 +15,9 @@ Trọng số các mô hình đã huấn luyện (E01–E04).
 | E04 | EfficientNet-B0 (PyTorch), 18 lớp, lấy mẫu 1/số mẫu | `v2_crop224` | `runs/E04_20261122-0853/` | `best.pt` (16,4 MB) | `config.json`, `class_mapping.json` cùng thư mục |
 | E04 bản đầu (thay thế 22/11) | như trên, lấy mẫu √(1/số mẫu) | `v2_crop224` | `runs/E04_20261121-1102/` | `best.pt` | chỉ để đối chiếu với `results/metrics/E04v1_*` |
 
-Mỗi thư mục run còn có `history.csv`, `config.json`, `class_mapping.json` và `<EXP_ID>_val.json`.
+Mỗi thư mục run còn có `history.csv`, `config.json`, `class_mapping.json`, `<EXP_ID>_val.json` và file dự đoán (`E04_test_predictions.csv` với hai run E04). Bản sao các file dự đoán nằm trong [`results/predictions/`](../results/predictions/).
+
+Các run thử nghiệm, run bị ngắt và thư mục `exports/` cũ đã được dọn khỏi Drive ngày 24/11/2026.
 Thứ tự lớp đầu ra: E01–E03 theo [`configs/class_mapping.json`](../configs/class_mapping.json) (22 lớp); E04 theo [`configs/class_mapping_v2.json`](../configs/class_mapping_v2.json) (18 lớp). `main.py` tự dùng `class_mapping.json` nằm cạnh checkpoint.
 
 ## Dùng checkpoint

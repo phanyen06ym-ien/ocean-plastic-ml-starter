@@ -17,7 +17,7 @@
 |---|---|
 | Dữ liệu đã xử lý | Drive `data/processed/v1_crop128.zip` (lần sau dùng lại, không xử lý lại) |
 | Checkpoint, history, config | Drive `runs/<EXP_ID>_<YYYYMMDD-HHMM>/` |
-| Chỉ số, hình, báo cáo | Drive `exports/s2_results_<thời gian>/`, sau đó vào repo qua PR: `results/metrics/`, `results/figures/`, `results/pipeline_results.md` |
+| Chỉ số, hình, báo cáo | Drive `exports/s2_results_<thời gian>/` (tạm thời), sau đó vào repo qua PR: `results/metrics/`, `results/figures/`, `results/predictions/`; xoá bản trong `exports/` khi đã có trên `main` |
 
 ## 3. Khi Colab ngắt kết nối
 

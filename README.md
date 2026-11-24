@@ -249,10 +249,19 @@ Thư mục Drive của nhóm:
 
 ```
 MyDrive/ocean-plastic-ml/
-├── data/raw/trashcan/               # dataset gốc
-├── data/processed/<DATA_VERSION>/   # ví dụ v1_crop128
-└── runs/<EXP_ID>_<YYYYMMDD-HHMM>/   # config, history.csv, checkpoint, metrics
+├── README.md                        # Mục lục thư mục Drive
+├── data/
+│   ├── raw/dataset.zip              # TrashCan 1.0 gốc (553 MB)
+│   └── processed/                   # v1_crop128.zip (E01–E03), v2_crop224.zip (E04)
+├── runs/                            # Mỗi run: best.pt / best.keras, config.json, class_mapping.json, history.csv, predictions
+│   ├── E01_20261105-1513/ · E02_20261105-1515/
+│   ├── E04_20261121-1102/           # E04 bản đầu (√(1/n))
+│   ├── E04_20261122-0853/           # E04 — mô hình cuối (tag v1.0-final)
+│   └── data_audit_v1_crop128/       # Kết quả audit của PR #35
+├── exports/                         # Nơi notebook 00 ghi kết quả tạm; chép vào repo rồi xoá
+├── audits/ · reports/               # Audit dữ liệu v1 và gói báo cáo giữa kỳ (13/11)
 ```
+Checkpoint E03 (`runs/E03_20261108-1459/`) chỉ có trên máy của Bách (xem [`models/README.md`](models/README.md)).
 
 ## 8. Cấu trúc repo
 
@@ -287,7 +296,8 @@ ocean-plastic-ml-starter/
 ├── models/                          # Chỉ README: danh sách checkpoint E01–E04 trên Drive
 ├── results/
 │   ├── figures/                     # Hình cho báo cáo
-│   └── metrics/                     # <EXP_ID>_<split>.json/.csv; metrics_summary.csv so sánh E01–E04
+│   ├── metrics/                     # <EXP_ID>_<split>.json/.csv; metrics_summary.csv so sánh E01–E04
+│   └── predictions/                 # Dự đoán từng ảnh (path, y_true, y_pred): E01–E02 Val, E04/E04v1 Val và Test
 ├── scripts/                         # collect_runs.py, summarize_runs.py, github/
 ├── main.py                          # CLI demo
 ├── requirements.txt
