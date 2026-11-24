@@ -1,0 +1,8 @@
+# E03d — tinh chỉnh E03 (S3-CNN). Chỉ khác E03: learning rate backbone pha 2 1e-5 -> 3e-5.
+# Khớp lần chạy E03d_20261110-1445 (results/metrics/e03_candidates.csv, E03d_val.json, E03d_bestf1_val.json).
+exp_id: E03d
+base_config: ../E03_transfer_mobilenetv2.yaml
+baseline_exp_id: E03
+changed_factor: "training.phase2.learning_rate.features 1e-5 -> 3e-5"
+description: E03 with phase-2 backbone learning rate 3e-5
+training: {phase2: {learning_rate: {features: 3.0e-5}}}

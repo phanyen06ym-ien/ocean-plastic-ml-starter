@@ -1,0 +1,13 @@
+# E03G — huấn luyện dài hơn (Bách, 24/11/2026, PR #37). Chỉ khác E03: số epoch và patience.
+# Kết quả: checkpoint theo val_loss trùng E03 (pha 1, epoch 2; Macro F1 Val 0,2034);
+# Macro F1 tốt nhất theo epoch 0,236 (pha 2, epoch 9) không được chọn. Xem e03_candidates.csv, README nhận xét 4.
+exp_id: E03G
+base_config: ../E03_transfer_mobilenetv2.yaml
+baseline_exp_id: E03
+changed_factor: "phase1/phase2 epochs 15/20 -> 30/40, early_stopping.patience 6 -> 12"
+name: transfer_mobilenetv2_extended_training
+description: E03 with longer phase budgets and early-stopping patience 12
+paths: {output_dir: runs/E03G_transfer_mobilenetv2_extended_training}
+training:
+  phase1: {epochs: 30, early_stopping: {patience: 12}}
+  phase2: {epochs: 40, early_stopping: {patience: 12}}

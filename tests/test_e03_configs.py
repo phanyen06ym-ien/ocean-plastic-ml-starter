@@ -95,3 +95,33 @@ def test_e04_model_sampler_and_focal_loss_run():
     assert weighted_ce(logits, y, w, gamma=2.0) < weighted_ce(logits, y, w)  # focal giảm trọng số mẫu dễ
     s = make_sampler([0, 0, 0, 1], e04["training"]["sampler"], 2, torch.Generator().manual_seed(0))
     assert len(list(iter(s))) == 4
+
+
+def _flatten(d, prefix=""):
+    out = {}
+    for k, v in d.items():
+        if isinstance(v, dict):
+            out.update(_flatten(v, f"{prefix}{k}."))
+        else:
+            out[f"{prefix}{k}"] = v
+    return out
+
+
+def test_tuning_configs_change_only_their_factor():
+    """configs/experiments/tuning/: mỗi lần tinh chỉnh E03 chỉ khác E03 ở đúng thông số đã chạy (khớp e03_candidates.csv)."""
+    expected = {
+        "E03a": {"model.head.dropout"},
+        "E03c": {"training.phase1.learning_rate"},
+        "E03d": {"training.phase2.learning_rate.features"},
+        "E03f": {"seed"},
+        "E03G": {"training.phase1.epochs", "training.phase2.epochs",
+                 "training.phase1.early_stopping.patience", "training.phase2.early_stopping.patience"},
+    }
+    base = _flatten(load_experiment_config(EXP / "E03_transfer_mobilenetv2.yaml"))
+    meta = {"exp_id", "baseline_exp_id", "changed_factor", "description", "name", "paths.output_dir"}
+    found = {p.stem for p in (EXP / "tuning").glob("*.yaml")}
+    assert found == set(expected)
+    for exp_id, keys in expected.items():
+        cfg = _flatten(load_experiment_config(EXP / "tuning" / f"{exp_id}.yaml"))
+        changed = {k for k in set(cfg) | set(base) if cfg.get(k) != base.get(k)} - meta
+        assert changed == keys, (exp_id, changed)

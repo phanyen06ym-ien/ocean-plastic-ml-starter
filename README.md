@@ -168,7 +168,7 @@ Adam (lr 1e-3), batch 64, tối đa 40 epoch, EarlyStopping (patience 6), Reduce
 | E01    | CNN tự thiết kế | Baseline + class weights                           | `v1_crop128`  | `E01_baseline.yaml`             |
 | E02    | CNN tự thiết kế | + Augmentation (lật ngang, xoay, zoom, tương phản) | `v1_crop128`  | `E02_augment.yaml`              |
 | E03    | MobileNetV2     | Mô hình: học chuyển giao                           | `v1_crop128`  | `E03_transfer_mobilenetv2.yaml` |
-| E03a–f, E03G | MobileNetV2 | Mỗi lần đổi một siêu tham số (dropout, lr, seed…); E03G: tối đa 30 + 40 epoch, patience 12 | `v1_crop128`  | E03 + `--set` (xem `results/metrics/e03_candidates.csv`) |
+| E03a, c, d, f, E03G | MobileNetV2 | Mỗi lần đổi một thông số: dropout 0,6 (a), lr pha 1 3e-4 (c), lr backbone pha 2 3e-5 (d), seed 43 (f); E03G: tối đa 30 + 40 epoch, patience 12 | `v1_crop128`  | `tuning/E03a.yaml` … `tuning/E03G.yaml` (kết quả: `results/metrics/e03_candidates.csv`) |
 | E04    | EfficientNet-B0 | Dữ liệu v2 (18 lớp) + backbone + bù lớp hiếm + chọn checkpoint theo Macro F1 + augmentation | `v2_crop224` | `E04_efficientnet_b0_data_v2.yaml` |
 
 Cấu hình từng thí nghiệm: `configs/experiments/` · Số liệu từng lần chạy: `results/metrics/<EXP_ID>_val.json`, `<EXP_ID>_history.csv`.
@@ -294,7 +294,7 @@ ocean-plastic-ml-starter/
 │   ├── data_contract_v2.yaml        # Thông số dữ liệu v2 (E04, 18 lớp)
 │   ├── class_mapping_v2.json        # 18 lớp sau khi gộp (E04)
 │   ├── class_mapping.json           # category_id → class_name → class_index
-│   └── experiments/                 # E01, E02, E03, E04 (.yaml)
+│   └── experiments/                 # E01, E02, E03, E04 (.yaml); tuning/ = các lần tinh chỉnh E03 (kế thừa E03 qua base_config)
 ├── data/                            # Chỉ có README.md; dữ liệu lưu trên Drive (xem data/README.md)
 ├── docs/
 │   ├── problem_statement.md         # Bài toán, phạm vi, chỉ số

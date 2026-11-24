@@ -1,0 +1,9 @@
+# E03a — tinh chỉnh E03 (S3-CNN). Chỉ khác E03: dropout đầu phân loại 0,4 -> 0,6.
+# Khớp lần chạy E03a_20261110-1215 / -1305 (results/metrics/e03_candidates.csv, E03a_val.json).
+# Lần chạy trên Windows thêm --set data.num_workers=0 (chỉ ảnh hưởng tốc độ nạp dữ liệu).
+exp_id: E03a
+base_config: ../E03_transfer_mobilenetv2.yaml
+baseline_exp_id: E03
+changed_factor: "model.head.dropout 0.4 -> 0.6"
+description: E03 with head dropout 0.6
+model: {head: {dropout: 0.6}}

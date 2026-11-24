@@ -1,0 +1,8 @@
+# E03f — kiểm tra độ dao động theo seed (S3-CNN). Chỉ khác E03: seed 42 -> 43.
+# Khớp lần chạy E03f_20261110-1744 (results/metrics/e03_candidates.csv, E03f_val.json, E03f_bestf1_val.json).
+exp_id: E03f
+base_config: ../E03_transfer_mobilenetv2.yaml
+baseline_exp_id: E03
+changed_factor: "seed 42 -> 43"
+description: E03 with seed 43 (seed variance check)
+seed: 43
