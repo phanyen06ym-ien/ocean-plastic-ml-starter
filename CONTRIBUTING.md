@@ -121,7 +121,7 @@ Mọi quyết định thay đổi phạm vi, merge khi chưa có review, hoặc 
 | Tài liệu | `docs/<snake_case>.md` | `docs/dataset_report.md` |
 | Cấu hình thí nghiệm | `configs/experiments/<EXP_ID>_<mo_ta>.yaml` | `E01_baseline.yaml` |
 | Kết quả số liệu | `results/metrics/<EXP_ID>_<split>.json` | `E01_val.json` |
-| Hình | `results/figures/<EXP_ID>_<loai>.png` | `E01_confusion_matrix.png` |
+| Hình | `results/figures/<EXP_ID>_<loai>.png` | `E01_val_confusion_matrix.png` |
 | Run trên Drive | `runs/<EXP_ID>_<YYYYMMDD-HHMM>/` | `runs/E01_20261114-0930/` |
 
 ## 8. Dữ liệu, mô hình và bí mật

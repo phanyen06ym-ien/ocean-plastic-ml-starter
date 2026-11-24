@@ -117,7 +117,7 @@ E03 (MobileNetV2 trên `v1_crop128`) chỉ đạt Macro F1 Validation 0,203. Ph�
 
 | Thông số | v1 | v2 | Lý do |
 |---|---|---|---|
-| Phạm vi lớp | 22 lớp | **18 lớp**: `trash_unknown_instance`, `trash_cup`, `trash_clothing`, `trash_wreckage` → `trash_other`; `animal_shells`, `animal_etc` → `animal_other`; giữ nguyên 6 lớp nhựa | `trash_unknown_instance` là lớp "không rõ loại" hút nhầm từ mọi lớp rác; `trash_cup` (44 crop, 4 video), `trash_clothing` (73), `trash_wreckage` (165), `animal_shells` (121) quá ít để học và đều có F1 = 0 ở E03 |
+| Phạm vi lớp | 22 lớp | **18 lớp**: `trash_unknown_instance`, `trash_cup`, `trash_clothing`, `trash_wreckage` → `trash_other`; `animal_shells`, `animal_etc` → `animal_other`; giữ nguyên 6 lớp nhựa | `trash_unknown_instance` là lớp "không rõ loại" hút nhầm từ mọi lớp rác; `trash_cup` (59 crop ở v1, 4 video), `trash_clothing` (82), `trash_wreckage` (165), `animal_shells` (248, nhưng chỉ 1 mẫu Val) quá ít hoặc phân bố quá lệch để học và đều có F1 = 0 ở E03 |
 | Kích thước | 128×128 | 224×224 | Kích thước ảnh tiền huấn luyện ImageNet; ảnh 128 làm mất chi tiết của vật nhỏ |
 | Cách cắt | Lề 10% theo từng chiều, resize thẳng | Cửa sổ vuông quanh tâm bbox, cạnh = cạnh dài bbox × 1,3; dời vào trong ảnh khi chạm mép | Resize thẳng làm méo vật dài (ống, dây, chai); cửa sổ vuông giữ đúng tỉ lệ |
 | Lề | 10% | 15% | Thêm một ít bối cảnh cho vật nhỏ nhưng không quá nhiều để mô hình học nền video |
@@ -193,7 +193,7 @@ Cạnh ngắn của bbox (pixel, trung vị) và tỉ lệ box < 32 px:
 ### 9.3. Ít mẫu và lớp `trash_other`
 
 - Train có 43 (`trash_snack_wrapper`) đến 88 (`trash_net`) crop cho 5/6 lớp nhựa, so với 1.948 crop `trash_other`; `trash_bottle` và `trash_snack_wrapper` chỉ xuất hiện trong 7 video.
-- E04 bản đầu đoán 59% mẫu nhựa Test (129/217) và 57% mẫu nhựa Val (131/228) thành `trash_other`, và không bao giờ dự đoán `trash_bottle`, `trash_snack_wrapper`.
+- E04 bản đầu đoán 59% mẫu nhựa Test (129/217) và 57% mẫu nhựa Val (131/228) thành `trash_other`, và trên Test không bao giờ dự đoán `trash_bottle`, `trash_snack_wrapper`.
 
 ### 9.4. Thay đổi: lấy mẫu theo 1/số mẫu (E04 hiện tại)
 

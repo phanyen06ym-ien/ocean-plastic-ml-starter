@@ -270,7 +270,7 @@ Không chốt tập lớp CNN chỉ dựa trên 120 ảnh mẫu.
 
 ## 7. Định dạng dữ liệu đầu ra
 
-File kết quả: `docs/visual_inspection_results.csv`.
+File kết quả (đề xuất): `results/visual_inspection/visual_inspection_results.csv`.
 
 Một dòng tương ứng với một annotation được chọn, chứa hai **bộ cột đánh giá độc lập** và một bộ cột kết luận đối chiếu. Có thể lưu riêng hai file raw review bất biến trước khi hợp nhất; kết quả tổng hợp không được ghi đè nhận xét ban đầu.
 
@@ -314,7 +314,7 @@ Một annotation ID chỉ xuất hiện một lần trong file kết quả tổn
 
 Các giá trị chưa đánh giá phải để trống và có trạng thái `Pending`; không được điền kết quả giả định. `Verified` bắt buộc có `material_type` và `material_evidence_source` truy xuất được; nếu không có, dùng `Unverified`. Cột `review_status` chỉ là trạng thái đối chiếu, không phải nhãn chất lượng ảnh.
 
-**Đầu ra tối thiểu:** `docs/visual_inspection_sample_manifest.csv` (danh sách đã khóa), `docs/visual_inspection_results.csv` (kết quả), và `docs/visual_inspection_summary.md` (tổng hợp, agreement, hạn chế). Đây là **đường dẫn đề xuất**, chưa khẳng định các file đã được tạo.
+**Đầu ra tối thiểu:** `results/visual_inspection/visual_inspection_sample_manifest.csv` (danh sách đã khóa, **đã có**), `results/visual_inspection/visual_inspection_results.csv` (kết quả), và `docs/visual_inspection_summary.md` (tổng hợp, agreement, hạn chế). Đây là **đường dẫn đề xuất**, chưa khẳng định các file đã được tạo.
 
 ## 8. Kiểm soát chất lượng
 

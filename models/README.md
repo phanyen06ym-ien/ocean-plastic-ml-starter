@@ -22,18 +22,18 @@ Thứ tự lớp đầu ra: E01–E03 theo [`configs/class_mapping.json`](../con
 
 ## Dùng checkpoint
 
-Tải thư mục run từ Drive về `models/<EXP_ID>/` (giữ `config.json` cạnh `best.pt`), rồi:
+Tải thư mục run từ Drive về `runs/<tên run>/` trong repo (giữ `config.json` và `class_mapping.json` cạnh checkpoint; `runs/` đã có trong `.gitignore`), rồi:
 
 ```bash
 # PyTorch (E03 MobileNetV2, E04 EfficientNet-B0)
-python main.py --image path/to/crop.jpg --model models/E04/best.pt
+python main.py --image path/to/crop.jpg --model runs/E04_20261122-0853/best.pt
 
 # CNN tự thiết kế (E01–E02)
-python main.py --image path/to/crop.jpg --model models/E01/best.keras
+python main.py --image path/to/crop.jpg --model runs/E01_20261105-1513/best.keras
 ```
 
 Đánh giá lại một checkpoint PyTorch:
 
 ```bash
-python -m src.evaluate --run models/E04 --ckpt best.pt --processed-dir data/processed/v2_crop224 --split val
+python -m src.evaluate --run runs/E04_20261122-0853 --ckpt best.pt --processed-dir data/processed/v2_crop224 --split val
 ```

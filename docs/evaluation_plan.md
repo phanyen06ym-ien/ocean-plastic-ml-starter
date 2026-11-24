@@ -7,6 +7,8 @@
 - **Trạng thái:** Hoàn thiện — Sẵn sàng bàn giao cho Sprint 2
 - **Tài liệu tham chiếu:** [problem_statement.md](problem_statement.md), [dataset_report.md](dataset_report.md)
 
+> **Lưu ý (25/11/2026):** Đây là kế hoạch viết ở Sprint 1. Cách làm thực tế (đường dẫn, kích thước ảnh, tiêu chí chọn checkpoint, số lần chạy Test) xem [README](../README.md) mục 4–7 và [ADR-002](adr/ADR-002-final-model-e04.md). Khác biệt chính: E01–E03 chọn checkpoint theo `val_loss`, E04 theo Macro F1 Validation; ảnh 128×128 (E01–E03) và 224×224 (E04); checkpoint lưu ở Drive `runs/<EXP_ID>_<thời gian>/best.pt|best.keras`; **Test đã chạy 2 lần** cho E04 (ngoại lệ ghi ở ADR-002 mục 5).
+
 ---
 
 ## 1. Mục Tiêu Đánh Giá (Evaluation Objectives)
@@ -58,7 +60,7 @@ Tập dữ liệu **TrashCan 1.0** được trích xuất từ các đoạn vide
 #### 1. Accuracy (Độ chính xác tổng quan)
 $$\text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN} = \frac{\sum_{i=1}^{C} c_{ii}}{\sum_{i=1}^{C} \sum_{j=1}^{C} c_{ij}}$$
 - **Ý nghĩa:** Tỷ lệ phần trăm giữa tổng số mẫu dự đoán đúng trên toàn bộ mẫu đánh giá.
-- **Hạn chế (Accuracy Paradox):** Trong bộ dữ liệu TrashCan, số lượng mẫu giữa các lớp rất chênh lệch (ví dụ: các lớp rác phổ biến như `trash_bag`, `trash_bottle` có số lượng mẫu áp đảo so với các lớp hiếm như `trash_can`, `trash_pipe`). Một mô hình ngây thơ luôn dự đoán vào lớp đa số vẫn có thể đạt Accuracy trên 80%, nhưng hoàn toàn vô dụng với các lớp rác thải còn lại.
+- **Hạn chế (Accuracy Paradox):** Trong bộ dữ liệu TrashCan, số lượng mẫu giữa các lớp rất chênh lệch (thực tế ở `v1_crop128`: `rov` chiếm khoảng 27% và `trash_unknown_instance` khoảng 23% số crop, trong khi `trash_bottle` chỉ có 126 crop). Một mô hình ngây thơ luôn dự đoán vào lớp đa số vẫn có thể đạt Accuracy trên 80%, nhưng hoàn toàn vô dụng với các lớp rác thải còn lại.
 - **Kết luận:** Accuracy chỉ dùng làm chỉ số tham khảo tổng quan (Secondary Metric), không dùng làm căn cứ quyết định mô hình tốt nhất.
 
 #### 2. Precision (Độ chuẩn xác)
@@ -222,7 +224,7 @@ flowchart TD
 | ERR-002 | `trash_bottle` | `rov` | 0.45 | Chai nhựa nhỏ ở góc xa, nền tối, có ánh kim loại phản chiếu. | Mô hình bắt vào điểm phản quang của đèn ROV trên vỏ chai. | Đã kiểm chứng bằng Grad-CAM (ví dụ) | Crop tập trung vào vật thể (Bounding Box) trước khi đưa vào CNN. |
 
 ### 6.3. Quy cách lưu trữ hình ảnh lỗi (Visual Artifacts)
-- Mọi mẫu dự đoán sai được xuất thành hình ảnh ghép (Subplots) bằng `src/evaluate.py: plot_misclassified_samples` (cần ảnh crop trên Drive). Đường dẫn đề xuất `results/misclassified_samples.png`; **chưa tạo** trong bản `v1.0-final`.
+- Mọi mẫu dự đoán sai được xuất thành hình ảnh ghép (Subplots) bằng `src/evaluate.py: plot_misclassified_samples` (cần ảnh crop trên Drive). Bản thực tế cho nhóm nhựa của E04 trên Test: `results/figures/E04_test_misclassified_plastic.jpg` (tạo bằng `scripts/make_misclassified_grid.py`).
 - Mỗi ảnh hiển thị:
   - Khung ảnh RGB gốc.
   - Tiêu đề màu đỏ: `True: <Tên_Lớp_Thực> | Pred: <Tên_Lớp_Đoán> (Conf: XX.X%)`.

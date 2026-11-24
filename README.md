@@ -25,7 +25,7 @@ Dự án xây dựng mô hình mạng nơ-ron tích chập (CNN) phân loại **
 
 ## 1. Tiến độ
 
-Cập nhật 21/11/2026 · Sprint 3 — hoàn thiện bản nộp giữa kỳ.
+Cập nhật 25/11/2026 · Sprint 3 — hoàn thiện bản nộp cuối kỳ.
 
 | Giai đoạn                              | Nội dung                                                                               | Trạng thái   |
 | -------------------------------------- | -------------------------------------------------------------------------------------- | ------------ |
@@ -35,12 +35,12 @@ Cập nhật 21/11/2026 · Sprint 3 — hoàn thiện bản nộp giữa kỳ.
 | MobileNetV2                            | E03 (2 pha) + tinh chỉnh E03a–E03f, E03G (huấn luyện dài hơn, 24/11)                   | ✅ Xong      |
 | Đánh giá Validation                    | Macro F1, nhóm nhựa, confusion matrix, phân tích lỗi E01–E03                           | ✅ Xong      |
 | Dữ liệu `v2_crop224` + E04             | Gộp 22 → 18 lớp, crop vuông 224×224, chia lại theo video giữ 70/15/15 cho từng lớp; EfficientNet-B0, bù lớp hiếm, chọn checkpoint theo Macro F1 | ✅ Xong      |
-| Chốt mô hình cuối                      | E04 (EfficientNet-B0, 18 lớp) — Macro F1 Validation cao nhất; quyết định ADR-002 (22/11/2026) | ✅ Xong      |
+| Chốt mô hình cuối                      | E04 (EfficientNet-B0, 18 lớp) — Macro F1 Validation cao nhất; quyết định [ADR-002](docs/adr/ADR-002-final-model-e04.md) (22/11/2026) | ✅ Xong      |
 | Đánh giá Test                          | E04 bản đầu (21/11): Macro F1 0,327 · E04 hiện tại (22/11, lần Test thứ hai): Macro F1 0,329, nhóm nhựa 0,132 | ✅ Xong      |
 | Phân tích lỗi nhóm nhựa                | Kích thước bbox theo lớp, kết quả theo video; đổi lấy mẫu sang 1/số mẫu ([`docs/dataset_report.md`](docs/dataset_report.md) mục 9) | ✅ Xong      |
 | Demo                                   | CLI `main.py` chạy với checkpoint Keras (E01–E02) và PyTorch (E03–E04)                  | ✅ Xong      |
 | Notebook kèm output                    | `01_trashcan_eda`, `04_evaluation` lưu kết quả lần chạy Colab 22/11/2026                 | ✅ Xong      |
-| Release `v1.0-final`                   | Tag trên GitHub tại commit `ede61ab` (mô hình cuối và kết quả), 22/11/2026               | ✅ Xong      |
+| Release `v1.0-final`                   | Tag trên GitHub tại commit `ede61ab` (mô hình cuối và kết quả), 22/11/2026. Các commit sau tag chỉ sửa tài liệu và lỗi đọc file UTF-8 trên Windows; bản nộp cuối dùng `main` mới nhất               | ✅ Xong      |
 | Báo cáo, slide                         |                                                                                        | ⏳           |
 
 ## 2. Bài toán
@@ -110,7 +110,7 @@ Thông số dùng chung được khóa trong [`configs/data_contract.yaml`](conf
 
 - `v1_crop128`: chia theo video làm lệch số mẫu giữa các tập, vài lớp chỉ có 1–4 mẫu ở Validation hoặc Test (`animal_shells` 1, `trash_bottle` 3 ở Val; `animal_starfish` 4 ở Test). `v2_crop224` khắc phục: mọi lớp có ít nhất 10 mẫu ở Val và Test, tỉ lệ ảnh 70,0 / 15,1 / 15,0%.
 - `v2_crop224` bỏ 858 annotation (7,1%) có bbox cạnh < 16 px; các vật thể rất nhỏ này không được mô hình học.
-- Nhiều bbox nhỏ (trung vị khoảng 90 × 66 px ở Train); một số bbox có toạ độ vượt ngoài ảnh (được giới hạn lại khi crop). Các lớp nhựa không nhỏ hơn các lớp khác (trung vị cạnh ngắn 45–127 px).
+- Nhiều bbox nhỏ (trung vị khoảng 90 × 66 px ở Train); một số bbox có toạ độ vượt ngoài ảnh (được giới hạn lại khi crop). Các lớp nhựa không nhỏ hơn các lớp khác (trung vị cạnh ngắn 45–107 px).
 - Mẫu nhựa tập trung trong rất ít video: một video (`vid_000255`) chiếm 41% mẫu nhựa của Test, nên số đo nhóm nhựa không ổn định.
 - `trash_unknown_instance` là lớp mơ hồ, dễ nhầm với các lớp rác khác.
 
@@ -123,7 +123,7 @@ TrashCan-Instance (COCO JSON + ảnh)
   → Audit & EDA                     notebooks/01 · src/eda.py
   → Crop đối tượng + chia theo video notebooks/02 · src/preprocessing.py
   → Huấn luyện                      notebooks/03 · src/train.py (Keras cho E01–E02, PyTorch cho E03–E04)
-  → Đánh giá Validation → chọn mô hình → đánh giá Test 1 lần
+  → Đánh giá Validation → chọn mô hình → đánh giá Test (đã chạy 2 lần, xem lưu ý ở mục 6)
                                     notebooks/04 · src/evaluate.py
   → Dự đoán ảnh mới (demo)          src/predict.py · main.py
 ```
@@ -157,9 +157,9 @@ Adam (lr 1e-3), batch 64, tối đa 40 epoch, EarlyStopping (patience 6), Reduce
 
 ### 4.3. Nguyên tắc thực nghiệm
 
-- Mỗi thí nghiệm chỉ đổi **một yếu tố** so với thí nghiệm gốc; cấu hình lưu trong `configs/experiments/`.
-- Cùng seed 42, cùng cách chia dữ liệu khi so sánh.
-- Chọn mô hình **chỉ dựa trên Validation**; tập Test chỉ chạy một lần cho mô hình cuối.
+- Mỗi thí nghiệm chỉ đổi **một yếu tố** so với thí nghiệm gốc; cấu hình lưu trong `configs/experiments/`. Ngoại lệ: E04 đổi cùng lúc dữ liệu, số lớp, backbone, cách bù lớp hiếm và tiêu chí chọn checkpoint (xem config E04); các lần tinh chỉnh E03a–f và E04 bản đầu → E04 mới tuân thủ quy tắc này.
+- Cùng seed 42, cùng cách chia dữ liệu khi so sánh (ngoại lệ: E03f đổi seed thành 43 để đo độ dao động).
+- Chọn mô hình **chỉ dựa trên Validation**; tập Test chỉ dùng cho mô hình cuối (thực tế đã chạy 2 lần, xem lưu ý ở mục 6).
 
 ## 5. Thực nghiệm
 
@@ -168,7 +168,7 @@ Adam (lr 1e-3), batch 64, tối đa 40 epoch, EarlyStopping (patience 6), Reduce
 | E01    | CNN tự thiết kế | Baseline + class weights                           | `v1_crop128`  | `E01_baseline.yaml`             |
 | E02    | CNN tự thiết kế | + Augmentation (lật ngang, xoay, zoom, tương phản) | `v1_crop128`  | `E02_augment.yaml`              |
 | E03    | MobileNetV2     | Mô hình: học chuyển giao                           | `v1_crop128`  | `E03_transfer_mobilenetv2.yaml` |
-| E03a, c, d, f, E03G | MobileNetV2 | Mỗi lần đổi một thông số: dropout 0,6 (a), lr pha 1 3e-4 (c), lr backbone pha 2 3e-5 (d), seed 43 (f); E03G: tối đa 30 + 40 epoch, patience 12 | `v1_crop128`  | `tuning/E03a.yaml` … `tuning/E03G.yaml` (kết quả: `results/metrics/e03_candidates.csv`) |
+| E03a, c, d, f, E03G | MobileNetV2 | Mỗi lần đổi một thông số: dropout 0,6 (a), lr pha 1 3e-4 (c), lr backbone pha 2 3e-5 (d), seed 43 (f); E03G: tối đa 30 + 40 epoch, patience 12 (số liệu E03G lấy từ log huấn luyện trong PR #37, không có file history/val.json trong repo) | `v1_crop128`  | `tuning/E03a.yaml` … `tuning/E03G.yaml` (kết quả: `results/metrics/e03_candidates.csv`) |
 | E04    | EfficientNet-B0 | Dữ liệu v2 (18 lớp) + backbone + bù lớp hiếm + chọn checkpoint theo Macro F1 + augmentation | `v2_crop224` | `E04_efficientnet_b0_data_v2.yaml` |
 
 Cấu hình từng thí nghiệm: `configs/experiments/` · Số liệu từng lần chạy: `results/metrics/<EXP_ID>_val.json`, `<EXP_ID>_history.csv`.
@@ -200,7 +200,7 @@ Mức ngẫu nhiên của Macro F1: ≈ 0,045 với 22 lớp, ≈ 0,056 với 18
 
 > **Lưu ý về tập Test.** Test đã được chạy **hai lần**: lần 1 (21/11) cho E04 bản đầu; lần 2 (22/11) cho E04 hiện tại. E04 hiện tại được tạo ra sau khi phân tích lỗi của lần 1 trên Test, nên kết quả Test lần 2 không còn hoàn toàn độc lập. Mô hình vẫn được chọn bằng Validation; cả hai kết quả được giữ (`results/metrics/E04v1_test.json`, `E04_test.json`).
 
-Trên Test, đổi cách lấy mẫu gần như không đổi Macro F1 (0,327 → 0,329) nhưng đổi Accuracy lấy recall nhóm nhựa: Accuracy giảm 2,8 điểm, recall nhựa tăng từ 0,099 lên 0,151, số mẫu nhựa bị đoán thành `trash_other` giảm từ 129 xuống 71 (trên 217). Tăng: `trash_pipe` (F1 0,24 → 0,51), `trash_bag` (0,23 → 0,34), `trash_rope` (0,09 → 0,20). Giảm: `trash_net` (0,32 → 0,17), `animal_other` (0,29 → 0,06), `trash_other` (0,41 → 0,34). `trash_bottle` và `trash_snack_wrapper` vẫn F1 = 0; cả 10 mẫu `trash_snack_wrapper` bị đoán thành `trash_bag`. Nguồn: `results/metrics/E04_test.json`, `E04v1_test.json`, hình `results/figures/E04_test_confusion_matrix.png`.
+Trên Test, đổi cách lấy mẫu gần như không đổi Macro F1 (0,327 → 0,329) nhưng đổi Accuracy lấy recall nhóm nhựa: Accuracy giảm 2,8 điểm, recall nhựa tăng từ 0,099 lên 0,151, số mẫu nhựa bị đoán thành `trash_other` giảm từ 129 xuống 71 (trên 217). Tăng: `trash_pipe` (F1 0,24 → 0,51), `trash_bag` (0,23 → 0,34), `trash_rope` (0,09 → 0,20). Giảm: `trash_net` (0,32 → 0,17), `animal_other` (0,29 → 0,06), `trash_other` (0,41 → 0,33). `trash_bottle` và `trash_snack_wrapper` vẫn F1 = 0; cả 10 mẫu `trash_snack_wrapper` bị đoán thành `trash_bag`. Nguồn: `results/metrics/E04_test.json`, `E04v1_test.json`, hình `results/figures/E04_test_confusion_matrix.png`.
 
 ¹ E04 khác E01–E03 ở số lớp (18 so với 22) và ở tập Validation/Test (cách chia mới), nên so sánh chỉ mang tính tham khảo. Checkpoint E04 chọn theo Macro F1 Validation (pha 2, epoch 4; bản đầu: pha 2, epoch 11); vì Validation vừa dùng để chọn checkpoint, con số này hơi lạc quan — xem kết quả Test ở trên.
 
@@ -211,7 +211,7 @@ Trên Test, đổi cách lấy mẫu gần như không đổi Macro F1 (0,327 �
 3. **Kết quả theo lớp rất chênh lệch** (E03f): tốt ở `rov` (F1 0,76), `animal_eel` (0,67), `animal_starfish` (0,52); bằng 0 ở nhiều lớp ít mẫu như `trash_bottle`, `trash_tarp`, `trash_rope`, `trash_snack_wrapper`, `trash_cup`.
 4. **Mô hình học thuộc nhanh:** E03 đạt `val_loss` tốt nhất ngay ở epoch 2 trong khi loss trên Train vẫn giảm mạnh — mô hình học bối cảnh của từng video hơn là hình dạng vật thể. E03G (Bách, 24/11) xác nhận điều này: kéo dài huấn luyện (patience 12) vẫn chọn đúng checkpoint pha 1 epoch 2, Macro F1 0,2034 như E03; loss Validation pha 2 tăng từ 2,30 lên 2,53. Macro F1 theo epoch đạt tối đa 0,236 (pha 2, epoch 9) nhưng không được chọn vì quy tắc theo `val_loss` — lý do E04 chọn checkpoint theo Macro F1.
 5. **E04 cải thiện rõ nhất.** Bản đầu của E04 kết hợp dữ liệu 224×224 chia lại theo từng lớp, gộp lớp mơ hồ / quá hiếm, EfficientNet-B0, bù lớp hiếm và chọn checkpoint theo Macro F1: Macro F1 0,339, Accuracy 57,9% (E03: 0,203 và 40,5%). Một lần thử trước đó chỉ làm lại dữ liệu và giữ MobileNetV2 (22 lớp) chỉ đạt Macro F1 0,219, Accuracy 42,7%: phần lớn cải thiện đến từ backbone mạnh hơn và việc gộp lớp. Tốt nhất ở `rov` (F1 0,91), `animal_crab` (0,69), `animal_eel` (0,59), `animal_fish` (0,58).
-6. **Phân tích lỗi nhóm nhựa** ([`docs/dataset_report.md`](docs/dataset_report.md) mục 9). Vật thể nhỏ **không** phải nguyên nhân chính: các lớp nhựa có bbox trung vị 45–127 px, trong khi `animal_starfish` nhỏ nhất (72% box < 32 px) lại đạt F1 cao nhất. Nguyên nhân rõ nhất là ít mẫu (43–88 crop Train cho 5/6 lớp nhựa, `trash_bottle` và `trash_snack_wrapper` chỉ có trong 7 video) và lớp gộp `trash_other` hút nhầm (bản đầu đoán 59% mẫu nhựa Test thành `trash_other`). Mẫu nhựa còn tập trung trong vài video (một video = 41% mẫu nhựa Test), nên số đo nhóm nhựa dao động mạnh.
+6. **Phân tích lỗi nhóm nhựa** ([`docs/dataset_report.md`](docs/dataset_report.md) mục 9). Vật thể nhỏ **không** phải nguyên nhân chính: các lớp nhựa có bbox trung vị 45–107 px, trong khi `animal_starfish` nhỏ nhất (72% box < 32 px) lại đạt F1 cao nhất. Nguyên nhân rõ nhất là ít mẫu (43–88 crop Train cho 5/6 lớp nhựa, `trash_bottle` và `trash_snack_wrapper` chỉ có trong 7 video) và lớp gộp `trash_other` hút nhầm (bản đầu đoán 59% mẫu nhựa Test thành `trash_other`). Mẫu nhựa còn tập trung trong vài video (một video = 41% mẫu nhựa Test), nên số đo nhóm nhựa dao động mạnh.
 7. **Lấy mẫu theo 1/số mẫu** (E04 hiện tại) giảm số mẫu nhựa bị hút vào `trash_other` (Test: 129 → 71/217) và tăng recall nhựa, nhưng precision và Accuracy giảm; Macro F1 gần như không đổi. `trash_bottle`, `trash_snack_wrapper` vẫn F1 = 0. Loss Train về gần 0 trong khi loss Validation đứng quanh 1,55–1,65: mô hình vẫn học thuộc bối cảnh video. Hướng tiếp theo: bỏ `trash_unknown_instance` khỏi huấn luyện hoặc phân loại hai tầng (nhựa / không nhựa → loại nhựa), thêm dữ liệu nhựa từ video khác.
 
 **Nguyên nhân chính nằm ở dữ liệu** và là cơ sở cho E04: ảnh 128×128 nhỏ hơn kích thước MobileNetV2 được tiền huấn luyện (224×224); phân bố lớp giữa các tập lệch mạnh do chia theo video; nhiều bbox rất nhỏ; hai lớp lớn chiếm một nửa dữ liệu.
@@ -250,6 +250,9 @@ git clone https://github.com/phanyen06ym-ien/ocean-plastic-ml-starter.git
 cd ocean-plastic-ml-starter
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+
+# Dữ liệu: tải dataset.zip từ Drive data/raw/ (hoặc UMN Data Repository) rồi giải nén vào data/raw/;
+# hoặc tải bằng Python: python -c "from src.preprocessing import download_trashcan; download_trashcan('data/raw')"
 pytest -q                                            # kiểm thử
 
 # Tiền xử lý
@@ -262,6 +265,14 @@ python -m src.train --config configs/experiments/E03_transfer_mobilenetv2.yaml -
 python -m src.preprocessing --raw-root <thư mục TrashCan> --out-dir data/processed/v2_crop224 --contract configs/data_contract_v2.yaml --mapping-out configs/class_mapping_v2.json
 python -m src.train --config configs/experiments/E04_efficientnet_b0_data_v2.yaml --processed-dir data/processed/v2_crop224
 
+# Huấn luyện E01 / E02 (CNN tự thiết kế, Keras)
+python -m src.train --config configs/experiments/E01_baseline.yaml --processed-dir data/processed/v1_crop128
+python -m src.train --config configs/experiments/E02_augment.yaml --processed-dir data/processed/v1_crop128
+
+# Đánh giá lại checkpoint E04 trên Validation / Test (ghi vào results/metrics/)
+python -m src.evaluate --run runs/E04_20261122-0853 --ckpt best.pt --processed-dir data/processed/v2_crop224 --split val
+python -m src.evaluate --run runs/E04_20261122-0853 --ckpt best.pt --processed-dir data/processed/v2_crop224 --split test
+
 # Dự đoán bằng mô hình cuối E04 (tải thư mục runs/E04_20261122-0853/ từ Drive về runs/ trong repo)
 python main.py --image path/to/crop.jpg --model runs/E04_20261122-0853/best.pt
 ```
@@ -271,7 +282,7 @@ python main.py --image path/to/crop.jpg --model runs/E04_20261122-0853/best.pt
 1. *File → Project from Version Control*, URL `https://github.com/phanyen06ym-ien/ocean-plastic-ml-starter.git`, chọn thư mục (ví dụ `D:\DEV\Projects\ocean-plastic-ml-starter`) → *Clone*.
 2. *Settings → Project → Python Interpreter → Add Interpreter → Virtualenv* (Python 3.10–3.12), thư mục `.venv` trong repo. PyCharm sẽ gợi ý cài `requirements.txt`; nếu không, mở *Terminal* và chạy `pip install -r requirements.txt`.
 3. Chuột phải thư mục gốc → *Mark Directory as → Sources Root* (để `from src...` chạy được). Trong *Settings → Tools → Python Integrated Tools* chọn *Default test runner: pytest*.
-4. Kiểm tra: chuột phải `tests/` → *Run 'pytest in tests'* (60 passed, 4 skipped — các test cần GPU/dữ liệu sẽ tự bỏ qua). Nếu ổ C: đầy, chạy `pytest -q --basetemp=D:\tmp\pytest` trong Terminal.
+4. Kiểm tra: chuột phải `tests/` → *Run 'pytest in tests'* (68 passed khi đã cài đủ TensorFlow và PyTorch; thiếu thư viện nào thì test tương ứng tự bỏ qua). Nếu ổ C: đầy, chạy `pytest -q --basetemp=D:\tmp\pytest` trong Terminal.
 5. Vẽ lại hình báo cáo không cần dữ liệu: chạy `scripts/make_report_figures.py`. Chạy demo: tải `runs/E04_20261122-0853/` từ Drive về `runs/` rồi tạo *Run Configuration* cho `main.py` với tham số `--image <ảnh> --model runs/E04_20261122-0853/best.pt`.
 
 Dữ liệu (`data/`), checkpoint (`runs/`, `*.pt`) và `.venv/`, `.idea/` đã nằm trong `.gitignore`, không bị commit nhầm. Huấn luyện lại nên dùng Colab (cần GPU).
@@ -370,6 +381,8 @@ Quy ước làm việc: [`CONTRIBUTING.md`](CONTRIBUTING.md).
 | [`dataset_report.md`](docs/dataset_report.md)                                                   | Thống kê dữ liệu đầy đủ        |
 | [`evaluation_plan.md`](docs/evaluation_plan.md)                                                 | Cách đánh giá, chỉ số          |
 | [`class_scope_analysis.md`](docs/class_scope_analysis.md)                                       | Lý do chọn phạm vi 22 lớp      |
+| [`adr/ADR-001-class-scope.md`](docs/adr/ADR-001-class-scope.md) | Quyết định phạm vi lớp, ảnh, chia dữ liệu (E01–E03) |
+| [`adr/ADR-002-final-model-e04.md`](docs/adr/ADR-002-final-model-e04.md) | Quyết định chọn mô hình cuối E04 |
 | [`visual_inspection_protocol.md`](docs/visual_inspection_protocol.md)                           | Quy trình kiểm tra ảnh (chưa thực hiện) |
 | [`colab_setup.md`](docs/colab_setup.md)                                                         | Hướng dẫn chạy trên Colab      |
 
