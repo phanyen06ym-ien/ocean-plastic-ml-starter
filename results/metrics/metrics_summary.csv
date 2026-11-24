@@ -2,6 +2,7 @@ exp_id,data_version,num_classes,split,n,accuracy,macro_f1,weighted_f1,plastic_ma
 E01,v1_crop128,22,val,1782,0.2189,0.0757,0.2641,0.0,CNN tự thiết kế,min val_loss
 E02,v1_crop128,22,val,1782,0.1605,0.0648,0.1671,0.0165,CNN tự thiết kế + augmentation,min val_loss
 E03,v1_crop128,22,val,1782,0.4052,0.2034,0.4179,0.1228,MobileNetV2,min val_loss
+E03r,v1_crop128,22,val,1782,0.4226,0.2055,0.4332,0.1110,MobileNetV2 (chạy lại E03),min val_loss
 E04v1,v2_crop224,18,val,1704,0.5786,0.3388,0.5461,0.1527,EfficientNet-B0 + dữ liệu v2 + lấy mẫu sqrt(1/n),max val Macro F1
 E04v1,v2_crop224,18,test,1751,0.5346,0.3266,0.4968,0.1186,EfficientNet-B0 + dữ liệu v2 + lấy mẫu sqrt(1/n),max val Macro F1
 E04,v2_crop224,18,val,1704,0.5687,0.3483,0.5540,0.1636,EfficientNet-B0 + dữ liệu v2 + lấy mẫu 1/n,max val Macro F1

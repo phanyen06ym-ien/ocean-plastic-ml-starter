@@ -11,7 +11,7 @@ Trọng số các mô hình đã huấn luyện (E01–E04).
 |---|---|---|---|---|---|
 | E01 | CNN tự thiết kế (Keras) | `v1_crop128` | `runs/E01_20261105-1513/` | `best.keras` | — |
 | E02 | E01 + augmentation (Keras) | `v1_crop128` | `runs/E02_20261105-1515/` | `best.keras` | — |
-| E03 | MobileNetV2 (PyTorch) | `v1_crop128` | `runs/E03_20261108-1459/` (máy của Bách; **không có trên Drive**, thư mục `runs/E03_20261112-1613/` trống) | `best.pt` (9,2 MB) | `config.json` cùng thư mục |
+| E03 | MobileNetV2 (PyTorch) | `v1_crop128` | Bản gốc `runs/E03_20261108-1459/` không có trên Drive. Dùng bản chạy lại cùng config: **`runs/E03r_20261124-2041/`** (Macro F1 Val 0,206; gốc 0,203) | `best.pt` (9,2 MB) | `config.json`, `class_mapping.json` cùng thư mục |
 | E04 | EfficientNet-B0 (PyTorch), 18 lớp, lấy mẫu 1/số mẫu | `v2_crop224` | `runs/E04_20261122-0853/` | `best.pt` (16,4 MB) | `config.json`, `class_mapping.json` cùng thư mục |
 | E04 bản đầu (thay thế 22/11) | như trên, lấy mẫu √(1/số mẫu) | `v2_crop224` | `runs/E04_20261121-1102/` | `best.pt` | chỉ để đối chiếu với `results/metrics/E04v1_*` |
 

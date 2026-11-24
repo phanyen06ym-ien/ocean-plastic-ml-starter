@@ -182,11 +182,14 @@ Tập Validation: 1.782 crop, 22 lớp cho E01–E03 (`v1_crop128`); 1.704 crop,
 | E01                    |            0,076 |     0,219 |       0,264 |              0,000 |               — |
 | E02                    |            0,065 |     0,161 |       0,167 |              0,017 |               — |
 | E03                    |            0,203 |     0,405 |       0,418 |              0,123 |               — |
+| E03r (chạy lại E03, 24/11) ² |            0,206 |     0,423 |       0,433 |              0,111 |               — |
 | E03f (tốt nhất E03a–f) |        **0,212** | **0,412** |   **0,420** |              0,117 |               — |
 | E04 bản đầu ¹ (lấy mẫu √(1/n)) | 0,339 | **0,579** | 0,546 | 0,153 | 0,327 |
 | **E04** ¹ (EfficientNet-B0, 18 lớp, lấy mẫu 1/n) | **0,348** | 0,569 | **0,554** | **0,164** | **0,329** |
 
 Mức ngẫu nhiên của Macro F1: ≈ 0,045 với 22 lớp, ≈ 0,056 với 18 lớp.
+
+² Checkpoint E03 gốc (`runs/E03_20261108-1459/`) chỉ nằm trên máy một thành viên, nên nhóm huấn luyện lại E03 bằng đúng config `E03_transfer_mobilenetv2.yaml` (seed 42, Colab T4, commit `c9746b9`, run `E03r_20261124-2041`). Kết quả lệch bản gốc dưới 0,02 ở mọi chỉ số tổng thể (Macro F1 0,206 so với 0,203), cho thấy E03 tái lập được. Checkpoint, file dự đoán Validation và confusion matrix của E03r có trên Drive và trong `results/metrics/E03r_*`, `results/predictions/E03r_val_predictions.csv`. Bảng và hình vẫn dùng số liệu E03 gốc; Test không chạy cho E03/E03r.
 
 **Kết quả trên tập Test (1.751 crop từ các video chưa dùng khi huấn luyện và chọn mô hình):**
 
@@ -297,6 +300,7 @@ MyDrive/ocean-plastic-ml/
 │   └── processed/                   # v1_crop128.zip (E01–E03), v2_crop224.zip (E04)
 ├── runs/                            # Mỗi run: best.pt / best.keras, config.json, class_mapping.json, history.csv, predictions
 │   ├── E01_20261105-1513/ · E02_20261105-1515/
+│   ├── E03r_20261124-2041/           # E03 chạy lại (MobileNetV2), best.pt + dự đoán Val
 │   ├── E04_20261121-1102/           # E04 bản đầu (√(1/n))
 │   ├── E04_20261122-0853/           # E04 — mô hình cuối (tag v1.0-final)
 │   └── data_audit_v1_crop128/       # Kết quả audit của PR #35
@@ -306,7 +310,7 @@ MyDrive/ocean-plastic-ml/
 │   └── visual_inspection_v2/        # PDF 130 mẫu + bảng chấm — chưa thực hiện
 └── reports/final_20261113/          # Gói kết quả giữa kỳ
 ```
-Checkpoint E03 (`runs/E03_20261108-1459/`) chỉ có trên máy của Bách (xem [`models/README.md`](models/README.md)).
+Checkpoint E03 gốc (`runs/E03_20261108-1459/`) không có trên Drive; dùng bản chạy lại `runs/E03r_20261124-2041/` (xem [`models/README.md`](models/README.md)).
 
 ## 8. Cấu trúc repo
 
@@ -342,7 +346,7 @@ ocean-plastic-ml-starter/
 ├── results/
 │   ├── figures/                     # Hình cho báo cáo
 │   ├── metrics/                     # <EXP_ID>_<split>.json/.csv; metrics_summary.csv so sánh E01–E04
-│   ├── predictions/                 # Dự đoán từng ảnh (path, y_true, y_pred): E01–E02 Val, E04/E04v1 Val và Test
+│   ├── predictions/                 # Dự đoán từng ảnh (path, y_true, y_pred): E01–E02 Val, E03r Val, E04/E04v1 Val và Test
 │   └── visual_inspection/           # Danh sách 130 mẫu đã chọn (chưa chấm)
 ├── scripts/                         # make_report_figures.py, make_misclassified_grid.py, visual_inspection_prepare.py, collect_runs.py, summarize_runs.py, github/
 ├── main.py                          # CLI demo
