@@ -51,7 +51,7 @@ def draw(err: pd.DataFrame, processed_dir: Path, out: Path, cols: int = 4) -> Pa
         ax.set_title(f"Thật: {r.true_name.replace('trash_', '')}\nĐoán: {r.pred_name} ({r.confidence:.0%})",
                      fontsize=8, color="#b91c1c")
     fig.suptitle("E04 — mẫu nhựa bị đoán sai trên Test (độ tin cậy cao nhất mỗi lớp)", fontsize=11)
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0, 1, 1 - 0.35 / (3.3 * rows)))
     out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out, dpi=110)
     plt.close(fig)
