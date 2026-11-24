@@ -216,11 +216,32 @@ Trên Test, đổi cách lấy mẫu gần như không đổi Macro F1 (0,327 �
 
 **Nguyên nhân chính nằm ở dữ liệu** và là cơ sở cho E04: ảnh 128×128 nhỏ hơn kích thước MobileNetV2 được tiền huấn luyện (224×224); phân bố lớp giữa các tập lệch mạnh do chia theo video; nhiều bbox rất nhỏ; hai lớp lớn chiếm một nửa dữ liệu.
 
+**Hình cho báo cáo** (`results/figures/`):
+
+| Nhóm | File |
+|---|---|
+| Dữ liệu (EDA) | `eda_class_distribution.png`, `eda_split_counts.png` (v1), `eda_v2_split_counts.png`, `eda_sample_crops.png` |
+| Huấn luyện | `E01_learning_curves.png`, `E02_learning_curves.png`, `E03_learning_curves.png`, `E04_learning_curves.png` |
+| Confusion matrix | `E01_val_…`, `E02_val_…`, `E03_val_…`, `E04_val_…`, `E04_test_…`, `E04v1_test_confusion_matrix.png` |
+| So sánh | `comparison_e01_e04.png` (Macro F1 và nhóm nhựa E01–E04), `E04_plastic_f1_per_class.png` |
+| Phân tích lỗi | `error_bbox_size_by_class.png`, `error_recall_by_size.png`, `error_plastic_by_video.png` |
+| Demo | `demo_val_predictions.png` |
+
 Kết quả theo lớp với support nhỏ (dưới khoảng 10 mẫu) không đủ để kết luận. Số liệu theo lớp: `results/metrics/<EXP_ID>_val.json` · Hình: `results/figures/` · Cách đánh giá: [`docs/evaluation_plan.md`](docs/evaluation_plan.md).
 
 ## 7. Tái lập kết quả
 
 **Google Colab (khuyến nghị, cần GPU):** mở `notebooks/00_pipeline_colab.ipynb` bằng nút _Open in Colab_ ở đầu trang và chạy từ trên xuống. Notebook mount Google Drive, tải dữ liệu, tiền xử lý, huấn luyện và đánh giá. Hướng dẫn chi tiết: [`docs/colab_setup.md`](docs/colab_setup.md).
+
+| Notebook | Nội dung | Output lưu sẵn | Mở |
+|---|---|---|---|
+| `00_pipeline_colab` | Toàn bộ quy trình E01–E04 | Không (chạy 2–3 giờ trên T4) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/phanyen06ym-ien/ocean-plastic-ml-starter/blob/main/notebooks/00_pipeline_colab.ipynb) |
+| `01_trashcan_eda` | Thống kê, phân bố lớp, ảnh mẫu | Có (22/11/2026) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/phanyen06ym-ien/ocean-plastic-ml-starter/blob/main/notebooks/01_trashcan_eda.ipynb) |
+| `02_preprocessing` | Crop, chia theo video (v1 hoặc v2) | Không; kết quả ở `results/metrics/preprocessing_summary*.json` | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/phanyen06ym-ien/ocean-plastic-ml-starter/blob/main/notebooks/02_preprocessing.ipynb) |
+| `03_cnn_training` | Huấn luyện một thí nghiệm theo config | Không; kết quả ở `results/metrics/<EXP_ID>_history.csv` | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/phanyen06ym-ien/ocean-plastic-ml-starter/blob/main/notebooks/03_cnn_training.ipynb) |
+| `04_evaluation` | So sánh Validation, confusion matrix, đánh giá Test | Có (22/11/2026) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/phanyen06ym-ien/ocean-plastic-ml-starter/blob/main/notebooks/04_evaluation.ipynb) |
+
+Vẽ lại các hình báo cáo từ số liệu đã lưu (không cần GPU, Drive hay checkpoint): `python scripts/make_report_figures.py`.
 
 **Máy cá nhân:**
 
@@ -298,7 +319,7 @@ ocean-plastic-ml-starter/
 │   ├── figures/                     # Hình cho báo cáo
 │   ├── metrics/                     # <EXP_ID>_<split>.json/.csv; metrics_summary.csv so sánh E01–E04
 │   └── predictions/                 # Dự đoán từng ảnh (path, y_true, y_pred): E01–E02 Val, E04/E04v1 Val và Test
-├── scripts/                         # collect_runs.py, summarize_runs.py, github/
+├── scripts/                         # make_report_figures.py, collect_runs.py, summarize_runs.py, github/
 ├── main.py                          # CLI demo
 ├── requirements.txt
 ├── CONTRIBUTING.md                  # Quy ước nhánh, commit, PR

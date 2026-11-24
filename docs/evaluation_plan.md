@@ -5,7 +5,7 @@
 - **Tác giả:** Nhóm Đánh giá & Tối ưu hóa (Evaluation & Optimization)
 - **Người phối hợp:** Phan Hải Yến (S1-ARCH / Leader), Hoàng Bách (S1-CNN / Training), Hùng (S1-DATA / Preprocessing), Ngọc Nguyên (S1-DEMO / Inference)
 - **Trạng thái:** Hoàn thiện — Sẵn sàng bàn giao cho Sprint 2
-- **Tài liệu tham chiếu:** [problem_statement.md](file:///e:/TEMP/Desktop/Desktop/ocean-plastic-ml-starter/docs/problem_statement.md), [dataset_report.md](file:///e:/TEMP/Desktop/Desktop/ocean-plastic-ml-starter/docs/dataset_report.md)
+- **Tài liệu tham chiếu:** [problem_statement.md](problem_statement.md), [dataset_report.md](dataset_report.md)
 
 ---
 
@@ -214,17 +214,19 @@ flowchart TD
 
 ### 6.2. Mẫu Bảng Tổng Hợp Lỗi & Hướng Cải Tiến (Error Catalog Template)
 
+> **Hai dòng dưới đây là ví dụ minh hoạ cách điền bảng, không phải kết quả của dự án.** Dự án không chạy Grad-CAM. Kết quả phân tích lỗi thật: [`dataset_report.md`](dataset_report.md) mục 9, `results/metrics/E04_test_error_analysis.json`, `results/predictions/E04_test_predictions.csv`.
+
 | ID Mẫu | Nhãn Thực Tế | Nhãn Dự Đoán | Độ Tin Cậy ($P$) | Hiện Tượng Quan Sát Trên Ảnh | Giả Thuyết Nguyên Nhân | Trạng Thái Kiểm Chứng | Hướng Khắc Phục Đề Xuất |
 |---|---|---|---|---|---|---|---|
-| ERR-001 | `trash_bag` | `trash_net` | 0.87 | Túi nilon bị rách tua rua, quấn quanh rạn đá dưới ánh sáng xanh. | Các dải rách tạo vân sọc tương tự mắt lưới đánh cá; mất kênh màu đỏ. | Giả thuyết hợp lý | Bổ sung tăng cường mô phỏng quang phổ xanh; thêm dữ liệu túi rách. |
-| ERR-002 | `trash_bottle` | `rov` | 0.45 | Chai nhựa nhỏ ở góc xa, nền tối, có ánh kim loại phản chiếu. | Mô hình bắt vào điểm phản quang của đèn ROV trên vỏ chai. | Đã kiểm chứng (Grad-CAM) | Crop tập trung vào vật thể (Bounding Box) trước khi đưa vào CNN. |
+| ERR-001 | `trash_bag` | `trash_net` | 0.87 | Túi nilon bị rách tua rua, quấn quanh rạn đá dưới ánh sáng xanh. | Các dải rách tạo vân sọc tương tự mắt lưới đánh cá; mất kênh màu đỏ. | Giả thuyết hợp lý (ví dụ) | Bổ sung tăng cường mô phỏng quang phổ xanh; thêm dữ liệu túi rách. |
+| ERR-002 | `trash_bottle` | `rov` | 0.45 | Chai nhựa nhỏ ở góc xa, nền tối, có ánh kim loại phản chiếu. | Mô hình bắt vào điểm phản quang của đèn ROV trên vỏ chai. | Đã kiểm chứng bằng Grad-CAM (ví dụ) | Crop tập trung vào vật thể (Bounding Box) trước khi đưa vào CNN. |
 
 ### 6.3. Quy cách lưu trữ hình ảnh lỗi (Visual Artifacts)
-- Mọi mẫu dự đoán sai được xuất thành hình ảnh ghép (Subplots) lưu tại `results/misclassified_samples.png`.
+- Mọi mẫu dự đoán sai được xuất thành hình ảnh ghép (Subplots) bằng `src/evaluate.py: plot_misclassified_samples` (cần ảnh crop trên Drive). Đường dẫn đề xuất `results/misclassified_samples.png`; **chưa tạo** trong bản `v1.0-final`.
 - Mỗi ảnh hiển thị:
   - Khung ảnh RGB gốc.
   - Tiêu đề màu đỏ: `True: <Tên_Lớp_Thực> | Pred: <Tên_Lớp_Đoán> (Conf: XX.X%)`.
-  - Lưu kèm file metadata `results/error_analysis.json` để phục vụ thảo luận trong cuộc họp Sprint Review.
+  - Danh sách dự đoán từng ảnh: `results/predictions/E04_test_predictions.csv`; tổng hợp lỗi theo video và kích thước: `results/metrics/E04_test_error_analysis.json`.
 
 ---
 
