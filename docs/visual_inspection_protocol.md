@@ -3,6 +3,7 @@
 > **Trạng thái (25/11/2026): đang chấm.** Áp dụng trên dữ liệu `v2_crop224` (không phải bộ chia gốc nêu ở mục 2): 6 lớp × (15 Train + 5 Val) = 120 mẫu chính thức + 10 mẫu chấm thử, seed 42, không dùng Test.
 > - Chọn mẫu: `scripts/visual_inspection_prepare.py` · danh sách: `results/visual_inspection/visual_inspection_sample_manifest.csv` (SHA-256 `87f58990…` khớp `visual_inspection_provenance.json` trên Drive).
 > - Ảnh để chấm và hai bảng chấm: Drive `MyDrive/ocean-plastic-ml/audits/visual_inspection_v2/`.
+> - **Thay đổi (25/11): một người chấm (Yến)** thay cho hai người (Yến, Hùng). Không tính được đồng thuận giữa hai người; thay bằng **chấm lại** 20 mẫu ngẫu nhiên (seed 42, mỗi lớp 3–4 mẫu) sau ít nhất 2 ngày, không xem lần chấm đầu, để báo cáo độ ổn định của chính người chấm (tỷ lệ trùng khớp). Kết quả được ghi là đánh giá của một người, và đây là hạn chế của nghiên cứu. Các mục nói về hai reviewer, agreement và hoà giải bên dưới không áp dụng cho lượt này.
 > - Bảng mục 2 và 4.2 là kế hoạch ban đầu theo bộ chia gốc (ví dụ `trash_rope` 0 mẫu Val); với v2, mọi lớp đủ 5 mẫu Val.
 
 
