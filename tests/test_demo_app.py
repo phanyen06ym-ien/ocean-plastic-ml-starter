@@ -42,3 +42,16 @@ def test_predict_fn_outputs_and_warning():
     assert probs["Túi nilon (trash_bag)"] == 0.3
     assert "Túi nilon" in text and "nhựa" in text and "không chắc chắn" in text
     assert demo.make_predict_fn(fake)(None, True)[2] == "Hãy tải lên một ảnh."
+
+
+def test_vietnamese_error_readable_when_redirected(tmp_path):
+    """Thông báo lỗi tiếng Việt đọc được khi stdout/stderr bị chuyển hướng (Windows mặc định cp1252)."""
+    import os
+    import subprocess
+    import sys
+    env = {k: v for k, v in os.environ.items() if k not in ("PYTHONIOENCODING", "PYTHONUTF8")}
+    env["PYTHONUTF8"] = "0"
+    r = subprocess.run([sys.executable, "demo_app.py", "--model", str(tmp_path / "none.pt")], cwd=ROOT, env=env,
+                       capture_output=True, timeout=300)
+    assert r.returncode == 1
+    assert "Không tìm thấy checkpoint" in r.stderr.decode("utf-8")

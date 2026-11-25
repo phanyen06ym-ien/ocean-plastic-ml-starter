@@ -19,8 +19,10 @@ from PIL import Image
 
 try:
     from src.predict import InferenceError, Predictor
+    from src.preprocessing import ensure_utf8_stdio
 except ImportError:  # pragma: no cover
     from predict import InferenceError, Predictor
+    from preprocessing import ensure_utf8_stdio
 
 ROOT = Path(__file__).resolve().parent
 DEFAULT_MODEL = ROOT / "runs" / "E04_20261122-0853" / "best.pt"
@@ -155,6 +157,7 @@ def build_app(predictor: Predictor, model_name: str):
 
 def main(argv: list[str] | None = None) -> None:
     """Đọc tham số dòng lệnh, nạp mô hình một lần rồi mở giao diện."""
+    ensure_utf8_stdio()            # thông báo tiếng Việt / emoji không lỗi trên console Windows
     ap = argparse.ArgumentParser(description="Giao diện demo nhận dạng ảnh rác dưới nước (Gradio)")
     ap.add_argument("--model", default=str(DEFAULT_MODEL), help="checkpoint .pt/.keras (mặc định: E04)")
     ap.add_argument("--port", type=int, default=7860)
