@@ -44,3 +44,10 @@ def test_trainable_params_follow_phase2(e03_run, tmp_path):
     for f in ("E03_val.json", "E03_val_confusion_counts.csv", "E03_val_predictions.csv"):
         assert (tmp_path / "out" / f).exists()
     assert not (run / "E03_val.json").exists()          # out_dir được tôn trọng, không ghi vào thư mục run
+
+
+def test_wrong_processed_dir_gives_clear_error(e03_run, tmp_path):
+    run, proc = e03_run
+    shutil.copy(ROOT / "configs/class_mapping_v2.json", proc / "class_mapping.json")   # dữ liệu v2 (18 lớp) cho run v1
+    with pytest.raises(ValueError, match=r"18 lớp.*22 lớp.*--processed-dir"):
+        evaluate_torch_checkpoint(run, "best.pt", proc, "val", out_dir=tmp_path / "out", device="cpu")

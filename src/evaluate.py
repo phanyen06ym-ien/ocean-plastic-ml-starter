@@ -1167,10 +1167,18 @@ def evaluate_torch_checkpoint(run_dir: str | Path, checkpoint: str, processed_di
     run = Path(run_dir)
     cfg = json.loads((run / "config.json").read_text(encoding="utf-8"))
     device = device or ("cuda" if torch.cuda.is_available() else "cpu")
-    mapping = load_class_mapping(find_class_mapping(processed_dir, cfg["data"].get("class_mapping_path", "class_mapping.json")))
+    mapping_path = find_class_mapping(processed_dir, cfg["data"].get("class_mapping_path", "class_mapping.json"))
+    mapping = load_class_mapping(mapping_path)
     names, plastic = class_names(mapping), plastic_indices(mapping)
-    if names != list(cfg["data"].get("class_names", names)):
-        raise ValueError("Thứ tự lớp khác với lúc huấn luyện")
+    trained = list(cfg["data"].get("class_names", names))
+    if names != trained:
+        i = next((k for k, (a, b) in enumerate(zip(names, trained)) if a != b), min(len(names), len(trained)))
+        got = names[i] if i < len(names) else "—"
+        want = trained[i] if i < len(trained) else "—"
+        raise ValueError(
+            f"Thứ tự lớp khác với lúc huấn luyện: {mapping_path} có {len(names)} lớp, config.json của run có "
+            f"{len(trained)} lớp; lệch đầu tiên ở vị trí {i}: {got!r} ≠ {want!r}. "
+            f"Kiểm tra --processed-dir (v1_crop128 cho E01–E03, v2_crop224 cho E04).")
 
     ds = ordered_image_folder(Path(processed_dir) / split, names, build_transform(cfg))
     loader = DataLoader(ds, batch_size=int(cfg["training"]["batch_size"]), shuffle=False, num_workers=0)
