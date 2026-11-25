@@ -339,19 +339,6 @@ def grouped_split(df: pd.DataFrame, ratios: dict[str, float], seed: int = 42, at
     return out, best_info
 
 
-def _split_key(df: pd.DataFrame, split: pd.Series, ratios: dict[str, float], classes: list[int]) -> tuple[tuple, dict]:
-    """Điểm của một phương án chia: (số lớp có ở cả val và test, số mẫu ít nhất của một lớp ở val/test, -độ lệch tỉ lệ)."""
-    tmp = df.assign(split=split.values)
-    counts = tmp.groupby(["split", "class_index"]).size()
-    covered = sum(1 for c in classes if all(counts.get((s, c), 0) > 0 for s in ("val", "test")))
-    min_eval = min(int(counts.get((s, c), 0)) for c in classes for s in ("val", "test"))
-    img_frac = tmp.groupby("split")["image_id"].nunique() / tmp["image_id"].nunique()
-    dev = sum(abs(float(img_frac.get(s, 0)) - ratios[s]) for s in SPLITS)
-    info = {"classes_in_val_and_test": covered, "num_classes": len(classes), "min_class_count_val_test": min_eval,
-            "image_fraction": {s: round(float(img_frac.get(s, 0)), 4) for s in SPLITS}}
-    return (covered, min(min_eval, 5), -round(dev, 4)), info
-
-
 def _split_loss(M: np.ndarray, I: np.ndarray, T: np.ndarray, r: np.ndarray) -> float:
     """Độ lệch của một phương án chia so với tỉ lệ mục tiêu.
 

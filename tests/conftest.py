@@ -3,7 +3,6 @@
 Chỉ dùng để kiểm thử code; KHÔNG phải dữ liệu thật.
 """
 import json
-import os
 import sys
 from pathlib import Path
 

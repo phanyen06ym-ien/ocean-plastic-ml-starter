@@ -2,9 +2,8 @@
 from pathlib import Path
 
 import numpy as np
-import pytest
 
-from src.train import DEFAULT_CONFIG, compute_class_weights, load_experiment_config
+from src.train import compute_class_weights, load_experiment_config
 
 ROOT = Path(__file__).resolve().parents[1]
 

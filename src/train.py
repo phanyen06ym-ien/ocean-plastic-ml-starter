@@ -619,7 +619,6 @@ def run_training_keras(cfg: dict[str, Any], processed_dir: str | Path, runs_root
 
     resume=True + run_dir có sẵn → nạp last.keras và chạy tiếp từ epoch đã lưu trong history.csv.
     """
-    import pandas as pd
     import tensorflow as tf
 
     set_seed(cfg["seed"])            # TensorFlow đã được import ở trên → seed cả TF
@@ -642,8 +641,9 @@ def run_training_keras(cfg: dict[str, Any], processed_dir: str | Path, runs_root
     else:
         model = model_from_config(cfg)
 
-    hist = model.fit(train_ds, validation_data=val_ds, epochs=cfg["epochs"], initial_epoch=initial_epoch,
-                     class_weight=cw, callbacks=get_callbacks(run_dir, cfg), verbose=2)
+    model.fit(train_ds, validation_data=val_ds, epochs=cfg["epochs"], initial_epoch=initial_epoch,
+              class_weight=cw, callbacks=get_callbacks(run_dir, cfg), verbose=2)
+    # Đọc lại từ CSVLogger (append=True) để history gồm cả các epoch trước khi resume
     history = pd.read_csv(run_dir / "history.csv").to_dict(orient="list")
     return model, history, run_dir
 

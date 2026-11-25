@@ -56,7 +56,7 @@ def test_load_image_errors(tmp_path):
 
 @pytest.mark.parametrize("mode", ["RGB", "L", "RGBA"])
 def test_preprocess_shape_and_range(tmp_path, mode):
-    arr = preprocess(load_image(_img(tmp_path, f"m.png", mode)), 128)
+    arr = preprocess(load_image(_img(tmp_path, "m.png", mode)), 128)
     assert arr.shape == (1, 128, 128, 3) and arr.dtype == np.float32
     assert 0 <= arr.min() and arr.max() <= 255 and arr.max() > 1   # chưa chia 255 (mô hình tự chuẩn hoá)
 
