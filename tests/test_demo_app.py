@@ -77,3 +77,15 @@ def test_editor_dict_with_numpy_layers():
     assert demo.prepare({"composite": arr, "background": None}, square=True).size == (60, 60)
     assert demo.prepare({"composite": None, "background": arr[..., :3]}, square=False).size == (90, 60)
     assert demo.prepare({"composite": None, "background": None, "layers": []}, square=True) is None
+
+
+def test_result_card_and_file_path(tmp_path):
+    f = tmp_path / "a.png"
+    Image.new("RGB", (64, 32), "blue").save(f)
+    assert demo.prepare(str(f), square=True).size == (32, 32)
+    card = demo.summarize([Prediction(1, "rov", 0.9, False), Prediction(0, "trash_bag", 0.1, True)], (64, 32), 12.3)
+    assert "ROV (thiết bị lặn)" in card and "Thiết bị (ROV)" in card and "90,0%" in card
+    assert "Túi nilon (trash_bag) – 10,0%" in card and "64 × 32 px" in card and "12 ms" in card
+    assert "không chắc chắn" not in card
+    assert demo.group_of("trash_bag", True)[0] == "Rác liên quan nhựa"
+    assert demo.group_of("animal_fish", False)[0] == "Sinh vật biển"
