@@ -163,3 +163,11 @@ class TestEvaluateModule(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_smoke_test_leaves_no_files_in_cwd(tmp_path, monkeypatch):
+    """smoke_test() chỉ ghi vào thư mục tạm, không tạo results/ ở thư mục đang chạy."""
+    from src.evaluate import smoke_test
+    monkeypatch.chdir(tmp_path)
+    assert smoke_test()
+    assert list(tmp_path.iterdir()) == []

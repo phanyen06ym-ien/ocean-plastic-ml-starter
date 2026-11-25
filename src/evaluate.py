@@ -27,6 +27,7 @@ Dòng lệnh (PyTorch):
 import argparse
 import os
 import json
+import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -989,31 +990,29 @@ def smoke_test() -> bool:
         "accuracy": [0.55, 0.72, 0.85, 0.92],
         "val_accuracy": [0.50, 0.68, 0.80, 0.88],
     }
-    test_lc_path = "results/test_smoke_learning_curves.png"
-    fig_lc, _ = plot_learning_curves(mock_history, save_path=test_lc_path)
-    plt.close(fig_lc)
-    assert os.path.exists(test_lc_path)
-    os.remove(test_lc_path)
-    print("[✓] Learning curves plotted and verified.")
+    # 7–9 ghi file vào thư mục tạm (tự xoá), không đụng tới results/ của repo
+    with tempfile.TemporaryDirectory() as tmp:
+        test_lc_path = os.path.join(tmp, "test_smoke_learning_curves.png")
+        fig_lc, _ = plot_learning_curves(mock_history, save_path=test_lc_path)
+        plt.close(fig_lc)
+        assert os.path.exists(test_lc_path)
+        print("[✓] Learning curves plotted and verified.")
 
-    # 8. Kiểm thử vẽ confusion matrix
-    test_cm_path = "results/test_smoke_cm.png"
-    fig_cm, _ = plot_confusion_matrix(cm, target_names=classes, save_path=test_cm_path)
-    plt.close(fig_cm)
-    assert os.path.exists(test_cm_path)
-    os.remove(test_cm_path)
-    print("[✓] Confusion matrix heatmap plotted and verified.")
+        # 8. Kiểm thử vẽ confusion matrix
+        test_cm_path = os.path.join(tmp, "test_smoke_cm.png")
+        fig_cm, _ = plot_confusion_matrix(cm, target_names=classes, save_path=test_cm_path)
+        plt.close(fig_cm)
+        assert os.path.exists(test_cm_path)
+        print("[✓] Confusion matrix heatmap plotted and verified.")
 
-    # 9. Kiểm thử lưu kết quả JSON & Markdown
-    test_json_path = "results/test_smoke_metrics.json"
-    test_md_path = "results/test_smoke_metrics.md"
-    save_evaluation_results(metrics, test_json_path, format="json")
-    save_evaluation_results(metrics, test_md_path, format="markdown")
-    assert os.path.exists(test_json_path)
-    assert os.path.exists(test_md_path)
-    os.remove(test_json_path)
-    os.remove(test_md_path)
-    print("[✓] Results export (JSON & Markdown) verified.")
+        # 9. Kiểm thử lưu kết quả JSON & Markdown
+        test_json_path = os.path.join(tmp, "test_smoke_metrics.json")
+        test_md_path = os.path.join(tmp, "test_smoke_metrics.md")
+        save_evaluation_results(metrics, test_json_path, format="json")
+        save_evaluation_results(metrics, test_md_path, format="markdown")
+        assert os.path.exists(test_json_path)
+        assert os.path.exists(test_md_path)
+        print("[✓] Results export (JSON & Markdown) verified.")
 
     print("=" * 60)
     print("TOÀN BỘ SMOKE TEST HOÀN TẤT THÀNH CÔNG! MODULE SẴN SÀNG SỬ DỤNG.")
