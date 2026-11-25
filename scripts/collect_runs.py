@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import sys
 from pathlib import Path
 
 
@@ -44,6 +45,9 @@ def fmt(x, nd=4, comma=True):
 
 
 def main() -> None:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from src.preprocessing import ensure_utf8_stdio
+    ensure_utf8_stdio()
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs-root", default="runs")
     ap.add_argument("--prefix", default="E0", help="only folders starting with this (default: E0)")

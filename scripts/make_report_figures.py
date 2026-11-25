@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 import matplotlib
@@ -173,6 +174,9 @@ def make_all(metrics: Path, out: Path) -> list[Path]:
 
 
 def main() -> None:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from src.preprocessing import ensure_utf8_stdio
+    ensure_utf8_stdio()
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--metrics", default="results/metrics")
     ap.add_argument("--out", default="results/figures")

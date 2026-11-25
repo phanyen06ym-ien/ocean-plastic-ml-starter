@@ -24,6 +24,7 @@ import hashlib
 import json
 import platform
 import random
+import sys
 import time
 from pathlib import Path
 
@@ -162,6 +163,9 @@ def review_template(samples: pd.DataFrame) -> pd.DataFrame:
 
 
 def main() -> None:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from src.preprocessing import ensure_utf8_stdio
+    ensure_utf8_stdio()
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--processed-dir", required=True)
     ap.add_argument("--raw-root", required=True, help="thư mục đã giải nén dataset.zip (TrashCan gốc)")

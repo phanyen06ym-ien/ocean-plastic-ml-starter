@@ -41,6 +41,9 @@ def to_markdown(rows: list[dict]) -> str:
 
 
 if __name__ == "__main__":
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from src.preprocessing import ensure_utf8_stdio
+    ensure_utf8_stdio()
     dirs = [Path(a) for a in sys.argv[1:]]
     if not dirs:
         sys.exit("Cách dùng: python scripts/summarize_runs.py <run_dir> [<run_dir> ...]")

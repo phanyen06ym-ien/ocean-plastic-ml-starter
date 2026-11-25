@@ -60,7 +60,9 @@ def draw(err: pd.DataFrame, processed_dir: Path, out: Path, cols: int = 4) -> Pa
 
 def main() -> None:
     from src.predict import Predictor
+    from src.preprocessing import ensure_utf8_stdio
 
+    ensure_utf8_stdio()
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--predictions", default="results/predictions/E04_test_predictions.csv")
     ap.add_argument("--processed-dir", required=True)
