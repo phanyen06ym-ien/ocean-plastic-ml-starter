@@ -39,7 +39,7 @@ def test_predict_fn_outputs_and_warning():
     shown, probs, text = demo.make_predict_fn(fake)(Image.new("RGB", (400, 200)), True)
     assert fake.seen.size == (200, 200)            # đã cắt vuông trước khi đưa vào mô hình
     assert shown.size == (224, 224)
-    assert probs["Túi nilon (trash_bag)"] == 0.3
+    assert "Túi nilon" in probs and "30,0%" in probs and "70,0%" in probs   # bảng top-5 HTML
     assert "Túi nilon" in text and "nhựa" in text and "không chắc chắn" in text
     assert demo.make_predict_fn(fake)(None, True)[2] == "Hãy tải lên một ảnh."
 
@@ -89,3 +89,11 @@ def test_result_card_and_file_path(tmp_path):
     assert "không chắc chắn" not in card
     assert demo.group_of("trash_bag", True)[0] == "Rác liên quan nhựa"
     assert demo.group_of("animal_fish", False)[0] == "Sinh vật biển"
+
+
+def test_predict_shows_unexpected_errors():
+    class Broken(FakePredictor):
+        def predict_image(self, img, k=3):
+            raise RuntimeError("hỏng")
+    shown, top5, card = demo.make_predict_fn(Broken())(Image.new("RGB", (10, 10)), True)
+    assert shown is None and "Lỗi khi nhận dạng" in card and "hỏng" in card

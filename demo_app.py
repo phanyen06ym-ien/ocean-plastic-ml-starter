@@ -118,6 +118,29 @@ def _pct(x: float) -> str:
     return f"{x * 100:.1f}".replace(".", ",") + "%"
 
 
+TOP5_PLACEHOLDER = "<div style='padding:12px;opacity:.6'>Top 5 lớp sẽ hiện ở đây.</div>"
+
+
+def top5_html(preds: list, k: int = 5) -> str:
+    """Bảng top-k: hạng, tên lớp (tiếng Việt + tên gốc), thanh và phần trăm xác suất; lớp nhựa tô cam."""
+    rows = []
+    for i, p in enumerate(preds[:k], 1):
+        _, color = group_of(p.class_name, p.plastic_related)
+        name = html.escape(VI_NAMES.get(p.class_name, p.class_name))
+        weight = "700" if i == 1 else "400"
+        rows.append(
+            f"<tr><td style='padding:5px 8px 5px 0;opacity:.6'>{i}</td>"
+            f"<td style='padding:5px 12px 5px 0;font-weight:{weight}'>{name} "
+            f"<span style='opacity:.55;font-size:12px'>{html.escape(p.class_name)}</span></td>"
+            f"<td style='width:45%;padding:5px 8px 5px 0'><div style='background:rgba(127,127,127,.2);"
+            f"border-radius:5px;height:10px'><div style='width:{p.confidence * 100:.1f}%;background:{color};"
+            f"height:10px;border-radius:5px'></div></div></td>"
+            f"<td style='text-align:right;white-space:nowrap;font-weight:{weight}'>{_pct(p.confidence)}</td></tr>")
+    return ("<div style='padding:12px 16px;border:1px solid rgba(127,127,127,.3);border-radius:12px'>"
+            "<div style='font-size:13px;opacity:.7;margin-bottom:6px'>TOP 5 LỚP CÓ XÁC SUẤT CAO NHẤT</div>"
+            f"<table style='width:100%;font-size:14px;border-collapse:collapse'>{''.join(rows)}</table></div>")
+
+
 def summarize(preds: list, original_size: tuple[int, int] | None = None, elapsed_ms: float | None = None) -> str:
     """Thẻ HTML thông tin nhận dạng: tên lớp, nhóm, độ tin cậy, mô tả, lớp đứng thứ hai, cảnh báo khi không chắc."""
     top = preds[0]
@@ -152,24 +175,29 @@ def summarize(preds: list, original_size: tuple[int, int] | None = None, elapsed
 
 
 def make_predict_fn(predictor: Predictor):
-    """Hàm callback cho Gradio: (ảnh, cắt vuông) → (ảnh mô hình nhìn thấy, xác suất các lớp, thẻ thông tin HTML)."""
+    """Hàm callback cho Gradio: (ảnh, cắt vuông) → (ảnh mô hình nhìn thấy, bảng top-5 HTML, thẻ thông tin HTML)."""
     n = len(predictor.mapping)
 
     def predict(value, square=True):
+        try:
+            return _predict(value, square)
+        except Exception as e:  # mọi lỗi hiện trong thẻ kết quả thay vì để trống giao diện
+            return None, TOP5_PLACEHOLDER, f"<div style='padding:12px;color:#c92a2a'>❌ Lỗi khi nhận dạng: {html.escape(str(e))}</div>"
+
+    def _predict(value, square):
         img = prepare(value, square)
         if img is None:
-            return None, {}, "Hãy tải lên một ảnh."
+            return None, TOP5_PLACEHOLDER, "Hãy tải lên một ảnh."
         original = to_pil(value).size
         t0 = time.perf_counter()
         try:
             preds = predictor.predict_image(img, k=n)
         except InferenceError as e:
-            return None, {}, f"❌ {e}"
+            return None, TOP5_PLACEHOLDER, f"❌ {e}"
         elapsed = (time.perf_counter() - t0) * 1000
         size = predictor.input_size
         shown = img.resize((size, size), Image.BILINEAR)
-        return (shown, {label(p.class_name): float(p.confidence) for p in preds},
-                summarize(preds, original, elapsed))
+        return shown, top5_html(preds), summarize(preds, original, elapsed)
 
     return predict
 
@@ -214,20 +242,20 @@ def build_app(predictor: Predictor, model_name: str):
                                 examples_per_page=12)
             with gr.Column(scale=6):
                 card = gr.HTML(PLACEHOLDER)
-                probs = gr.Label(num_top_classes=5, label="Top 5 lớp có xác suất cao nhất")
+                probs = gr.HTML(TOP5_PLACEHOLDER)
                 shown = gr.Image(label="Ảnh mô hình nhìn thấy", height=200, interactive=False)
 
         outputs = [shown, probs, card]
 
         def auto(value, sq):
             """Có ảnh mới (tải lên, ảnh ví dụ, dán, webcam) hoặc đổi tuỳ chọn → nhận dạng luôn; không có ảnh → để trống."""
-            return predict(value, sq) if value is not None else (None, {}, PLACEHOLDER)
+            return predict(value, sq) if value is not None else (None, TOP5_PLACEHOLDER, PLACEHOLDER)
 
         btn.click(predict, [inp, square], outputs)
         inp.change(auto, [inp, square], outputs)
         square.change(auto, [inp, square], outputs)
         upload.upload(lambda f: to_pil(getattr(f, "name", f)), upload, inp)
-        clear.click(lambda: (None, None, {}, PLACEHOLDER), None, [inp] + outputs)
+        clear.click(lambda: (None, None, TOP5_PLACEHOLDER, PLACEHOLDER), None, [inp] + outputs)
         gr.Markdown("<small>Đồ án môn Học máy và Khai phá dữ liệu – Nhóm 4. Kết quả mang tính minh hoạ: "
                     "Macro F1 trên tập Kiểm tra 0,329; nhóm lớp nhựa còn yếu (0,132).</small>")
     return app
