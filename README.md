@@ -283,6 +283,7 @@ python main.py --image path/to/crop.jpg --model runs/E04_20261122-0853/best.pt
 
 # Giao diện demo trên trình duyệt (Gradio): tải ảnh / webcam / dán ảnh, cắt quanh vật thể, xem top-5
 python demo_app.py        # mở http://127.0.0.1:7860 ; thêm --share để có link công khai tạm thời
+python demo_app.py --port 7861   # nếu báo "Cổng 7860 đang được dùng" (một phiên demo cũ chưa tắt)
 ```
 
 **PyCharm (Windows):**
@@ -290,7 +291,7 @@ python demo_app.py        # mở http://127.0.0.1:7860 ; thêm --share để có
 1. *File → Project from Version Control*, URL `https://github.com/phanyen06ym-ien/ocean-plastic-ml-starter.git`, chọn thư mục (ví dụ `D:\DEV\Projects\ocean-plastic-ml-starter`) → *Clone*.
 2. *Settings → Project → Python Interpreter → Add Interpreter → Virtualenv* (Python 3.10–3.12), thư mục `.venv` trong repo. PyCharm sẽ gợi ý cài `requirements.txt`; nếu không, mở *Terminal* và chạy `pip install -r requirements.txt`.
 3. Chuột phải thư mục gốc → *Mark Directory as → Sources Root* (để `from src...` chạy được). Trong *Settings → Tools → Python Integrated Tools* chọn *Default test runner: pytest*.
-4. Kiểm tra: chuột phải `tests/` → *Run 'pytest in tests'* (81 passed khi đã cài đủ TensorFlow và PyTorch; thiếu thư viện nào thì test tương ứng tự bỏ qua). Nếu ổ C: đầy, chạy `pytest -q --basetemp=D:\tmp\pytest` trong Terminal.
+4. Kiểm tra: chuột phải `tests/` → *Run 'pytest in tests'* (86 passed khi đã cài đủ TensorFlow và PyTorch; thiếu thư viện nào thì test tương ứng tự bỏ qua). Nếu ổ C: đầy, chạy `pytest -q --basetemp=D:\tmp\pytest` trong Terminal.
 5. Vẽ lại hình báo cáo không cần dữ liệu: chạy `scripts/make_report_figures.py`. Chạy demo: tải `runs/E04_20261122-0853/` từ Drive về `runs/` rồi tạo *Run Configuration* cho `main.py` với tham số `--image <ảnh> --model runs/E04_20261122-0853/best.pt`.
 
 Dữ liệu (`data/`), checkpoint (`runs/`, `*.pt`) và `.venv/`, `.idea/` đã nằm trong `.gitignore`, không bị commit nhầm. Huấn luyện lại nên dùng Colab (cần GPU).
