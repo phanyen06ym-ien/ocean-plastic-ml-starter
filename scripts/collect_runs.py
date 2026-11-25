@@ -16,6 +16,7 @@ from pathlib import Path
 
 
 def load_rows(runs_root: Path, prefix: str) -> list[dict]:
+    """Một dòng cho mỗi <runs_root>/<prefix>*/summary.json, sắp theo Macro F1 val giảm dần."""
     rows = []
     for path in sorted(runs_root.glob(f"{prefix}*/summary.json")):
         d = json.loads(path.read_text(encoding="utf-8"))
@@ -38,6 +39,7 @@ def load_rows(runs_root: Path, prefix: str) -> list[dict]:
 
 
 def fmt(x, nd=4, comma=True):
+    """Định dạng số cho bảng Markdown: số thực dấu phẩy thập phân, số nguyên dấu chấm ngăn nghìn; None → '-'."""
     if x is None:
         return "-"
     s = f"{x:.{nd}f}" if isinstance(x, float) else f"{x:,}".replace(",", ".") if comma else str(x)
@@ -45,6 +47,7 @@ def fmt(x, nd=4, comma=True):
 
 
 def main() -> None:
+    """Dòng lệnh: in bảng Markdown các run và (tuỳ chọn) ghi CSV với --csv."""
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from src.preprocessing import ensure_utf8_stdio
     ensure_utf8_stdio()

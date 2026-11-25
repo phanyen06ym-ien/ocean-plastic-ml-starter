@@ -12,6 +12,7 @@ from pathlib import Path
 
 
 def summarize_run(run_dir: str | Path) -> dict:
+    """Tham số, kích thước file, thời gian suy luận CPU và Macro F1 val của một thư mục run."""
     run = Path(run_dir)
     summary = json.loads((run / "summary.json").read_text(encoding="utf-8"))
     exp_id = summary["exp_id"]
@@ -33,6 +34,7 @@ def _fmt(v, nd=4, scale=1.0):
 
 
 def to_markdown(rows: list[dict]) -> str:
+    """Bảng Markdown các run, sắp theo Macro F1 val giảm dần (dấu phẩy thập phân)."""
     out = ["| EXP_ID | Tham số (M) | Kích thước (MB) | Suy luận (ms) | Macro F1 val | Nhóm nhựa val |", "|---|---:|---:|---:|---:|---:|"]
     for r in sorted(rows, key=lambda r: -(r["macro_f1"] or 0)):
         out.append(f"| {r['exp_id']} | {_fmt(r['params'], 3, 1e6)} | {_fmt(r['file_size_mb'], 2)} | "

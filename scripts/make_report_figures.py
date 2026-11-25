@@ -37,6 +37,7 @@ def _save(fig, path: Path) -> Path:
 
 
 def learning_curves(history: pd.DataFrame, title: str, path: Path) -> Path:
+    """Loss Train/Val, accuracy và Macro F1 Val theo epoch; vạch ranh giới hai pha và epoch val_loss nhỏ nhất."""
     x = np.arange(1, len(history) + 1)
     fig, axes = plt.subplots(1, 3, figsize=(15, 4))
     axes[0].plot(x, history["loss"], color=C_MAIN, label="train")
@@ -57,6 +58,7 @@ def learning_curves(history: pd.DataFrame, title: str, path: Path) -> Path:
 
 
 def confusion(cm: pd.DataFrame, title: str, path: Path) -> Path:
+    """Confusion matrix chuẩn hoá theo hàng (tỉ lệ theo nhãn thật)."""
     cmn = cm.div(cm.sum(axis=1).replace(0, 1), axis=0)
     fig, ax = plt.subplots(figsize=(10.5, 9))
     im = ax.imshow(cmn.values, cmap="Blues", vmin=0, vmax=1)
@@ -72,6 +74,7 @@ def confusion(cm: pd.DataFrame, title: str, path: Path) -> Path:
 
 
 def comparison(metrics: Path, path: Path) -> Path:
+    """Cột Macro F1 và Macro F1 nhóm nhựa trên Validation E01–E04, kèm điểm Test của E04."""
     rows = []
     for label, f in [("E01", "E01_val"), ("E02", "E02_val"), ("E03", "E03_val"),
                      ("E04 bản đầu", "E04v1_val"), ("E04", "E04_val")]:
@@ -99,6 +102,7 @@ def comparison(metrics: Path, path: Path) -> Path:
 
 
 def plastic_per_class(metrics: Path, path: Path) -> Path:
+    """F1 Test từng lớp nhựa: E04 bản đầu so với E04."""
     old = json.loads((metrics / "E04v1_test.json").read_text(encoding="utf-8"))["overall"]["per_class"]
     new = json.loads((metrics / "E04_test.json").read_text(encoding="utf-8"))["overall"]["per_class"]
     x = np.arange(len(PLASTIC))
@@ -114,6 +118,7 @@ def plastic_per_class(metrics: Path, path: Path) -> Path:
 
 
 def bbox_by_class(metrics: Path, path: Path) -> Path:
+    """Trung vị cạnh ngắn bbox theo lớp (dữ liệu v2), tô màu lớp nhựa."""
     d = pd.read_csv(metrics / "bbox_stats_by_class_v2.csv").sort_values("50%")
     colors = [C_ACCENT if c in PLASTIC else C_MUTED for c in d["class_name"]]
     fig, ax = plt.subplots(figsize=(9, 6))
@@ -125,6 +130,7 @@ def bbox_by_class(metrics: Path, path: Path) -> Path:
 
 
 def recall_by_size(metrics: Path, path: Path) -> Path:
+    """Recall Test của E04 theo nhóm kích thước bbox, cho mọi lớp và nhóm nhựa."""
     d = pd.read_csv(metrics / "E04_test_by_size.csv")
     bins = list(dict.fromkeys(d["size_bin"]))
     x = np.arange(len(bins))
@@ -144,6 +150,7 @@ def recall_by_size(metrics: Path, path: Path) -> Path:
 
 
 def plastic_by_video(metrics: Path, path: Path) -> Path:
+    """Số mẫu nhựa Test theo video và recall nhựa của E04 trong từng video."""
     d = pd.read_csv(metrics / "E04_test_by_video.csv")
     d = d[d["num_plastic"] > 0].sort_values("num_plastic", ascending=False)
     fig, ax = plt.subplots(figsize=(10, 4.5))
@@ -161,6 +168,7 @@ def plastic_by_video(metrics: Path, path: Path) -> Path:
 
 
 def make_all(metrics: Path, out: Path) -> list[Path]:
+    """Vẽ cả 7 hình vào `out`; trả danh sách đường dẫn."""
     out.mkdir(parents=True, exist_ok=True)
     return [
         learning_curves(pd.read_csv(metrics / "E03_history.csv"), "E03", out / "E03_learning_curves.png"),
@@ -175,6 +183,7 @@ def make_all(metrics: Path, out: Path) -> list[Path]:
 
 
 def main() -> None:
+    """Dòng lệnh: --metrics (mặc định results/metrics của repo), --out (mặc định results/figures)."""
     sys.path.insert(0, str(ROOT))
     from src.preprocessing import ensure_utf8_stdio
     ensure_utf8_stdio()

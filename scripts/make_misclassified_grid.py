@@ -42,6 +42,7 @@ def select_errors(pred: pd.DataFrame, mapping: list[dict], per_class: int, limit
 
 
 def draw(err: pd.DataFrame, processed_dir: Path, out: Path, cols: int = 4) -> Path:
+    """Vẽ lưới ảnh lỗi (thật / đoán / độ tin cậy) ra `out` và ghi danh sách kèm theo ra <out>.csv."""
     rows = max(1, -(-len(err) // cols))
     fig, axes = plt.subplots(rows, cols, figsize=(3 * cols, 3.5 * rows), layout="constrained")
     for ax in getattr(axes, "flat", [axes]):
@@ -60,6 +61,7 @@ def draw(err: pd.DataFrame, processed_dir: Path, out: Path, cols: int = 4) -> Pa
 
 
 def main() -> None:
+    """Dòng lệnh: nạp checkpoint, chọn lỗi nhóm nhựa có độ tin cậy cao nhất và vẽ lưới ảnh."""
     from src.predict import Predictor
     from src.preprocessing import ensure_utf8_stdio
 
@@ -78,6 +80,7 @@ def main() -> None:
     pred = pd.read_csv(a.predictions)
 
     def conf(path: str) -> float:
+        """Xác suất mô hình gán cho nhãn đã đoán (y_pred trong file dự đoán) của ảnh `path`."""
         top = predictor.predict_path(proc / path, k=len(names))["top_k"]
         y_pred = int(pred.loc[pred["path"] == path, "y_pred"].iloc[0])
         return next(p["confidence"] for p in top if p["class_index"] == y_pred)

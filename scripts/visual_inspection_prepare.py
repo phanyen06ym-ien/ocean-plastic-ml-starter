@@ -38,6 +38,7 @@ REVIEW_COLS = ["visibility", "label_match", "quality", "material_evidence", "not
 
 
 def sha256(path: Path) -> str:
+    """SHA-256 của một file (ghi vào provenance để kiểm tra manifest không đổi)."""
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
@@ -87,6 +88,7 @@ def select_samples(manifest: pd.DataFrame, seed: int = SEED) -> pd.DataFrame:
 
 
 def find_source(raw_root: Path, file_name: str, source_split: str, index: dict[str, list[Path]]) -> Path | None:
+    """Ảnh gốc theo tên file, ưu tiên ảnh nằm trong thư mục của split gốc; None nếu không có."""
     hits = index.get(Path(file_name).name, [])
     pref = [h for h in hits if source_split in h.parts]
     return (pref or hits or [None])[0]
@@ -108,6 +110,7 @@ def _font(size: int):
 
 
 def sample_panel(row, processed_dir: Path, source: Path | None, h: int = 300) -> Image.Image:
+    """Một mẫu: số thứ tự + nhãn, ảnh crop mô hình thấy và ảnh gốc có khung bbox đỏ."""
     with Image.open(processed_dir / row["crop_path"]) as im:
         crop = im.convert("RGB").resize((h, h))
     if source is not None and source.exists():
@@ -134,6 +137,7 @@ def sample_panel(row, processed_dir: Path, source: Path | None, h: int = 300) ->
 
 def contact_pages(samples: pd.DataFrame, processed_dir: Path, sources: dict[str, Path | None],
                   per_page: int = 4, width: int = 1240) -> list[Image.Image]:
+    """Ghép các panel thành trang (mỗi trang `per_page` mẫu), nhóm theo lớp; mẫu chấm thử để riêng."""
     pages = []
     group = samples["class_name"].where(samples["set"] == "main", "pilot")      # chấm thử: một nhóm chung
     for (kind, cls), g in samples.groupby([samples["set"], group], sort=False):
@@ -158,6 +162,7 @@ def contact_pages(samples: pd.DataFrame, processed_dir: Path, sources: dict[str,
 
 
 def review_template(samples: pd.DataFrame) -> pd.DataFrame:
+    """Bảng chấm trống: thông tin mẫu và các cột REVIEW_COLS để người chấm điền."""
     t = samples[["sample_no", "set", "annotation_id", "class_name", "split"]].copy()
     for c in REVIEW_COLS:
         t[c] = ""
@@ -165,6 +170,7 @@ def review_template(samples: pd.DataFrame) -> pd.DataFrame:
 
 
 def main() -> None:
+    """Dòng lệnh: chọn mẫu, ghi manifest, bảng chấm, PDF contact sheet và provenance vào --out."""
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from src.preprocessing import ensure_utf8_stdio
     ensure_utf8_stdio()
