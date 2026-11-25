@@ -1155,11 +1155,11 @@ def evaluate_torch_checkpoint(run_dir: str | Path, checkpoint: str, processed_di
     import torch
     from torch.utils.data import DataLoader
     try:
-        from src.train import (build_model, build_transform, compute_metrics, find_class_mapping, measure_efficiency,
-                               ordered_image_folder, predict)
+        from src.train import (build_model, build_transform, compute_metrics, configure_phase, find_class_mapping,
+                               measure_efficiency, ordered_image_folder, predict)
     except ImportError:  # pragma: no cover
-        from train import (build_model, build_transform, compute_metrics, find_class_mapping, measure_efficiency,
-                           ordered_image_folder, predict)
+        from train import (build_model, build_transform, compute_metrics, configure_phase, find_class_mapping,
+                           measure_efficiency, ordered_image_folder, predict)
 
     if split not in ("train", "val", "test"):
         raise ValueError(f"split phải là train/val/test, nhận: {split}")
@@ -1179,6 +1179,11 @@ def evaluate_torch_checkpoint(run_dir: str | Path, checkpoint: str, processed_di
     model.load_state_dict(torch.load(run / checkpoint, map_location=device))
     loss, y, p = predict(model, loader, device)
     metrics = compute_metrics(y, p, names, plastic)
+    # Mô hình vừa nạp có mọi tham số requires_grad=True; đặt lại theo pha 2 để params.trainable_phase2
+    # đúng như summary.json của src/train.py (không ảnh hưởng dự đoán).
+    phase2 = cfg.get("training", {}).get("phase2")
+    if phase2:
+        configure_phase(model, {"freeze_backbone": False, **phase2})
     metrics.update({"exp_id": cfg["exp_id"], "checkpoint": checkpoint, "split": split, "num_samples": int(len(y)),
                     "num_classes": len(names), "loss_unweighted": loss, "data_version": cfg["data"].get("data_version"),
                     "run_dir": str(run), "efficiency": measure_efficiency(model, cfg, device)})
