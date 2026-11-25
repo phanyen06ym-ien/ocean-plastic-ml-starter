@@ -190,7 +190,7 @@
   "efficiency": {
     "params": {
       "total": 4030606,
-      "trainable_phase2": 4030606
+      "trainable_phase2": 3964876
     },
     "file_size_mb": 16.4,
     "input_size": [
