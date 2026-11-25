@@ -20,5 +20,8 @@ tensorflow>=2.15     # Keras 3; trên Windows không có GPU có thể dùng ten
 torch>=2.1
 torchvision>=0.16    # cần đúng cặp phiên bản với torch
 
+# Giao diện demo (demo_app.py)
+gradio>=4.44
+
 # Kiểm thử
 pytest>=7.4

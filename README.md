@@ -280,6 +280,9 @@ python -m src.evaluate --run runs/E04_20261122-0853 --ckpt best.pt --processed-d
 
 # Dự đoán bằng mô hình cuối E04 (tải thư mục runs/E04_20261122-0853/ từ Drive về runs/ trong repo)
 python main.py --image path/to/crop.jpg --model runs/E04_20261122-0853/best.pt
+
+# Giao diện demo trên trình duyệt (Gradio): tải ảnh / webcam / dán ảnh, cắt quanh vật thể, xem top-5
+python demo_app.py        # mở http://127.0.0.1:7860 ; thêm --share để có link công khai tạm thời
 ```
 
 **PyCharm (Windows):**
