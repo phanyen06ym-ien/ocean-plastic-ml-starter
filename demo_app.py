@@ -108,12 +108,6 @@ def make_predict_fn(predictor: Predictor):
     return predict
 
 
-def warm_up(predictor: Predictor) -> None:
-    """Một lần dự đoán trên ảnh trống khi khởi động: lần bấm "Nhận dạng" đầu tiên không phải chờ khởi tạo PyTorch."""
-    size = predictor.input_size
-    predictor.predict_image(Image.new("RGB", (size, size)), k=1)
-
-
 def example_images(folder: Path = EXAMPLES_DIR, per_class: int = 1, limit: int = 12) -> list[list[str]]:
     """Một vài ảnh Test làm ví dụ (ưu tiên các lớp nhựa); rỗng nếu chưa tải dữ liệu."""
     if not folder.exists():
@@ -191,7 +185,6 @@ def main(argv: list[str] | None = None) -> None:
     except ImportError:
         raise SystemExit("Chưa cài gradio. Chạy: pip install -r requirements.txt")
     predictor = Predictor(model)
-    warm_up(predictor)
     build_app(predictor, model.parent.name).launch(server_port=args.port, share=args.share, inbrowser=True)
 
 
