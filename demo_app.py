@@ -155,6 +155,14 @@ def build_app(predictor: Predictor, model_name: str):
     return app
 
 
+def port_in_use(port: int, host: str = "127.0.0.1") -> bool:
+    """True nếu đã có chương trình khác lắng nghe ở host:port (ví dụ một phiên demo cũ chưa tắt)."""
+    import socket
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(0.5)
+        return s.connect_ex((host, port)) == 0
+
+
 def main(argv: list[str] | None = None) -> None:
     """Đọc tham số dòng lệnh, nạp mô hình một lần rồi mở giao diện."""
     ensure_utf8_stdio()            # thông báo tiếng Việt / emoji không lỗi trên console Windows
@@ -163,6 +171,10 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--port", type=int, default=7860)
     ap.add_argument("--share", action="store_true", help="tạo link công khai tạm thời")
     args = ap.parse_args(argv)
+    if port_in_use(args.port):     # báo ngay, trước khi mất vài chục giây nạp mô hình
+        raise SystemExit(f"Cổng {args.port} đang được dùng (có thể một phiên demo cũ vẫn chạy: mở "
+                         f"http://127.0.0.1:{args.port} để xem, hoặc tắt cửa sổ đó). "
+                         f"Hoặc chạy cổng khác: python demo_app.py --port {args.port + 1}")
     model = Path(args.model)
     if not model.exists():
         raise SystemExit(f"Không tìm thấy checkpoint {model}. Tải thư mục runs/E04_20261122-0853/ từ Drive "

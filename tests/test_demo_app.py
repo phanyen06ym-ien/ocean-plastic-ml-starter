@@ -55,3 +55,17 @@ def test_vietnamese_error_readable_when_redirected(tmp_path):
                        capture_output=True, timeout=300)
     assert r.returncode == 1
     assert "Không tìm thấy checkpoint" in r.stderr.decode("utf-8")
+
+
+def test_busy_port_is_reported_before_loading_model():
+    import socket
+
+    import pytest
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        s.listen(16)          # như server thật: không để hàng đợi đầy sau lần kiểm tra đầu
+        port = s.getsockname()[1]
+        assert demo.port_in_use(port)
+        with pytest.raises(SystemExit, match=rf"Cổng {port} đang được dùng.*--port {port + 1}"):
+            demo.main(["--port", str(port), "--model", "khong_ton_tai.pt"])   # lỗi cổng báo trước lỗi checkpoint
+    assert not demo.port_in_use(port)
