@@ -52,6 +52,12 @@ except ImportError:  # pragma: no cover
 # Bảo đảm in tiếng Việt an toàn trên Windows terminal (giữ như trước: áp dụng ngay khi import module)
 ensure_utf8_stdio()
 
+SIZE_BINS = (0, 32, 64, 128, 10_000)  # cạnh ngắn của bbox gốc (pixel), dùng trong scores_by_size
+
+# =============================================================================
+# CHỈ SỐ, BIỂU ĐỒ, PHÂN TÍCH LỖI, XUẤT KẾT QUẢ (dùng chung cho mọi thí nghiệm)
+# =============================================================================
+
 
 def compute_classification_metrics(
     y_true: Union[List, np.ndarray],
@@ -934,99 +940,8 @@ def save_evaluation_results(
         raise ValueError(f"Định dạng {format} không được hỗ trợ. Chọn 'json' hoặc 'markdown'.")
 
 
-def smoke_test() -> bool:
-    """
-    Hàm kiểm thử tự động (Smoke Test) xác minh tính toàn vẹn của tất cả các hàm
-    trong module với dữ liệu giả lập có kết quả kỳ vọng đã biết.
-    """
-    print("=" * 60)
-    print("BẮT ĐẦU SMOKE TEST MODULE SRC/EVALUATE.PY")
-    print("=" * 60)
-
-    # 1. Dữ liệu giả định với 4 lớp rác thải đại dương
-    classes = ["trash_bag", "trash_bottle", "trash_can", "trash_net"]
-    y_true = np.array([0, 0, 0, 1, 1, 1, 2, 2, 3, 3])
-    y_pred = np.array([0, 0, 1, 1, 1, 2, 2, 2, 3, 0])
-    # Đúng 7/10 mẫu -> Accuracy kỳ vọng = 0.70
-
-    # 2. Kiểm thử compute_classification_metrics
-    metrics = compute_classification_metrics(y_true, y_pred, target_names=classes)
-    assert abs(metrics["accuracy"] - 0.70) < 1e-5, f"Lỗi Accuracy: {metrics['accuracy']}"
-    assert "macro_f1" in metrics
-    assert "per_class" in metrics
-    print(f"[✓] Metrics computation passed. Accuracy: {metrics['accuracy']:.2f}, Macro F1: {metrics['macro_f1']:.4f}")
-
-    # 3. Kiểm thử classification_report
-    report_str = generate_classification_report(y_true, y_pred, target_names=classes)
-    assert "trash_bag" in report_str
-    print("[✓] Classification report generated successfully.")
-
-    # 4. Kiểm thử confusion_matrix
-    cm = compute_confusion_matrix(y_true, y_pred)
-    assert cm.shape == (4, 4)
-    assert np.trace(cm) == 7  # 7 mẫu đúng
-    print("[✓] Confusion matrix computed successfully.")
-
-    # 5. Kiểm thử tìm top confused pairs
-    confused = find_top_confused_pairs(cm, target_names=classes, top_k=2)
-    assert len(confused) > 0
-    print(f"[✓] Top confused pairs extracted: {confused[0]['true_name']} -> {confused[0]['pred_name']} ({confused[0]['count']} samples)")
-
-    # 6. Kiểm thử trích xuất mẫu lỗi
-    probs = np.zeros((10, 4))
-    for i in range(10):
-        probs[i, y_pred[i]] = 0.85
-        probs[i, (y_pred[i] + 1) % 4] = 0.15
-
-    errors = identify_misclassified_samples(y_true, y_pred, probabilities=probs, target_names=classes)
-    assert len(errors) == 3  # 3 mẫu sai
-    assert errors[0]["severity"] == "high_confidence_error"
-    print(f"[✓] Misclassified samples identified successfully: {len(errors)} errors found.")
-
-    # 7. Kiểm thử vẽ learning curves
-    mock_history = {
-        "loss": [0.9, 0.6, 0.4, 0.25],
-        "val_loss": [0.95, 0.65, 0.45, 0.35],
-        "accuracy": [0.55, 0.72, 0.85, 0.92],
-        "val_accuracy": [0.50, 0.68, 0.80, 0.88],
-    }
-    # 7–9 ghi file vào thư mục tạm (tự xoá), không đụng tới results/ của repo
-    with tempfile.TemporaryDirectory() as tmp:
-        test_lc_path = os.path.join(tmp, "test_smoke_learning_curves.png")
-        fig_lc, _ = plot_learning_curves(mock_history, save_path=test_lc_path)
-        plt.close(fig_lc)
-        assert os.path.exists(test_lc_path)
-        print("[✓] Learning curves plotted and verified.")
-
-        # 8. Kiểm thử vẽ confusion matrix
-        test_cm_path = os.path.join(tmp, "test_smoke_cm.png")
-        fig_cm, _ = plot_confusion_matrix(cm, target_names=classes, save_path=test_cm_path)
-        plt.close(fig_cm)
-        assert os.path.exists(test_cm_path)
-        print("[✓] Confusion matrix heatmap plotted and verified.")
-
-        # 9. Kiểm thử lưu kết quả JSON & Markdown
-        test_json_path = os.path.join(tmp, "test_smoke_metrics.json")
-        test_md_path = os.path.join(tmp, "test_smoke_metrics.md")
-        save_evaluation_results(metrics, test_json_path, format="json")
-        save_evaluation_results(metrics, test_md_path, format="markdown")
-        assert os.path.exists(test_json_path)
-        assert os.path.exists(test_md_path)
-        print("[✓] Results export (JSON & Markdown) verified.")
-
-    print("=" * 60)
-    print("TOÀN BỘ SMOKE TEST HOÀN TẤT THÀNH CÔNG! MODULE SẴN SÀNG SỬ DỤNG.")
-    print("=" * 60)
-    return True
-
-
 # =============================================================================
-# CHẠY ĐÁNH GIÁ MỘT CHECKPOINT (Keras E01–E02)
-# Kết quả theo quy ước tên file:
-#     results/metrics/<EXP_ID>_<split>.json, <EXP_ID>_<split>_predictions.csv
-#     results/figures/<EXP_ID>_<split>_confusion_matrix.png, <EXP_ID>_learning_curves.png,
-#                     <EXP_ID>_<split>_misclassified.png
-# Báo cáo hai cấp: tổng thể (22 lớp v1 / 18 lớp v2) và nhóm lớp liên quan nhựa.
+# BÁO CÁO HAI CẤP: tổng thể (22 lớp v1 / 18 lớp v2) và nhóm lớp liên quan nhựa
 # =============================================================================
 def group_metrics(y_true, y_pred, indices: list[int]) -> dict[str, Any]:
     """Macro P/R/F1 chỉ trên các lớp trong `indices` (mô hình vẫn dự đoán toàn bộ các lớp).
@@ -1065,6 +980,13 @@ def summarize(y_true, y_pred, probs, mapping: list[dict[str, Any]], exp_id: str,
     }
 
 
+# =============================================================================
+# CHẠY ĐÁNH GIÁ MỘT CHECKPOINT (Keras E01–E02)
+# Kết quả theo quy ước tên file:
+#     results/metrics/<EXP_ID>_<split>.json, <EXP_ID>_<split>_predictions.csv
+#     results/figures/<EXP_ID>_<split>_confusion_matrix.png, <EXP_ID>_learning_curves.png,
+#                     <EXP_ID>_<split>_misclassified.png
+# =============================================================================
 def predict_split(model, processed_dir: str | Path, split: str, mapping: list[dict[str, Any]],
                   input_size: int = 128, batch_size: int = 128) -> tuple[np.ndarray, np.ndarray, list[str]]:
     """Dự đoán toàn bộ ảnh của một tập theo thứ tự cố định. Trả (y_true, probs, file_paths)."""
@@ -1209,9 +1131,9 @@ def evaluate_torch_checkpoint(run_dir: str | Path, checkpoint: str, processed_di
     return metrics
 
 
-SIZE_BINS = (0, 32, 64, 128, 10_000)  # cạnh ngắn của bbox gốc (pixel)
-
-
+# =============================================================================
+# PHÂN TÍCH LỖI THEO VIDEO VÀ KÍCH THƯỚC BBOX (cần split_manifest.csv của dữ liệu đã xử lý)
+# =============================================================================
 def join_predictions_manifest(predictions_csv: str | Path, manifest_csv: str | Path) -> pd.DataFrame:
     """Ghép <EXP>_<split>_predictions.csv (path, y_true, y_pred) với split_manifest.csv theo đường dẫn crop.
 
@@ -1289,6 +1211,95 @@ def error_analysis(predictions_csv: str | Path, manifest_csv: str | Path, plasti
                "size": by_size.to_dict(orient="records")}
     (out / f"{stem}_error_analysis.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
     return summary
+
+
+# =============================================================================
+# KIỂM THỬ NHANH VÀ DÒNG LỆNH
+# =============================================================================
+def smoke_test() -> bool:
+    """
+    Hàm kiểm thử tự động (Smoke Test) xác minh tính toàn vẹn của tất cả các hàm
+    trong module với dữ liệu giả lập có kết quả kỳ vọng đã biết.
+    """
+    print("=" * 60)
+    print("BẮT ĐẦU SMOKE TEST MODULE SRC/EVALUATE.PY")
+    print("=" * 60)
+
+    # 1. Dữ liệu giả định với 4 lớp rác thải đại dương
+    classes = ["trash_bag", "trash_bottle", "trash_can", "trash_net"]
+    y_true = np.array([0, 0, 0, 1, 1, 1, 2, 2, 3, 3])
+    y_pred = np.array([0, 0, 1, 1, 1, 2, 2, 2, 3, 0])
+    # Đúng 7/10 mẫu -> Accuracy kỳ vọng = 0.70
+
+    # 2. Kiểm thử compute_classification_metrics
+    metrics = compute_classification_metrics(y_true, y_pred, target_names=classes)
+    assert abs(metrics["accuracy"] - 0.70) < 1e-5, f"Lỗi Accuracy: {metrics['accuracy']}"
+    assert "macro_f1" in metrics
+    assert "per_class" in metrics
+    print(f"[✓] Metrics computation passed. Accuracy: {metrics['accuracy']:.2f}, Macro F1: {metrics['macro_f1']:.4f}")
+
+    # 3. Kiểm thử classification_report
+    report_str = generate_classification_report(y_true, y_pred, target_names=classes)
+    assert "trash_bag" in report_str
+    print("[✓] Classification report generated successfully.")
+
+    # 4. Kiểm thử confusion_matrix
+    cm = compute_confusion_matrix(y_true, y_pred)
+    assert cm.shape == (4, 4)
+    assert np.trace(cm) == 7  # 7 mẫu đúng
+    print("[✓] Confusion matrix computed successfully.")
+
+    # 5. Kiểm thử tìm top confused pairs
+    confused = find_top_confused_pairs(cm, target_names=classes, top_k=2)
+    assert len(confused) > 0
+    print(f"[✓] Top confused pairs extracted: {confused[0]['true_name']} -> {confused[0]['pred_name']} ({confused[0]['count']} samples)")
+
+    # 6. Kiểm thử trích xuất mẫu lỗi
+    probs = np.zeros((10, 4))
+    for i in range(10):
+        probs[i, y_pred[i]] = 0.85
+        probs[i, (y_pred[i] + 1) % 4] = 0.15
+
+    errors = identify_misclassified_samples(y_true, y_pred, probabilities=probs, target_names=classes)
+    assert len(errors) == 3  # 3 mẫu sai
+    assert errors[0]["severity"] == "high_confidence_error"
+    print(f"[✓] Misclassified samples identified successfully: {len(errors)} errors found.")
+
+    # 7. Kiểm thử vẽ learning curves
+    mock_history = {
+        "loss": [0.9, 0.6, 0.4, 0.25],
+        "val_loss": [0.95, 0.65, 0.45, 0.35],
+        "accuracy": [0.55, 0.72, 0.85, 0.92],
+        "val_accuracy": [0.50, 0.68, 0.80, 0.88],
+    }
+    # 7–9 ghi file vào thư mục tạm (tự xoá), không đụng tới results/ của repo
+    with tempfile.TemporaryDirectory() as tmp:
+        test_lc_path = os.path.join(tmp, "test_smoke_learning_curves.png")
+        fig_lc, _ = plot_learning_curves(mock_history, save_path=test_lc_path)
+        plt.close(fig_lc)
+        assert os.path.exists(test_lc_path)
+        print("[✓] Learning curves plotted and verified.")
+
+        # 8. Kiểm thử vẽ confusion matrix
+        test_cm_path = os.path.join(tmp, "test_smoke_cm.png")
+        fig_cm, _ = plot_confusion_matrix(cm, target_names=classes, save_path=test_cm_path)
+        plt.close(fig_cm)
+        assert os.path.exists(test_cm_path)
+        print("[✓] Confusion matrix heatmap plotted and verified.")
+
+        # 9. Kiểm thử lưu kết quả JSON & Markdown
+        test_json_path = os.path.join(tmp, "test_smoke_metrics.json")
+        test_md_path = os.path.join(tmp, "test_smoke_metrics.md")
+        save_evaluation_results(metrics, test_json_path, format="json")
+        save_evaluation_results(metrics, test_md_path, format="markdown")
+        assert os.path.exists(test_json_path)
+        assert os.path.exists(test_md_path)
+        print("[✓] Results export (JSON & Markdown) verified.")
+
+    print("=" * 60)
+    print("TOÀN BỘ SMOKE TEST HOÀN TẤT THÀNH CÔNG! MODULE SẴN SÀNG SỬ DỤNG.")
+    print("=" * 60)
+    return True
 
 
 def main(argv: list[str] | None = None) -> None:

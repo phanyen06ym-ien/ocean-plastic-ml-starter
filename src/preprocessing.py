@@ -46,6 +46,13 @@ from PIL import Image
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONTRACT = PROJECT_ROOT / "configs" / "data_contract.yaml"
 DEFAULT_MAPPING = PROJECT_ROOT / "configs" / "class_mapping.json"
+SPLITS = ("train", "val", "test")
+IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp"}
+
+# Tải TrashCan 1.0 (dataset.zip) trực tiếp từ UMN Data Repository (DSpace 7 REST API).
+# Dùng trên Colab khi Drive `data/raw/` chưa có file .zip.
+UMN_API = "https://conservancy.umn.edu/server/api/core"
+TRASHCAN_ITEM_UUID = "6dd6a960-c44a-4510-a679-efb8c82ebfb7"
 
 
 def ensure_utf8_stdio() -> None:
@@ -93,10 +100,6 @@ def plastic_indices(mapping: list[dict[str, Any]]) -> list[int]:
 
 
 # --------------------------------------------------------------------------- 0b. Tải dữ liệu gốc
-# Tải TrashCan 1.0 (dataset.zip) trực tiếp từ UMN Data Repository (DSpace 7 REST API).
-# Dùng trên Colab khi Drive `data/raw/` chưa có file .zip.
-UMN_API = "https://conservancy.umn.edu/server/api/core"
-TRASHCAN_ITEM_UUID = "6dd6a960-c44a-4510-a679-efb8c82ebfb7"
 
 
 def _get_json(url: str) -> dict[str, Any]:
@@ -145,8 +148,6 @@ def download_trashcan(dest_dir: str | Path, name: str = "dataset.zip") -> Path:
     tmp.rename(target)
     return target
 
-SPLITS = ("train", "val", "test")
-IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp"}
 
 
 # --------------------------------------------------------------------------- 1. Tìm file

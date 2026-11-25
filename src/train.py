@@ -80,6 +80,11 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "class_weight": "balanced", "augmentation": None, "normalization": "rescale_1_255_in_model",
 }
 
+BACKBONES = {  # tên trong config → (hàm torchvision, enum trọng số)
+    "mobilenet_v2": ("mobilenet_v2", "MobileNet_V2_Weights"),
+    "efficientnet_b0": ("efficientnet_b0", "EfficientNet_B0_Weights"),
+}
+
 
 def _require_torch() -> None:
     if torch is None:
@@ -290,12 +295,6 @@ def make_sampler(targets, sampler_cfg: dict[str, Any] | None, num_classes: int, 
 
 
 # --------------------------------------------------------------------------- model
-BACKBONES = {  # tên trong config → (hàm torchvision, enum trọng số)
-    "mobilenet_v2": ("mobilenet_v2", "MobileNet_V2_Weights"),
-    "efficientnet_b0": ("efficientnet_b0", "EfficientNet_B0_Weights"),
-}
-
-
 def build_model(cfg: dict[str, Any], pretrained: bool = True) -> nn.Module:
     """MobileNetV2 (E03) hoặc EfficientNet-B0 (E04), tiền huấn luyện ImageNet; thay classifier bằng Dropout → Linear."""
     _require_torch()
