@@ -963,6 +963,7 @@ def group_metrics(y_true, y_pred, indices: list[int]) -> dict[str, Any]:
 
 
 def summarize(y_true, y_pred, probs, mapping: list[dict[str, Any]], exp_id: str, split: str) -> dict[str, Any]:
+    """Chỉ số tổng thể + Macro F1 các lớp có mẫu + nhóm nhựa cho một tập (`probs` hiện không dùng)."""
     names = class_names(mapping)
     labels = list(range(len(names)))
     overall = compute_classification_metrics(y_true, y_pred, labels=labels, target_names=names)
@@ -1303,6 +1304,7 @@ def smoke_test() -> bool:
 
 
 def main(argv: list[str] | None = None) -> None:
+    """Dòng lệnh: --run ... --processed-dir ... đánh giá checkpoint PyTorch; không tham số = smoke test."""
     ap = argparse.ArgumentParser(description="Đánh giá checkpoint PyTorch (E03–E04); không tham số = smoke test")
     ap.add_argument("--run", help="thư mục run, ví dụ runs/E04_20261121-1000")
     ap.add_argument("--ckpt", default="best.pt", help="checkpoint trong thư mục run")

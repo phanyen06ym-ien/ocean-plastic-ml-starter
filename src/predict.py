@@ -36,6 +36,7 @@ class InferenceError(Exception):
 
 @dataclass
 class Prediction:
+    """Một dự đoán: chỉ số lớp, tên lớp, xác suất và cờ lớp liên quan nhựa."""
     class_index: int
     class_name: str
     confidence: float
@@ -43,6 +44,7 @@ class Prediction:
 
 
 def load_image(path: str | Path) -> Image.Image:
+    """Mở ảnh JPG/PNG/BMP và chuyển sang RGB; lỗi đầu vào báo bằng InferenceError."""
     path = Path(path)
     if not path.exists():
         raise InferenceError(f"Không tìm thấy file ảnh: {path}")
@@ -99,6 +101,7 @@ class TorchModel:
         self.class_names = list(config["data"].get("class_names") or [])
 
     def predict(self, x: np.ndarray, verbose: int = 0) -> np.ndarray:
+        """Xác suất softmax (N, num_classes) cho mảng ảnh (N, H, W, 3) giá trị 0..255."""
         arr = np.transpose(np.asarray(x, dtype=np.float32) / 255.0, (0, 3, 1, 2))
         arr = (arr - self.mean) / self.std
         torch = self._torch
@@ -148,6 +151,7 @@ def check_compatible(model, mapping: list[dict[str, Any]]) -> int:
 
 
 def top_k(probs: np.ndarray, mapping: list[dict[str, Any]], k: int = 3) -> list[Prediction]:
+    """k lớp có xác suất cao nhất, theo thứ tự giảm dần."""
     probs = np.asarray(probs).reshape(-1)
     order = np.argsort(-probs)[:k]
     return [Prediction(int(i), mapping[i]["class_name"], float(probs[i]), bool(mapping[i].get("plastic_related")))
@@ -180,16 +184,19 @@ class Predictor:
         self.input_size = check_compatible(self.model, self.mapping)
 
     def predict_image(self, img: Image.Image, k: int = 3) -> list[Prediction]:
+        """Top-k cho một ảnh PIL; kiểm tra đầu ra mô hình là phân phối softmax."""
         probs = self.model.predict(preprocess(img, self.input_size), verbose=0)[0]
         if not np.isclose(probs.sum(), 1.0, atol=1e-3):
             raise InferenceError("Đầu ra mô hình không phải phân phối softmax")
         return top_k(probs, self.mapping, k)
 
     def predict_path(self, path: str | Path, k: int = 3) -> dict[str, Any]:
+        """Top-k cho một file ảnh: {image, top1, top_k}."""
         preds = self.predict_image(load_image(path), k)
         return {"image": str(path), "top1": asdict(preds[0]), "top_k": [asdict(p) for p in preds]}
 
     def predict_folder(self, folder: str | Path, k: int = 3) -> list[dict[str, Any]]:
+        """Top-k cho mọi ảnh trong thư mục (đọc cả thư mục con), sắp theo đường dẫn."""
         files = sorted(p for p in Path(folder).rglob("*") if p.suffix.lower() in SUPPORTED_EXTS)
         if not files:
             raise InferenceError(f"Thư mục không có ảnh: {folder}")

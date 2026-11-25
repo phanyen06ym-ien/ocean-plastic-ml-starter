@@ -43,6 +43,7 @@ def bbox_stats(df: pd.DataFrame) -> pd.DataFrame:
 
 def plot_class_distribution(table: pd.DataFrame, highlight: list[str] | None = None,
                             save_path: str | Path | None = None, title: str = "Phân bố annotation theo lớp"):
+    """Biểu đồ cột ngang số annotation theo lớp; tô màu các lớp trong `highlight`."""
     highlight = set(highlight or [])
     t = table.sort_values("total")
     colors = ["#d95f02" if c in highlight else "#7570b3" for c in t.index]
@@ -60,6 +61,7 @@ def plot_class_distribution(table: pd.DataFrame, highlight: list[str] | None = N
 
 
 def plot_split_counts(split_table: pd.DataFrame, save_path: str | Path | None = None):
+    """Biểu đồ cột chồng số crop theo lớp ở Train / Val / Test."""
     cols = [c for c in ("train", "val", "test") if c in split_table.columns]
     t = split_table[cols].sort_values(cols[0])
     fig, ax = plt.subplots(figsize=(9, max(4, 0.32 * len(t))))

@@ -92,10 +92,12 @@ def load_class_mapping(path: str | Path = DEFAULT_MAPPING) -> list[dict[str, Any
 
 
 def class_names(mapping: list[dict[str, Any]]) -> list[str]:
+    """Danh sách tên lớp theo class_index."""
     return [c["class_name"] for c in mapping]
 
 
 def plastic_indices(mapping: list[dict[str, Any]]) -> list[int]:
+    """class_index của các lớp liên quan nhựa (plastic_related = true)."""
     return [c["class_index"] for c in mapping if c.get("plastic_related")]
 
 
@@ -120,6 +122,7 @@ def pick_bitstream(bitstreams: list[dict[str, Any]], name: str = "dataset.zip") 
 
 
 def list_bitstreams(item_uuid: str = TRASHCAN_ITEM_UUID, api: str = UMN_API) -> list[dict[str, Any]]:
+    """Danh sách file (bitstream) trong bundle ORIGINAL của item TrashCan trên UMN."""
     bundles = _get_json(f"{api}/items/{item_uuid}/bundles")["_embedded"]["bundles"]
     out: list[dict[str, Any]] = []
     for b in bundles:
@@ -171,6 +174,7 @@ def find_annotation_files(raw_root: str | Path, names: dict[str, str] | None = N
 
 
 def load_coco(path: str | Path) -> dict[str, Any]:
+    """Đọc file annotation COCO (UTF-8)."""
     with open(path, encoding="utf-8") as f:
         return json.load(f)
 
@@ -207,6 +211,7 @@ def build_class_mapping(categories: list[dict[str, Any]], plastic_related: list[
 
 
 def save_class_mapping(mapping: list[dict[str, Any]], path: str | Path, source: str = "") -> None:
+    """Ghi class_mapping.json (kèm số lớp, quy tắc thứ tự và nguồn annotation)."""
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "dataset": "TrashCan 1.0 — Instance",
@@ -574,6 +579,7 @@ def run_preprocessing(raw_root: str | Path, out_dir: str | Path, contract_path: 
 
 
 def main() -> None:
+    """Dòng lệnh: tiền xử lý theo --contract và ghi vào --out-dir."""
     ensure_utf8_stdio()
     ap = argparse.ArgumentParser(description="Tiền xử lý TrashCan-Instance theo data contract")
     ap.add_argument("--raw-root", required=True, help="Thư mục chứa dataset TrashCan đã giải nén")

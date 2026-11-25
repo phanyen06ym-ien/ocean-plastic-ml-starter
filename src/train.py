@@ -146,18 +146,21 @@ def apply_overrides(cfg: dict[str, Any], overrides: list[str] | None) -> dict[st
 
 
 def save_config(cfg: dict[str, Any], path: str | Path) -> None:
+    """Ghi cấu hình đã dùng ra config.json (UTF-8)."""
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(cfg, f, ensure_ascii=False, indent=2)
 
 
 def make_run_dir(runs_root: str | Path, exp_id: str) -> Path:
+    """Tạo thư mục run <runs_root>/<EXP_ID>_<YYYYMMDD-HHMM>/."""
     d = Path(runs_root) / f"{exp_id}_{datetime.now().strftime('%Y%m%d-%H%M')}"
     d.mkdir(parents=True, exist_ok=True)
     return d
 
 
 def set_seed(seed: int, repro: dict[str, Any] | None = None) -> None:
+    """Đặt seed cho random, NumPy, TensorFlow (nếu đã import) và PyTorch; tuỳ chọn cuDNN tất định."""
     repro = repro or {}
     random.seed(seed)
     np.random.seed(seed)
@@ -191,6 +194,7 @@ def find_class_mapping(processed_dir: str | Path, name: str = "class_mapping.jso
 
 # --------------------------------------------------------------------------- class weights
 def count_images_per_class(split_dir: str | Path, names: list[str]) -> np.ndarray:
+    """Số ảnh của từng lớp trong <split_dir>/<class_name>/ theo thứ tự `names`."""
     exts = {".jpg", ".jpeg", ".png"}
     return np.array([
         sum(1 for p in (Path(split_dir) / n).iterdir() if p.suffix.lower() in exts) if (Path(split_dir) / n).exists() else 0
@@ -257,6 +261,7 @@ def build_transform(cfg: dict[str, Any], train: bool = False):
 
 
 def make_loaders(cfg: dict[str, Any], processed_dir: str | Path, names: list[str]):
+    """DataLoader Train (sampler hoặc xáo trộn) và Val; không bao giờ mở tập Test."""
     train_ds = ordered_image_folder(Path(processed_dir) / "train", names, build_transform(cfg, train=True))
     val_ds = ordered_image_folder(Path(processed_dir) / "val", names, build_transform(cfg))   # never open "test"
     g = torch.Generator()
@@ -333,6 +338,7 @@ def set_train_mode(model: nn.Module, phase: dict[str, Any]) -> None:
 
 
 def make_optimizer(model: nn.Module, phase: dict[str, Any], tcfg: dict[str, Any]):
+    """Adam theo pha: một nhóm tham số (đầu phân loại) hoặc hai nhóm (features, classifier)."""
     assert tcfg["optimizer"] == "adam"
     lr = phase["learning_rate"]
     if isinstance(lr, dict):
@@ -368,6 +374,7 @@ def weighted_ce(logits: torch.Tensor, y: torch.Tensor, class_w: torch.Tensor, ga
 
 # --------------------------------------------------------------------------- train / eval loops
 def train_epoch(model, loader, opt, class_w, device, phase, gamma: float = 0.0) -> float:
+    """Huấn luyện một epoch; trả loss trung bình (có trọng số lớp / focal) trên Train."""
     set_train_mode(model, phase)
     total, n = 0.0, 0
     for x, y in loader:
@@ -382,7 +389,7 @@ def train_epoch(model, loader, opt, class_w, device, phase, gamma: float = 0.0) 
 
 
 def predict(model, loader, device):
-    """Return (unweighted val loss, y_true, y_pred). Validation only."""
+    """Return (unweighted mean cross-entropy, y_true, y_pred) on one loader (Val in training, Val/Test in src.evaluate)."""
     model.eval()
     ys, ps, loss_sum = [], [], 0.0
     with torch.no_grad():
@@ -397,6 +404,7 @@ def predict(model, loader, device):
 
 
 def compute_metrics(y_true, y_pred, names: list[str], plastic: list[int]) -> dict[str, Any]:
+    """Accuracy, Macro/Weighted P/R/F1, chỉ số từng lớp và Macro nhóm nhựa (lớp có mẫu)."""
     from sklearn.metrics import accuracy_score, precision_recall_fscore_support
     labels = list(range(len(names)))
     pr, rc, f1, sup = precision_recall_fscore_support(y_true, y_pred, labels=labels, zero_division=0)
@@ -423,6 +431,7 @@ def compute_metrics(y_true, y_pred, names: list[str], plastic: list[int]) -> dic
 
 def run_phase(model, phase: dict[str, Any], tcfg, loaders, class_w, device, run_dir: Path, ckpt_name: str,
               history: list[dict[str, Any]], names, plastic) -> dict[str, Any]:
+    """Huấn luyện một pha với dừng sớm theo `early_stopping.monitor`; lưu checkpoint tốt nhất."""
     train_loader, val_loader = loaders
     configure_phase(model, phase)
     opt = make_optimizer(model, phase, tcfg)
@@ -474,11 +483,13 @@ def run_phase(model, phase: dict[str, Any], tcfg, loaders, class_w, device, run_
 
 # --------------------------------------------------------------------------- efficiency
 def count_params(model: nn.Module) -> dict[str, int]:
+    """Tổng số tham số và số tham số đang requires_grad (pha 2)."""
     return {"total": sum(p.numel() for p in model.parameters()),
             "trainable_phase2": sum(p.numel() for p in model.parameters() if p.requires_grad)}
 
 
 def file_size_mb(model: nn.Module) -> float:
+    """Kích thước state_dict khi lưu bằng torch.save (MB)."""
     with tempfile.TemporaryDirectory() as d:
         path = Path(d) / "m.pt"
         torch.save(model.state_dict(), path)
@@ -486,6 +497,7 @@ def file_size_mb(model: nn.Module) -> float:
 
 
 def inference_ms(model: nn.Module, device: str, size, warmup: int = 20, iters: int = 100) -> float:
+    """Thời gian suy luận trung bình một ảnh (batch 1, ms) trên `device`."""
     model = model.to(device).eval()
     x = torch.randn(1, 3, *size, device=device)
     with torch.no_grad():
@@ -502,6 +514,7 @@ def inference_ms(model: nn.Module, device: str, size, warmup: int = 20, iters: i
 
 
 def measure_efficiency(model, cfg, device) -> dict[str, Any]:
+    """Tham số, kích thước file và thời gian suy luận CPU (và CUDA nếu có)."""
     ec = cfg["evaluation"]["efficiency"]["inference_time"]
     size = cfg["input"]["image_size"]
     out = {"params": count_params(model), "file_size_mb": round(file_size_mb(model), 3),
@@ -516,6 +529,7 @@ def measure_efficiency(model, cfg, device) -> dict[str, Any]:
 # =========================================================================== E01–E02: CNN tự thiết kế (Keras)
 # --------------------------------------------------------------------------- mô hình (Keras)
 def build_augmentation(aug: dict[str, Any] | None):
+    """Lớp augmentation Keras (lật, xoay, zoom, tương phản) hoặc None."""
     from tensorflow import keras
     from tensorflow.keras import layers
     if not aug:
@@ -563,6 +577,7 @@ def build_cnn(input_shape=(128, 128, 3), num_classes: int = 22, filters=(32, 64,
 
 
 def compile_model(model, cfg: dict[str, Any]):
+    """Compile mô hình Keras: Adam + (sparse_)categorical_crossentropy + accuracy."""
     from tensorflow import keras
     loss = "sparse_categorical_crossentropy" if cfg["label_mode"] == "int" else "categorical_crossentropy"
     model.compile(optimizer=keras.optimizers.Adam(learning_rate=cfg["learning_rate"]), loss=loss, metrics=["accuracy"])
@@ -570,11 +585,13 @@ def compile_model(model, cfg: dict[str, Any]):
 
 
 def model_from_config(cfg: dict[str, Any]):
+    """Dựng và compile CNN tự thiết kế từ cấu hình E01/E02."""
     return compile_model(build_cnn(cfg["input_shape"], cfg["num_classes"], cfg["filters"], cfg["dense_units"],
                                    cfg["dropout"], cfg.get("batch_norm", True), cfg.get("augmentation")), cfg)
 
 
 def get_callbacks(run_dir: str | Path, cfg: dict[str, Any]):
+    """ModelCheckpoint best/last, EarlyStopping, CSVLogger và ReduceLROnPlateau (theo val_loss)."""
     from tensorflow import keras
     run_dir = str(run_dir)
     os.makedirs(run_dir, exist_ok=True)
@@ -601,6 +618,7 @@ def load_split(processed_dir: str | Path, split: str, names: list[str], cfg: dic
 
 
 def load_datasets(processed_dir: str | Path, cfg: dict[str, Any], mapping_path: str | Path | None = None):
+    """tf.data Train (xáo trộn) và Val theo class mapping; kiểm tra số lớp khớp cấu hình."""
     import tensorflow as tf
     mapping = load_class_mapping(mapping_path or Path(processed_dir) / "class_mapping.json")
     names = class_names(mapping)
@@ -738,6 +756,7 @@ def run_training(cfg: dict[str, Any], processed_dir: str | Path, runs_root: str 
 
 
 def main() -> None:
+    """Dòng lệnh huấn luyện: đọc --config, áp --exp-id / --set rồi chạy pipeline phù hợp."""
     ensure_utf8_stdio()
     ap = argparse.ArgumentParser(description="Huấn luyện E01–E04 (Keras cho E01–E02, PyTorch cho E03–E04)")
     ap.add_argument("--config", required=True)

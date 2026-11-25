@@ -26,6 +26,7 @@ PLASTIC_TAG = " [liên quan nhựa]"
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Tham số dòng lệnh của demo (--image hoặc --folder, --model, ...)."""
     ap = argparse.ArgumentParser(
         prog="python main.py",
         description="Phân loại ảnh một đối tượng dưới nước (TrashCan-Instance) bằng CNN / MobileNetV2 / EfficientNet-B0.",
@@ -46,6 +47,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def print_single(result: dict) -> None:
+    """In top-k của một ảnh; đánh dấu lớp liên quan nhựa."""
     print(f"Ảnh: {result['image']}")
     for i, p in enumerate(result["top_k"], 1):
         tag = PLASTIC_TAG if p["plastic_related"] else ""
@@ -53,6 +55,7 @@ def print_single(result: dict) -> None:
 
 
 def print_folder(rows: list[dict]) -> None:
+    """In top-1 của từng ảnh trong thư mục và số ảnh được đoán thuộc nhóm nhựa."""
     for r in rows:
         t = r["top1"]
         tag = PLASTIC_TAG if t["plastic_related"] else ""
@@ -62,6 +65,7 @@ def print_folder(rows: list[dict]) -> None:
 
 
 def write_csv(rows: list[dict], out: str | Path) -> None:
+    """Ghi kết quả --folder ra CSV (UTF-8): top-k tên lớp, chỉ số lớp, độ tin cậy."""
     import pandas as pd
 
     records = []
@@ -80,6 +84,7 @@ def write_csv(rows: list[dict], out: str | Path) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Chạy demo; trả mã thoát 0 khi thành công, 1 khi đầu vào/cấu hình lỗi (InferenceError)."""
     ensure_utf8_stdio()
     args = build_parser().parse_args(argv)
     try:
