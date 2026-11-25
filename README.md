@@ -202,6 +202,8 @@ Mức ngẫu nhiên của Macro F1: ≈ 0,045 với 22 lớp, ≈ 0,056 với 18
 | Recall nhóm nhựa | 0,150 | 0,099 | 0,237 | **0,151** |
 
 > **Lưu ý về tập Test.** Test đã được chạy **hai lần**: lần 1 (21/11) cho E04 bản đầu; lần 2 (22/11) cho E04 hiện tại. E04 hiện tại được tạo ra sau khi phân tích lỗi của lần 1 trên Test, nên kết quả Test lần 2 không còn hoàn toàn độc lập. Mô hình vẫn được chọn bằng Validation; cả hai kết quả được giữ (`results/metrics/E04v1_test.json`, `E04_test.json`).
+>
+> 25/11/2026: chạy lại checkpoint E04 đã chọn trên Val và Test bằng CPU để kiểm tra tái lập; kết quả và dự đoán từng ảnh trùng tuyệt đối, không dùng để chọn hay chỉnh mô hình.
 
 Trên Test, đổi cách lấy mẫu gần như không đổi Macro F1 (0,327 → 0,329) nhưng đổi Accuracy lấy recall nhóm nhựa: Accuracy giảm 2,8 điểm, recall nhựa tăng từ 0,099 lên 0,151, số mẫu nhựa bị đoán thành `trash_other` giảm từ 129 xuống 71 (trên 217). Tăng: `trash_pipe` (F1 0,24 → 0,51), `trash_bag` (0,23 → 0,34), `trash_rope` (0,09 → 0,20). Giảm: `trash_net` (0,32 → 0,17), `animal_other` (0,29 → 0,06), `trash_other` (0,41 → 0,33). `trash_bottle` và `trash_snack_wrapper` vẫn F1 = 0; cả 10 mẫu `trash_snack_wrapper` bị đoán thành `trash_bag`. Nguồn: `results/metrics/E04_test.json`, `E04v1_test.json`, hình `results/figures/E04_test_confusion_matrix.png`.
 
@@ -285,7 +287,7 @@ python main.py --image path/to/crop.jpg --model runs/E04_20261122-0853/best.pt
 1. *File → Project from Version Control*, URL `https://github.com/phanyen06ym-ien/ocean-plastic-ml-starter.git`, chọn thư mục (ví dụ `D:\DEV\Projects\ocean-plastic-ml-starter`) → *Clone*.
 2. *Settings → Project → Python Interpreter → Add Interpreter → Virtualenv* (Python 3.10–3.12), thư mục `.venv` trong repo. PyCharm sẽ gợi ý cài `requirements.txt`; nếu không, mở *Terminal* và chạy `pip install -r requirements.txt`.
 3. Chuột phải thư mục gốc → *Mark Directory as → Sources Root* (để `from src...` chạy được). Trong *Settings → Tools → Python Integrated Tools* chọn *Default test runner: pytest*.
-4. Kiểm tra: chuột phải `tests/` → *Run 'pytest in tests'* (68 passed khi đã cài đủ TensorFlow và PyTorch; thiếu thư viện nào thì test tương ứng tự bỏ qua). Nếu ổ C: đầy, chạy `pytest -q --basetemp=D:\tmp\pytest` trong Terminal.
+4. Kiểm tra: chuột phải `tests/` → *Run 'pytest in tests'* (81 passed khi đã cài đủ TensorFlow và PyTorch; thiếu thư viện nào thì test tương ứng tự bỏ qua). Nếu ổ C: đầy, chạy `pytest -q --basetemp=D:\tmp\pytest` trong Terminal.
 5. Vẽ lại hình báo cáo không cần dữ liệu: chạy `scripts/make_report_figures.py`. Chạy demo: tải `runs/E04_20261122-0853/` từ Drive về `runs/` rồi tạo *Run Configuration* cho `main.py` với tham số `--image <ảnh> --model runs/E04_20261122-0853/best.pt`.
 
 Dữ liệu (`data/`), checkpoint (`runs/`, `*.pt`) và `.venv/`, `.idea/` đã nằm trong `.gitignore`, không bị commit nhầm. Huấn luyện lại nên dùng Colab (cần GPU).
