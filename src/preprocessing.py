@@ -30,6 +30,7 @@ import json
 import os
 import re
 import shutil
+import sys
 import urllib.request
 from collections import defaultdict
 from pathlib import Path
@@ -47,7 +48,18 @@ DEFAULT_CONTRACT = PROJECT_ROOT / "configs" / "data_contract.yaml"
 DEFAULT_MAPPING = PROJECT_ROOT / "configs" / "class_mapping.json"
 
 
+def ensure_utf8_stdio() -> None:
+    """In tiếng Việt an toàn trên Windows: khi stdout/stderr bị chuyển hướng (> file, pipe), Python dùng cp1252
+    và báo UnicodeEncodeError. Chuyển cả hai sang UTF-8; bỏ qua nếu luồng không hỗ trợ reconfigure."""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8")
+        except (AttributeError, ValueError, OSError):
+            pass
+
+
 def load_yaml(path: str | Path) -> dict[str, Any]:
+    """Đọc file YAML (UTF-8)."""
     with open(path, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
@@ -574,6 +586,7 @@ def run_preprocessing(raw_root: str | Path, out_dir: str | Path, contract_path: 
 
 
 def main() -> None:
+    ensure_utf8_stdio()
     ap = argparse.ArgumentParser(description="Tiền xử lý TrashCan-Instance theo data contract")
     ap.add_argument("--raw-root", required=True, help="Thư mục chứa dataset TrashCan đã giải nén")
     ap.add_argument("--out-dir", required=True, help="Thư mục đầu ra, ví dụ .../data/processed/v1_crop128")

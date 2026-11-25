@@ -20,6 +20,7 @@ import sys
 from pathlib import Path
 
 from src.predict import InferenceError, Predictor
+from src.preprocessing import ensure_utf8_stdio
 
 PLASTIC_TAG = " [liên quan nhựa]"
 
@@ -79,6 +80,7 @@ def write_csv(rows: list[dict], out: str | Path) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    ensure_utf8_stdio()
     args = build_parser().parse_args(argv)
     try:
         if args.top_k < 1:

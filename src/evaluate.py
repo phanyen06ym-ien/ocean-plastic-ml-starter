@@ -26,22 +26,9 @@ Dòng lệnh (PyTorch):
 
 import argparse
 import os
-import sys
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
-
-# Bảo đảm mã hóa UTF-8 an toàn trên Windows terminal
-if hasattr(sys.stdout, "reconfigure"):
-    try:
-        sys.stdout.reconfigure(encoding="utf-8")
-    except Exception:
-        pass
-if hasattr(sys.stderr, "reconfigure"):
-    try:
-        sys.stderr.reconfigure(encoding="utf-8")
-    except Exception:
-        pass
 
 import numpy as np
 import pandas as pd
@@ -57,9 +44,12 @@ from sklearn.metrics import (
 )
 
 try:
-    from src.preprocessing import class_names, load_class_mapping, plastic_indices
+    from src.preprocessing import class_names, ensure_utf8_stdio, load_class_mapping, plastic_indices
 except ImportError:  # pragma: no cover
-    from preprocessing import class_names, load_class_mapping, plastic_indices
+    from preprocessing import class_names, ensure_utf8_stdio, load_class_mapping, plastic_indices
+
+# Bảo đảm in tiếng Việt an toàn trên Windows terminal (giữ như trước: áp dụng ngay khi import module)
+ensure_utf8_stdio()
 
 
 def compute_classification_metrics(

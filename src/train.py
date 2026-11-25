@@ -65,9 +65,11 @@ except ImportError:  # pragma: no cover
     torch = None
 
 try:
-    from src.preprocessing import DEFAULT_MAPPING, class_names, load_class_mapping, load_yaml, plastic_indices
+    from src.preprocessing import (DEFAULT_MAPPING, class_names, ensure_utf8_stdio, load_class_mapping, load_yaml,
+                                   plastic_indices)
 except ImportError:  # pragma: no cover
-    from preprocessing import DEFAULT_MAPPING, class_names, load_class_mapping, load_yaml, plastic_indices
+    from preprocessing import (DEFAULT_MAPPING, class_names, ensure_utf8_stdio, load_class_mapping, load_yaml,
+                               plastic_indices)
 
 # Mặc định cho cấu hình Keras (E01–E02); file configs/experiments/E01_*.yaml, E02_*.yaml ghi đè lên.
 DEFAULT_CONFIG: dict[str, Any] = {
@@ -737,6 +739,7 @@ def run_training(cfg: dict[str, Any], processed_dir: str | Path, runs_root: str 
 
 
 def main() -> None:
+    ensure_utf8_stdio()
     ap = argparse.ArgumentParser(description="Huấn luyện E01–E04 (Keras cho E01–E02, PyTorch cho E03–E04)")
     ap.add_argument("--config", required=True)
     ap.add_argument("--processed-dir", default=None, help="default: data.processed_dir in the config")
