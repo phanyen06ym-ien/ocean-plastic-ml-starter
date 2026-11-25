@@ -69,3 +69,9 @@ def test_busy_port_is_reported_before_loading_model():
         with pytest.raises(SystemExit, match=rf"Cổng {port} đang được dùng.*--port {port + 1}"):
             demo.main(["--port", str(port), "--model", "khong_ton_tai.pt"])   # lỗi cổng báo trước lỗi checkpoint
     assert not demo.port_in_use(port)
+
+
+def test_warm_up_runs_one_prediction_at_model_size():
+    fake = FakePredictor()
+    demo.warm_up(fake)
+    assert fake.seen is not None and fake.seen.size == (224, 224)
