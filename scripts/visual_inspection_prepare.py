@@ -108,9 +108,11 @@ def _font(size: int):
 
 
 def sample_panel(row, processed_dir: Path, source: Path | None, h: int = 300) -> Image.Image:
-    crop = Image.open(processed_dir / row["crop_path"]).convert("RGB").resize((h, h))
+    with Image.open(processed_dir / row["crop_path"]) as im:
+        crop = im.convert("RGB").resize((h, h))
     if source is not None and source.exists():
-        src = Image.open(source).convert("RGB")
+        with Image.open(source) as im:
+            src = im.convert("RGB")
         d = ImageDraw.Draw(src)
         x, y, w, hh = row["bbox_x"], row["bbox_y"], row["bbox_w"], row["bbox_h"]
         d.rectangle([x, y, x + w, y + hh], outline=(255, 40, 40), width=max(2, src.width // 200))

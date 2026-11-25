@@ -47,7 +47,8 @@ def draw(err: pd.DataFrame, processed_dir: Path, out: Path, cols: int = 4) -> Pa
     for ax in getattr(axes, "flat", [axes]):
         ax.axis("off")
     for ax, r in zip(getattr(axes, "flat", [axes]), err.itertuples()):
-        ax.imshow(Image.open(processed_dir / r.path).convert("RGB"))
+        with Image.open(processed_dir / r.path) as im:
+            ax.imshow(im.convert("RGB"))
         ax.set_title(f"Thật: {r.true_name.replace('trash_', '')}\nĐoán: {r.pred_name} ({r.confidence:.0%})",
                      fontsize=8, color="#b91c1c")
     fig.suptitle("E04 — mẫu nhựa bị đoán sai trên Test (độ tin cậy cao nhất mỗi lớp)", fontsize=11)

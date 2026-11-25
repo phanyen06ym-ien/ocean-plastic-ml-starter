@@ -92,7 +92,8 @@ def plot_sample_crops(manifest: pd.DataFrame, processed_dir: str | Path, class_n
             ax = axes[r, k]
             ax.axis("off")
             if k < len(pick):
-                ax.imshow(Image.open(Path(processed_dir) / pick.iloc[k]["crop_path"]))
+                with Image.open(Path(processed_dir) / pick.iloc[k]["crop_path"]) as im:   # đóng file (Windows khoá file đang mở)
+                    ax.imshow(np.asarray(im))
         axes[r, 0].set_title(c, fontsize=7, loc="left")
     fig.tight_layout()
     if save_path:
