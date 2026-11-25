@@ -203,7 +203,12 @@ def make_predict_fn(predictor: Predictor):
 
 
 def example_images(folder: Path = EXAMPLES_DIR, per_class: int = 1, limit: int = 12) -> list[list[str]]:
-    """Một vài ảnh Test làm ví dụ (ưu tiên các lớp nhựa); rỗng nếu chưa tải dữ liệu."""
+    """Ảnh ví dụ: 5 ảnh demo trong demo_images/ nếu đã tạo; nếu không, vài ảnh Test (ưu tiên lớp nhựa)."""
+    demo_dir = ROOT / "demo_images"
+    if folder == EXAMPLES_DIR and demo_dir.exists():
+        prepared = sorted(demo_dir.glob("*.jpg"))
+        if prepared:
+            return [[str(f)] for f in prepared]
     if not folder.exists():
         return []
     order = ["trash_bag", "trash_net", "trash_rope", "trash_tarp", "trash_bottle", "trash_snack_wrapper",
@@ -238,7 +243,7 @@ def build_app(predictor: Predictor, model_name: str):
                 square = gr.Checkbox(value=True, label="Cắt vuông ở giữa ảnh (giống dữ liệu huấn luyện)")
                 examples = example_images()
                 if examples:
-                    gr.Examples(examples, inputs=[inp], label="Ảnh ví dụ từ tập Kiểm tra (bấm để thử)",
+                    gr.Examples(examples, inputs=[inp], label="Ảnh ví dụ (bấm để thử)",
                                 examples_per_page=12)
             with gr.Column(scale=6):
                 card = gr.HTML(PLACEHOLDER)
