@@ -75,3 +75,11 @@ def test_warm_up_runs_one_prediction_at_model_size():
     fake = FakePredictor()
     demo.warm_up(fake)
     assert fake.seen is not None and fake.seen.size == (224, 224)
+
+
+def test_editor_dict_with_numpy_layers():
+    """gr.ImageEditor(type="numpy") trả dict chứa mảng numpy; không được dùng `or` trên mảng."""
+    arr = np.zeros((60, 90, 4), dtype=np.uint8)
+    assert demo.prepare({"composite": arr, "background": None}, square=True).size == (60, 60)
+    assert demo.prepare({"composite": None, "background": arr[..., :3]}, square=False).size == (90, 60)
+    assert demo.prepare({"composite": None, "background": None, "layers": []}, square=True) is None

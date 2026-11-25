@@ -52,7 +52,8 @@ def to_pil(value: Any) -> Image.Image | None:
     if value is None:
         return None
     if isinstance(value, dict):  # gr.ImageEditor
-        value = value.get("composite") or value.get("background")
+        composite = value.get("composite")              # không dùng `or`: mảng numpy không có giá trị đúng/sai
+        value = composite if composite is not None else value.get("background")
         if value is None:
             return None
     if not isinstance(value, Image.Image):
