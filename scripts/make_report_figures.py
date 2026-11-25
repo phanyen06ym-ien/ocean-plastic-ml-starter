@@ -24,6 +24,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
+ROOT = Path(__file__).resolve().parents[1]
 PLASTIC = ["trash_bag", "trash_bottle", "trash_snack_wrapper", "trash_tarp", "trash_rope", "trash_net"]
 C_MAIN, C_ACCENT, C_MUTED = "#2563eb", "#ea580c", "#9ca3af"
 
@@ -174,12 +175,12 @@ def make_all(metrics: Path, out: Path) -> list[Path]:
 
 
 def main() -> None:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    sys.path.insert(0, str(ROOT))
     from src.preprocessing import ensure_utf8_stdio
     ensure_utf8_stdio()
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--metrics", default="results/metrics")
-    ap.add_argument("--out", default="results/figures")
+    ap.add_argument("--metrics", default=str(ROOT / "results" / "metrics"))
+    ap.add_argument("--out", default=str(ROOT / "results" / "figures"))
     a = ap.parse_args()
     for p in make_all(Path(a.metrics), Path(a.out)):
         print(p)

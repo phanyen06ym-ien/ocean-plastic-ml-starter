@@ -33,3 +33,13 @@ def test_misclassified_grid(tmp_path):
     assert list(err["path"]) == ["test/x/1.jpg"]          # chỉ lỗi của lớp nhựa, độ tin cậy cao nhất
     out = mod.draw(err, tmp_path, tmp_path / "grid.png")
     assert out.exists() and out.with_suffix(".csv").exists()
+
+
+def test_default_metrics_path_is_repo_relative(tmp_path):
+    """Chạy từ thư mục khác vẫn đọc results/metrics của repo (mặc định không phụ thuộc thư mục đang đứng)."""
+    import subprocess
+    import sys
+    r = subprocess.run([sys.executable, str(ROOT / "scripts" / "make_report_figures.py"), "--out", str(tmp_path / "f")],
+                       cwd=tmp_path, capture_output=True, timeout=300)
+    assert r.returncode == 0, r.stderr.decode("utf-8", "replace")
+    assert len(list((tmp_path / "f").glob("*.png"))) == 7

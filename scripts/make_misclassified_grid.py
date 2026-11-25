@@ -64,10 +64,10 @@ def main() -> None:
 
     ensure_utf8_stdio()
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--predictions", default="results/predictions/E04_test_predictions.csv")
+    ap.add_argument("--predictions", default=str(ROOT / "results" / "predictions" / "E04_test_predictions.csv"))
     ap.add_argument("--processed-dir", required=True)
     ap.add_argument("--checkpoint", required=True)
-    ap.add_argument("--out", default="results/figures/E04_test_misclassified_plastic.png")
+    ap.add_argument("--out", default=str(ROOT / "results" / "figures" / "E04_test_misclassified_plastic.png"))
     ap.add_argument("--per-class", type=int, default=3)
     ap.add_argument("--limit", type=int, default=16)
     a = ap.parse_args()
